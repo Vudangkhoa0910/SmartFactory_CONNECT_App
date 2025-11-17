@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SmartFactory Connect cần quyền truy cập thư viện ảnh để bạn có thể đính kèm ảnh vào góp ý</string>
+	<key>NSCameraUsageDescription</key>
+	<string>SmartFactory Connect cần quyền sử dụng camera để chụp ảnh đính kèm vào góp ý</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SmartFactory Connect cần quyền sử dụng microphone để ghi âm video</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>SmartFactory Connect cần quyền lưu ảnh vào thư viện</string>
 </dict>
 </plist>

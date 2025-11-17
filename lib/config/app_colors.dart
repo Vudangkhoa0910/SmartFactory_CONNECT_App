@@ -128,6 +128,7 @@ class AppColors {
   // ============================================================================
   // MÀU BỔ SUNG (Additional Theme Colors)
   // ============================================================================
+  static const Color themePink100 = Color(0xFFFCE7F6);
   static const Color themePink500 = Color(0xFFEE46BC);
   static const Color themePurple500 = Color(0xFF7A5AF8);
 

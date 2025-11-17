@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'config/app_colors.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/report/report_screen.dart';
-import 'screens/suggestions/suggestions_screen.dart';
+import 'screens/idea_box/idea_box_list_screen.dart';
 import 'screens/profile/profile_screen.dart';
 
 class BottomNavScreen extends StatefulWidget {
@@ -45,7 +45,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   final pages = [
     const HomeScreen(),
     const ReportScreen(),
-    const SuggestionsScreen(),
+    const IdeaBoxListScreen(),
     const ProfileScreen(),
   ];
 
