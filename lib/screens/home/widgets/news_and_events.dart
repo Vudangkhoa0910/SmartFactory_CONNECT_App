@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
+import '../all_news_screen.dart';
 
 class NewsAndEvents extends StatelessWidget {
   const NewsAndEvents({super.key});
@@ -33,7 +34,14 @@ class NewsAndEvents extends StatelessWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AllNewsScreen(),
+                      ),
+                    );
+                  },
                   child: Text(
                     'Xem tất cả',
                     style: TextStyle(
@@ -52,7 +60,7 @@ class NewsAndEvents extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: 10,
+            itemCount: 5,
             itemBuilder: (context, index) {
               return _NewsCard(
                 title: 'Tiêu đề tin tức số ${index + 1}',

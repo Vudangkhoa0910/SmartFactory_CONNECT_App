@@ -1,4 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../../config/app_colors.dart';
 
 class ReportFormScreen extends StatefulWidget {
@@ -15,7 +21,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   final _descriptionController = TextEditingController();
 
   String? _selectedPriority;
-  String? _selectedCategory;
+  List<String> _selectedCategories = [];
 
   final List<String> _priorities = ['Thấp', 'Trung bình', 'Cao', 'Khẩn cấp'];
 
@@ -28,27 +34,149 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     'Khác',
   ];
 
+  // Media attachments
+  final List<File> _images = [];
+  final List<File> _videos = [];
+  String? _audioPath;
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isRecording = false;
+  bool _isPlaying = false;
+
   @override
   void dispose() {
     _titleController.dispose();
     _locationController.dispose();
     _descriptionController.dispose();
+    _audioRecorder.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'Thấp':
-        return AppColors.success500;
-      case 'Trung bình':
-        return AppColors.blueLight500;
-      case 'Cao':
-        return AppColors.orange500;
-      case 'Khẩn cấp':
-        return AppColors.error500;
-      default:
-        return AppColors.gray400;
+  // Camera functions
+  Future<void> _takePicture() async {
+    final status = await Permission.camera.request();
+    if (status.isGranted) {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        setState(() {
+          _images.add(File(image.path));
+        });
+      }
+    } else {
+      _showPermissionDialog('Camera');
     }
+  }
+
+  // Gallery functions
+  Future<void> _pickMedia() async {
+    final status = await Permission.photos.request();
+    if (status.isGranted || status.isLimited) {
+      final picker = ImagePicker();
+
+      // Show dialog to choose between image or video
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Chọn loại file'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.image, color: AppColors.brand500),
+                title: Text('Ảnh'),
+                onTap: () => Navigator.pop(context, 'image'),
+              ),
+              ListTile(
+                leading: Icon(Icons.video_library, color: AppColors.brand500),
+                title: Text('Video'),
+                onTap: () => Navigator.pop(context, 'video'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (choice == 'image') {
+        final XFile? image = await picker.pickImage(
+          source: ImageSource.gallery,
+        );
+        if (image != null) {
+          setState(() {
+            _images.add(File(image.path));
+          });
+        }
+      } else if (choice == 'video') {
+        final XFile? video = await picker.pickVideo(
+          source: ImageSource.gallery,
+        );
+        if (video != null) {
+          setState(() {
+            _videos.add(File(video.path));
+          });
+        }
+      }
+    } else {
+      _showPermissionDialog('Photos/Gallery');
+    }
+  }
+
+  // Audio recording functions
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      // Stop recording
+      final path = await _audioRecorder.stop();
+      if (path != null) {
+        setState(() {
+          _audioPath = path;
+          _isRecording = false;
+        });
+      }
+    } else {
+      // Start recording
+      final status = await Permission.microphone.request();
+      if (status.isGranted) {
+        final directory = await getApplicationDocumentsDirectory();
+        final path =
+            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+        await _audioRecorder.start(
+          const RecordConfig(encoder: AudioEncoder.aacLc),
+          path: path,
+        );
+        setState(() {
+          _isRecording = true;
+        });
+      } else {
+        _showPermissionDialog('Microphone');
+      }
+    }
+  }
+
+  void _showPermissionDialog(String permissionType) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Quyền truy cập bị từ chối'),
+        content: Text(
+          'Ứng dụng cần quyền truy cập $permissionType để sử dụng chức năng này.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Đóng'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: Text('Cài đặt'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -157,18 +285,14 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     });
                   },
                   backgroundColor: AppColors.white,
-                  selectedColor: _getPriorityColor(priority).withOpacity(0.1),
-                  checkmarkColor: _getPriorityColor(priority),
+                  selectedColor: AppColors.error500.withOpacity(0.1),
+                  checkmarkColor: AppColors.error500,
                   labelStyle: TextStyle(
-                    color: isSelected
-                        ? _getPriorityColor(priority)
-                        : AppColors.gray700,
+                    color: isSelected ? AppColors.error500 : AppColors.gray700,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                   side: BorderSide(
-                    color: isSelected
-                        ? _getPriorityColor(priority)
-                        : AppColors.gray200,
+                    color: AppColors.error500,
                     width: isSelected ? 2 : 1,
                   ),
                   shape: RoundedRectangleBorder(
@@ -182,39 +306,40 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             // Phân loại vấn đề
             _buildSectionTitle('Phân loại vấn đề'),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              decoration: InputDecoration(
-                hintText: 'Chọn loại vấn đề',
-                hintStyle: TextStyle(color: AppColors.gray400),
-                filled: true,
-                fillColor: AppColors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.gray200),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.gray200),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                ),
-              ),
-              items: _categories
-                  .map(
-                    (category) => DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value;
-                });
-              },
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _categories.map((category) {
+                final isSelected = _selectedCategories.contains(category);
+                return FilterChip(
+                  label: Text(category),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedCategories.add(category);
+                      } else {
+                        _selectedCategories.remove(category);
+                      }
+                    });
+                  },
+                  backgroundColor: AppColors.white,
+                  selectedColor: AppColors.brand500.withOpacity(0.1),
+                  checkmarkColor: AppColors.brand500,
+                  showCheckmark: true,
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppColors.brand500 : AppColors.gray700,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  side: BorderSide(
+                    color: isSelected ? AppColors.brand500 : AppColors.gray200,
+                    width: isSelected ? 2 : 1,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 20),
 
@@ -254,9 +379,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                   child: _buildAttachmentButton(
                     icon: Icons.camera_alt,
                     label: 'Chụp ảnh',
-                    onTap: () {
-                      // TODO: Implement camera
-                    },
+                    onTap: _takePicture,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -264,21 +387,32 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                   child: _buildAttachmentButton(
                     icon: Icons.photo_library,
                     label: 'Tải ảnh/Video',
-                    onTap: () {
-                      // TODO: Implement gallery
-                    },
+                    onTap: _pickMedia,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             _buildAttachmentButton(
-              icon: Icons.mic,
-              label: 'Ghi âm',
-              onTap: () {
-                // TODO: Implement audio recording
-              },
+              icon: _isRecording ? Icons.stop : Icons.mic,
+              label: _isRecording ? 'Dừng ghi âm' : 'Ghi âm',
+              onTap: _toggleRecording,
+              isRecording: _isRecording,
             ),
+
+            // Display attached media
+            if (_images.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _buildMediaPreview('Ảnh đã chọn', _images, Icons.image),
+            ],
+            if (_videos.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _buildMediaPreview('Video đã chọn', _videos, Icons.videocam),
+            ],
+            if (_audioPath != null) ...[
+              const SizedBox(height: 16),
+              _buildAudioPreview(),
+            ],
             const SizedBox(height: 32),
 
             // Nút gửi báo cáo
@@ -356,6 +490,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    bool isRecording = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -363,19 +498,27 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: isRecording
+              ? AppColors.error500.withOpacity(0.1)
+              : AppColors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.gray200),
+          border: Border.all(
+            color: isRecording ? AppColors.error500 : AppColors.gray200,
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.brand500, size: 20),
+            Icon(
+              icon,
+              color: isRecording ? AppColors.error500 : AppColors.brand500,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: AppColors.gray700,
+                color: isRecording ? AppColors.error500 : AppColors.gray700,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -384,5 +527,156 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildMediaPreview(String title, List<File> files, IconData icon) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$title (${files.length})',
+          style: TextStyle(
+            color: AppColors.gray700,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 80,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: files.length,
+            itemBuilder: (context, index) {
+              return Container(
+                width: 80,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.gray100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(icon, color: AppColors.gray400, size: 32),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            files.removeAt(index);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.error500,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: AppColors.white,
+                            size: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAudioPreview() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.brand500.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.brand500),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _togglePlayback,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.brand500,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _isPlaying ? Icons.pause : Icons.play_arrow,
+                color: AppColors.white,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ghi âm đã lưu',
+                  style: TextStyle(
+                    color: AppColors.brand500,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _isPlaying ? 'Đang phát...' : 'Nhấn để nghe',
+                  style: TextStyle(
+                    color: AppColors.brand500.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _audioPath = null;
+                _isPlaying = false;
+              });
+              _audioPlayer.stop();
+            },
+            child: Icon(Icons.close, color: AppColors.error500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _togglePlayback() async {
+    if (_audioPath == null) return;
+
+    if (_isPlaying) {
+      await _audioPlayer.pause();
+      setState(() {
+        _isPlaying = false;
+      });
+    } else {
+      await _audioPlayer.play(DeviceFileSource(_audioPath!));
+      setState(() {
+        _isPlaying = true;
+      });
+
+      // Listen for completion
+      _audioPlayer.onPlayerComplete.listen((_) {
+        setState(() {
+          _isPlaying = false;
+        });
+      });
+    }
   }
 }

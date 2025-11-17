@@ -151,74 +151,62 @@ class ReportScreen extends StatelessWidget {
           Positioned(
             bottom: 100,
             right: 20,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.brand500.withOpacity(0.4),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          const ReportFormScreen(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                            const curve = Curves.easeInOutCubic;
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const ReportFormScreen(),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                          const curve = Curves.easeInOutCubic;
 
-                            var scaleTween = Tween<double>(
-                              begin: 0.85,
-                              end: 1.0,
-                            ).chain(CurveTween(curve: curve));
-                            var scaleAnimation = animation.drive(scaleTween);
+                          var scaleTween = Tween<double>(
+                            begin: 0.85,
+                            end: 1.0,
+                          ).chain(CurveTween(curve: curve));
+                          var scaleAnimation = animation.drive(scaleTween);
 
-                            var fadeTween = Tween<double>(
-                              begin: 0.0,
-                              end: 1.0,
-                            ).chain(CurveTween(curve: curve));
-                            var fadeAnimation = animation.drive(fadeTween);
+                          var fadeTween = Tween<double>(
+                            begin: 0.0,
+                            end: 1.0,
+                          ).chain(CurveTween(curve: curve));
+                          var fadeAnimation = animation.drive(fadeTween);
 
-                            var radiusTween = Tween<double>(
-                              begin: 40.0,
-                              end: 0.0,
-                            ).chain(CurveTween(curve: curve));
-                            var radiusAnimation = animation.drive(radiusTween);
+                          var radiusTween = Tween<double>(
+                            begin: 40.0,
+                            end: 0.0,
+                          ).chain(CurveTween(curve: curve));
+                          var radiusAnimation = animation.drive(radiusTween);
 
-                            return ScaleTransition(
-                              scale: scaleAnimation,
-                              child: FadeTransition(
-                                opacity: fadeAnimation,
-                                child: AnimatedBuilder(
-                                  animation: radiusAnimation,
-                                  builder: (context, child) {
-                                    return ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        radiusAnimation.value,
-                                      ),
-                                      child: child,
-                                    );
-                                  },
-                                  child: child,
-                                ),
+                          return ScaleTransition(
+                            scale: scaleAnimation,
+                            child: FadeTransition(
+                              opacity: fadeAnimation,
+                              child: AnimatedBuilder(
+                                animation: radiusAnimation,
+                                builder: (context, child) {
+                                  return ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      radiusAnimation.value,
+                                    ),
+                                    child: child,
+                                  );
+                                },
+                                child: child,
                               ),
-                            );
-                          },
-                      transitionDuration: const Duration(milliseconds: 500),
-                    ),
-                  );
-                },
-                backgroundColor: AppColors.brand500,
-                elevation: 0,
-                shape: CircleBorder(),
-                child: Icon(Icons.add, color: AppColors.white, size: 32),
-              ),
+                            ),
+                          );
+                        },
+                    transitionDuration: const Duration(milliseconds: 500),
+                  ),
+                );
+              },
+              backgroundColor: AppColors.brand500,
+              elevation: 0,
+              shape: CircleBorder(),
+              child: Icon(Icons.add, color: AppColors.white, size: 32),
             ),
           ),
         ],
