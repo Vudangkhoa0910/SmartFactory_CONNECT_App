@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/report_model.dart';
+import 'report_detail_screen.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
   const ReportHistoryScreen({super.key});
@@ -106,7 +107,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     final filteredReports = _filteredReports;
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
@@ -246,7 +247,13 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                         statusColor: _getStatusColor(report.status),
                         priorityColor: _getPriorityColor(report.priority),
                         onTap: () {
-                          // TODO: Navigate to detail screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ReportDetailScreen(report: report),
+                            ),
+                          );
                         },
                         onRate:
                             report.status == ReportStatus.completed &&

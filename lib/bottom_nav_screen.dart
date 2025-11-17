@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'config/app_colors.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/report/report_screen.dart';
-import 'screens/notifications/notifications_screen.dart';
+import 'screens/suggestions/suggestions_screen.dart';
 import 'screens/profile/profile_screen.dart';
 
 class BottomNavScreen extends StatefulWidget {
@@ -45,7 +45,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   final pages = [
     const HomeScreen(),
     const ReportScreen(),
-    const NotificationsScreen(),
+    const SuggestionsScreen(),
     const ProfileScreen(),
   ];
 
@@ -129,18 +129,18 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                     ),
                     BottomNavigationBarItem(
                       icon: SvgPicture.asset(
-                        'assets/notifications.svg',
+                        'assets/box.svg',
                         color: AppColors.gray400,
                         width: 26,
                         height: 25,
                       ),
                       activeIcon: SvgPicture.asset(
-                        'assets/notifications.svg',
+                        'assets/box.svg',
                         color: AppColors.brand500,
                         width: 26,
                         height: 25,
                       ),
-                      label: "Thông báo",
+                      label: "Hòm thư góp ý",
                     ),
                     BottomNavigationBarItem(
                       icon: SvgPicture.asset(

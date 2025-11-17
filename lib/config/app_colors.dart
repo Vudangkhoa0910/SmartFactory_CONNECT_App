@@ -135,6 +135,18 @@ class AppColors {
   // THEME CONFIGURATION
   // ============================================================================
 
+  /// Background gradient cho toàn ứng dụng - Đỏ nhạt sang trắng từ trên xuống
+  static const LinearGradient appBackgroundGradient = LinearGradient(
+    colors: [
+      Color.fromARGB(255, 255, 247, 247),
+      Color.fromARGB(255, 255, 250, 250),
+      Color.fromARGB(255, 255, 253, 253),
+    ],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    stops: [0.0, 0.3, 1.0],
+  );
+
   /// Theme sáng (Light Theme)
   static ThemeData get lightTheme {
     return ThemeData(

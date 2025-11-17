@@ -7,32 +7,36 @@ class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray25,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.notifications_rounded,
-                size: 100,
-                color: AppColors.brand500,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Thông báo',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.gray800,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.appBackgroundGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.notifications_rounded,
+                  size: 100,
+                  color: AppColors.brand500,
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Trang thông báo đang được phát triển',
-                style: TextStyle(fontSize: 16, color: AppColors.gray600),
-              ),
-            ],
+                const SizedBox(height: 24),
+                Text(
+                  'Thông báo',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.gray800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Trang thông báo đang được phát triển',
+                  style: TextStyle(fontSize: 16, color: AppColors.gray600),
+                ),
+              ],
+            ),
           ),
         ),
       ),

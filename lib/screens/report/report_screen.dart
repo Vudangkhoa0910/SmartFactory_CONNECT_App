@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import 'report_form_screen.dart';
+import 'report_detail_screen.dart';
 import '../../models/report_model.dart';
 
 class ReportScreen extends StatelessWidget {
@@ -69,36 +70,18 @@ class ReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       body: Stack(
         children: [
-          // Header section with colored background
-          Container(
-            height: screenHeight * 0.15,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.brand500, AppColors.brand600],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-
-          // Content background with rounded top corners
+          // Background with gradient
           Positioned(
-            top: screenHeight * 0.1,
+            top: 0,
             left: 0,
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.gray50,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
+              decoration: const BoxDecoration(
+                gradient: AppColors.appBackgroundGradient,
               ),
             ),
           ),
@@ -108,18 +91,6 @@ class ReportScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header text
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-                  child: Text(
-                    'Báo cáo sự cố',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.white,
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 20),
 
                 // Main content - Report history list
@@ -159,7 +130,13 @@ class ReportScreen extends StatelessWidget {
                                   report.priority,
                                 ),
                                 onTap: () {
-                                  // TODO: Navigate to detail screen
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ReportDetailScreen(report: report),
+                                    ),
+                                  );
                                 },
                               );
                             },

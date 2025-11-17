@@ -15,41 +15,48 @@ class HomeScreen extends StatelessWidget {
     final bottomPadding = 100.0;
 
     return Scaffold(
-      backgroundColor: AppColors.gray25,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Scrollable Content
-            CustomScrollView(
-              slivers: [
-                // Spacer for fixed header
-                SliverToBoxAdapter(
-                  child: SizedBox(height: headerHeight + 16),
+      body: RepaintBoundary(
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.appBackgroundGradient,
+          ),
+          child: SafeArea(
+            child: Stack(
+              children: [
+                // Scrollable Content
+                CustomScrollView(
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  slivers: [
+                    // Spacer for fixed header
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: headerHeight + 16),
+                    ),
+
+                    // Slider Section
+                    SliverToBoxAdapter(child: HomeSlider(height: sliderHeight)),
+
+                    // News & Events Section
+                    SliverPadding(
+                      padding: EdgeInsets.only(bottom: bottomPadding),
+                      sliver: const SliverToBoxAdapter(child: NewsAndEvents()),
+                    ),
+                  ],
                 ),
 
-                // Slider Section
-                SliverToBoxAdapter(
-                  child: HomeSlider(height: sliderHeight),
-                ),
-
-                // News & Events Section
-                SliverPadding(
-                  padding: EdgeInsets.only(bottom: bottomPadding),
-                  sliver: const SliverToBoxAdapter(
-                    child: NewsAndEvents(),
+                // Fixed Header on top
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: RepaintBoundary(
+                    child: HomeHeader(height: headerHeight),
                   ),
                 ),
               ],
             ),
-
-            // Fixed Header on top
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: HomeHeader(height: headerHeight),
-            ),
-          ],
+          ),
         ),
       ),
     );
