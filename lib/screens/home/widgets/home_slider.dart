@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../config/app_colors.dart';
 
 class HomeSlider extends StatefulWidget {
@@ -15,9 +16,9 @@ class _HomeSliderState extends State<HomeSlider> {
   int _currentSlide = 0;
 
   final List<String> _sliderImages = [
-    'https://via.placeholder.com/800x400/DC2626/FFFFFF?text=Slide+1',
-    'https://via.placeholder.com/800x400/DC2626/FFFFFF?text=Slide+2',
-    'https://via.placeholder.com/800x400/DC2626/FFFFFF?text=Slide+3',
+    '',
+    '',
+    '',
   ];
 
   @override
@@ -60,19 +61,29 @@ class _HomeSliderState extends State<HomeSlider> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Icon(
-                                Icons.image_outlined,
-                                size: 64,
-                                color: AppColors.gray400,
+                        child: imageUrl.isEmpty
+                            ? Container(
+                                color: AppColors.white,
+                                padding: const EdgeInsets.all(48),
+                                child: SvgPicture.asset(
+                                  'assets/logo-denso.svg',
+                                  fit: BoxFit.contain,
+                                ),
+                              )
+                            : Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: AppColors.white,
+                                    padding: const EdgeInsets.all(48),
+                                    child: SvgPicture.asset(
+                                      'assets/logo-denso.svg',
+                                      fit: BoxFit.contain,
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                       ),
                     );
                   },

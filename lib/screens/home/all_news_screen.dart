@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../config/app_colors.dart';
 
 class AllNewsScreen extends StatefulWidget {
@@ -174,8 +175,7 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
             category:
                 _categories[(index % (_categories.length - 1)) +
                     1], // Random category
-            imageUrl:
-                'https://via.placeholder.com/120x80/DC2626/FFFFFF?text=News',
+            imageUrl: '',
             onTap: () {
               // TODO: Navigate to news detail
             },
@@ -231,20 +231,35 @@ class _NewsCard extends StatelessWidget {
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
               ),
-              child: Image.network(
-                imageUrl,
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    color: AppColors.gray100,
-                    child: Icon(Icons.image_outlined, color: AppColors.gray400),
-                  );
-                },
-              ),
+              child: imageUrl.isEmpty
+                  ? Container(
+                      width: 100,
+                      height: 100,
+                      color: AppColors.white,
+                      padding: const EdgeInsets.all(16),
+                      child: SvgPicture.asset(
+                        'assets/logo-denso.svg',
+                        fit: BoxFit.contain,
+                      ),
+                    )
+                  : Image.network(
+                      imageUrl,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 100,
+                          height: 100,
+                          color: AppColors.white,
+                          padding: const EdgeInsets.all(16),
+                          child: SvgPicture.asset(
+                            'assets/logo-denso.svg',
+                            fit: BoxFit.contain,
+                          ),
+                        );
+                      },
+                    ),
             ),
 
             // Content
