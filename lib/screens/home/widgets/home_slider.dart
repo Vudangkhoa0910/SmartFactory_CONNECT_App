@@ -15,11 +15,7 @@ class HomeSlider extends StatefulWidget {
 class _HomeSliderState extends State<HomeSlider> {
   int _currentSlide = 0;
 
-  final List<String> _sliderImages = [
-    '',
-    '',
-    '',
-  ];
+  final List<String> _sliderImages = ['', '', ''];
 
   @override
   Widget build(BuildContext context) {
