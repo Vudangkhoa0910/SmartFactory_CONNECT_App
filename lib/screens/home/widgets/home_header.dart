@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
+import '../../../providers/user_provider.dart';
 
 class HomeHeader extends StatelessWidget {
   final double height;
@@ -8,6 +9,9 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = UserProvider();
+    final bool isLeader = userProvider.isLeader;
+
     return Container(
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -28,26 +32,26 @@ class HomeHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Logo hoặc Title
+          // User Info
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'SmartFactory',
+                'Nguyễn Văn A',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.gray800,
                 ),
               ),
               Text(
-                'CONNECT',
+                isLeader ? 'Leader' : 'Worker',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.brand500,
-                  letterSpacing: 1.5,
+                  color: isLeader ? AppColors.error500 : AppColors.gray800,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],

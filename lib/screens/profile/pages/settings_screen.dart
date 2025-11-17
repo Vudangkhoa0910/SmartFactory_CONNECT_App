@@ -44,7 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await ApiService.setServerIp(ip);
       await ApiService.setServerPort(port);
-      
+
       if (mounted) {
         _showMessage('Đã lưu cấu hình: $ip:$port');
       }
@@ -79,10 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final result = await ApiService.pingHealth();
 
       if (mounted) {
-        _showMessage(
-          result['message'],
-          isError: !result['success'],
-        );
+        _showMessage(result['message'], isError: !result['success']);
       }
     } catch (e) {
       if (mounted) {
@@ -171,6 +168,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: TextField(
                           controller: _ipController,
                           decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
                             labelText: 'IP',
                             labelStyle: TextStyle(
                               color: AppColors.gray600,
@@ -225,6 +224,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: TextField(
                           controller: _portController,
                           decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
                             labelText: 'Port',
                             labelStyle: TextStyle(
                               color: AppColors.gray600,
@@ -297,7 +298,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: (_isLoading || _isTesting) ? null : _saveSettings,
+                    onPressed: (_isLoading || _isTesting)
+                        ? null
+                        : _saveSettings,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.brand500,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -311,8 +314,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : Text(
@@ -335,8 +339,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline,
-                          color: AppColors.gray600, size: 20),
+                      Icon(
+                        Icons.info_outline,
+                        color: AppColors.gray600,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

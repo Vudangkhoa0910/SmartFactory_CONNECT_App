@@ -9,10 +9,7 @@ import '../../models/idea_box_model.dart';
 class CreateIdeaScreen extends StatefulWidget {
   final IdeaBoxType initialBoxType;
 
-  const CreateIdeaScreen({
-    super.key,
-    required this.initialBoxType,
-  });
+  const CreateIdeaScreen({super.key, required this.initialBoxType});
 
   @override
   State<CreateIdeaScreen> createState() => _CreateIdeaScreenState();
@@ -24,7 +21,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   final _employeeIdController = TextEditingController();
   final _positionController = TextEditingController();
   final _contentController = TextEditingController();
-  
+
   late IdeaBoxType _selectedBoxType;
   IssueType? _selectedIssueType;
   DifficultyLevel? _selectedDifficulty;
@@ -53,9 +50,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.appBackgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: AppColors.appBackgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -72,19 +67,19 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                         const SizedBox(height: 24),
                         _buildIssueTypeSelector(),
                         const SizedBox(height: 24),
-                        
+
                         // Thông tin cá nhân
                         _buildPersonalInfoSection(),
                         const SizedBox(height: 24),
-                        
+
                         // Ngày gửi
                         _buildDateField(),
                         const SizedBox(height: 20),
-                        
+
                         // Nội dung góp ý
                         _buildContentField(),
                         const SizedBox(height: 20),
-                        
+
                         if (_selectedBoxType == IdeaBoxType.white) ...[
                           _buildDifficultySelector(),
                           const SizedBox(height: 20),
@@ -133,10 +128,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                 ),
                 Text(
                   'Chia sẻ ý tưởng của bạn',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.gray500,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.gray500),
                 ),
               ],
             ),
@@ -194,7 +186,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     required Color color,
   }) {
     final isSelected = _selectedBoxType == type;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -247,10 +239,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.gray500,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
           ],
@@ -303,7 +292,10 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.brand500 : AppColors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -329,7 +321,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
 
   Widget _buildPersonalInfoSection() {
     final isRequired = _selectedBoxType == IdeaBoxType.white;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -374,7 +366,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           ),
         ],
         const SizedBox(height: 12),
-        
+
         // Họ và tên
         TextFormField(
           controller: _nameController,
@@ -407,7 +399,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
+
         // Mã nhân viên
         TextFormField(
           controller: _employeeIdController,
@@ -440,7 +432,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
+
         // Chức vụ
         TextFormField(
           controller: _positionController,
@@ -623,7 +615,9 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                     color: isSelected ? AppColors.warning100 : AppColors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? AppColors.warning500 : AppColors.gray200,
+                      color: isSelected
+                          ? AppColors.warning500
+                          : AppColors.gray200,
                     ),
                   ),
                   child: Text(
@@ -632,7 +626,9 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? AppColors.warning700 : AppColors.gray600,
+                      color: isSelected
+                          ? AppColors.warning700
+                          : AppColors.gray600,
                     ),
                   ),
                 ),
@@ -657,33 +653,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.blueLight50,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.blueLight200),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 18,
-                color: AppColors.blueLight600,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Camera chỉ hoạt động trên thiết bị thật',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.blueLight700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 12),
         if (_attachments.isNotEmpty) ...[
           SizedBox(
@@ -838,10 +807,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         ),
         child: const Text(
           'Gửi góp ý',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -855,12 +821,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         maxHeight: 1080,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         setState(() {
           _attachments.add(File(image.path));
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -878,16 +844,18 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     } on Exception catch (e) {
       if (mounted) {
         String errorMessage = 'Lỗi khi chọn ảnh';
-        
+
         // Xử lý các lỗi cụ thể
         if (e.toString().contains('camera_access_denied')) {
           errorMessage = 'Vui lòng cấp quyền truy cập camera trong Cài đặt';
         } else if (e.toString().contains('photo_access_denied')) {
-          errorMessage = 'Vui lòng cấp quyền truy cập thư viện ảnh trong Cài đặt';
+          errorMessage =
+              'Vui lòng cấp quyền truy cập thư viện ảnh trong Cài đặt';
         } else if (e.toString().contains('No implementation found')) {
-          errorMessage = 'Camera không khả dụng trên Simulator. Vui lòng thử trên thiết bị thật';
+          errorMessage =
+              'Camera không khả dụng trên Simulator. Vui lòng thử trên thiết bị thật';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -921,11 +889,11 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
       }
 
       // TODO: Gọi API để lưu góp ý
-      
+
       final successMessage = _selectedBoxType == IdeaBoxType.white
           ? 'Đã ghi nhận ý kiến của bạn'
           : 'Góp ý của bạn đã được gửi ẩn danh';
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(successMessage),

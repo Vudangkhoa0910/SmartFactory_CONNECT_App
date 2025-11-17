@@ -10,10 +10,9 @@ class AllNewsScreen extends StatefulWidget {
 }
 
 class _AllNewsScreenState extends State<AllNewsScreen> {
-  String? _selectedCategory;
+  Set<String> _selectedFilters = {};
 
   final List<String> _categories = [
-    'Tất cả',
     'Nhân sự',
     'Sản xuất',
     'An toàn',
@@ -21,6 +20,49 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
     'Sự kiện',
     'Đào tạo',
   ];
+
+  // Map category display names to filter keys
+  String _getCategoryKey(String category) {
+    switch (category) {
+      case 'Nhân sự':
+        return 'hr';
+      case 'Sản xuất':
+        return 'production';
+      case 'An toàn':
+        return 'safety';
+      case 'Chất lượng':
+        return 'quality';
+      case 'Sự kiện':
+        return 'event';
+      case 'Đào tạo':
+        return 'training';
+      default:
+        return '';
+    }
+  }
+
+  List<Map<String, String>> get _filteredNews {
+    final allNews = List.generate(20, (index) {
+      final category = _categories[index % _categories.length];
+      return {
+        'title': 'Tiêu đề tin tức số ${index + 1}',
+        'description':
+            'Mô tả ngắn gọn về tin tức hoặc sự kiện quan trọng trong nhà máy...',
+        'date': '${index + 1} Tháng 11, 2025',
+        'category': category,
+        'categoryKey': _getCategoryKey(category),
+        'imageUrl': '',
+      };
+    });
+
+    if (_selectedFilters.isEmpty) {
+      return allNews;
+    }
+
+    return allNews
+        .where((news) => _selectedFilters.contains(news['categoryKey']))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,121 +84,252 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
           ),
         ),
         actions: [
-          // Filter button with category label
-          Row(
-            children: [
-              if (_selectedCategory != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.brand500.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    _selectedCategory!,
-                    style: TextStyle(
-                      color: AppColors.brand500,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              PopupMenuButton<String>(
-                icon: Icon(Icons.filter_list, color: AppColors.gray600),
-                onSelected: (value) {
-                  setState(() {
-                    _selectedCategory = value == 'Tất cả' ? null : value;
-                  });
-                },
-                itemBuilder: (context) {
-                  final otherCategories = _categories
-                      .where((c) => c != 'Tất cả')
-                      .toList();
-
-                  return [
-                    // "Tất cả" item
-                    PopupMenuItem(
-                      value: 'Tất cả',
-                      child: Text(
-                        'Tất cả',
-                        style: TextStyle(
-                          fontWeight: _selectedCategory == null
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: _selectedCategory == null
-                              ? AppColors.error500
-                              : AppColors.gray800,
+          // Filter button
+          PopupMenuButton<String>(
+            icon: Icon(Icons.filter_list, color: AppColors.gray600, size: 22),
+            color: Colors.white,
+            offset: const Offset(0, 40),
+            onSelected: (_) {}, // Empty handler
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedFilters.clear());
+                        setMenuState(() {});
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.transparent,
+                        child: Text(
+                          'Tất cả',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                    // Divider
-                    PopupMenuItem(
-                      enabled: false,
-                      height: 1,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        height: 1,
-                        color: AppColors.error500,
-                      ),
-                    ),
-                    // Grid items (2 columns)
-                    ...List.generate((otherCategories.length / 2).ceil(), (
-                      rowIndex,
-                    ) {
-                      final startIndex = rowIndex * 2;
-                      final endIndex = (startIndex + 2).clamp(
-                        0,
-                        otherCategories.length,
-                      );
-                      final rowCategories = otherCategories.sublist(
-                        startIndex,
-                        endIndex,
-                      );
-
-                      return PopupMenuItem(
-                        enabled: false,
-                        child: Row(
-                          children: rowCategories.map((category) {
-                            final isSelected = _selectedCategory == category;
-                            return Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  setState(() {
-                                    _selectedCategory = category;
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  child: Text(
-                                    category,
-                                    style: TextStyle(
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                      color: isSelected
-                                          ? AppColors.error500
-                                          : AppColors.gray800,
-                                      fontSize: 14,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                    );
+                  },
+                ),
+              ),
+              PopupMenuItem(
+                enabled: false,
+                height: 1,
+                child: Divider(height: 1, color: AppColors.brand500),
+              ),
+              // Row 1: Nhân sự | Sản xuất
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('hr')
+                                    ? _selectedFilters.remove('hr')
+                                    : _selectedFilters.add('hr');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Nhân sự',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('hr')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight: _selectedFilters.contains('hr')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
                                 ),
                               ),
-                            );
-                          }).toList(),
+                            ),
+                          ),
                         ),
-                      );
-                    }),
-                  ];
-                },
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('production')
+                                    ? _selectedFilters.remove('production')
+                                    : _selectedFilters.add('production');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Sản xuất',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('production')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('production')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              // Row 2: An toàn | Chất lượng
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('safety')
+                                    ? _selectedFilters.remove('safety')
+                                    : _selectedFilters.add('safety');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'An toàn',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('safety')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('safety')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('quality')
+                                    ? _selectedFilters.remove('quality')
+                                    : _selectedFilters.add('quality');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Chất lượng',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('quality')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('quality')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              // Row 3: Sự kiện | Đào tạo
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('event')
+                                    ? _selectedFilters.remove('event')
+                                    : _selectedFilters.add('event');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Sự kiện',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('event')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight: _selectedFilters.contains('event')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('training')
+                                    ? _selectedFilters.remove('training')
+                                    : _selectedFilters.add('training');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Đào tạo',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('training')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('training')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -165,17 +338,15 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 20, // Tất cả tin tức
+        itemCount: _filteredNews.length,
         itemBuilder: (context, index) {
+          final news = _filteredNews[index];
           return _NewsCard(
-            title: 'Tiêu đề tin tức số ${index + 1}',
-            description:
-                'Mô tả ngắn gọn về tin tức hoặc sự kiện quan trọng trong nhà máy...',
-            date: '${index + 1} Tháng 11, 2025',
-            category:
-                _categories[(index % (_categories.length - 1)) +
-                    1], // Random category
-            imageUrl: '',
+            title: news['title']!,
+            description: news['description']!,
+            date: news['date']!,
+            category: news['category']!,
+            imageUrl: news['imageUrl']!,
             onTap: () {
               // TODO: Navigate to news detail
             },

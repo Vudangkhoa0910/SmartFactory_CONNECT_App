@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 import '../../../models/user_profile_model.dart';
+import '../../../providers/user_provider.dart';
 import 'personal_info_edit_field_screen.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
@@ -17,13 +18,15 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late TextEditingController _addressController;
+  UserRole _currentRole = UserRole.worker;
 
   @override
   void initState() {
     super.initState();
+    _currentRole = widget.user.role;
     _phoneController = TextEditingController(text: widget.user.phoneNumber);
     _emailController = TextEditingController(text: widget.user.email);
-    _addressController = TextEditingController(text: widget.user.address ?? '');
+    _addressController = TextEditingController(text: widget.user.address);
   }
 
   @override
@@ -133,7 +136,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             ]),
             const SizedBox(height: 16),
             _buildSection('Thông tin công việc', [
-              _buildInfoField('Chức vụ', widget.user.role.displayName, false),
+              _buildRoleDropdown(),
               _buildInfoField('Bộ phận', widget.user.department, false),
               _buildInfoField(
                 'Ngày vào công ty',
@@ -364,6 +367,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       ),
                     );
                   }).toList(),
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -380,6 +384,96 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 children: [
                   Text(
                     widget.user.gender.displayName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.gray900,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    size: 18,
+                    color: AppColors.gray400,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleDropdown() {
+    final GlobalKey _roleKey = GlobalKey();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              'Chức vụ',
+              style: TextStyle(fontSize: 14, color: AppColors.gray600),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: GestureDetector(
+              key: _roleKey,
+              onTap: () {
+                final RenderBox renderBox =
+                    _roleKey.currentContext!.findRenderObject() as RenderBox;
+                final position = renderBox.localToGlobal(Offset.zero);
+                final size = renderBox.size;
+
+                final RenderBox overlay =
+                    Overlay.of(context).context.findRenderObject() as RenderBox;
+
+                showMenu<UserRole>(
+                  context: context,
+                  position: RelativeRect.fromLTRB(
+                    position.dx + size.width - 100,
+                    position.dy + size.height,
+                    overlay.size.width - (position.dx + size.width),
+                    overlay.size.height - (position.dy + size.height),
+                  ),
+                  items: [UserRole.worker, UserRole.sv].map((UserRole role) {
+                    return PopupMenuItem<UserRole>(
+                      value: role,
+                      height: 36,
+                      child: Text(
+                        role.displayName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.gray900,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ).then((UserRole? selectedRole) {
+                  if (selectedRole != null && selectedRole != _currentRole) {
+                    setState(() {
+                      _currentRole = selectedRole;
+                    });
+                    // Update global role for testing
+                    UserProvider().setRole(selectedRole);
+                  }
+                });
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    _currentRole.displayName,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,

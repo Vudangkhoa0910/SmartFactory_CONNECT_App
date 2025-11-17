@@ -16,7 +16,7 @@ class IdeaBoxListScreen extends StatefulWidget {
 class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _selectedFilter = 'all';
+  Set<String> _selectedFilters = {};
 
   @override
   void initState() {
@@ -34,7 +34,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   List<IdeaBoxItem> _getMockData(IdeaBoxType type) {
     // Hòm trắng: Hiển thị TẤT CẢ góp ý công khai (ai cũng xem được)
     // Hòm hồng: Chỉ hiển thị góp ý ẩn danh của NGƯỜI DÙNG HIỆN TẠI
-    
+
     if (type == IdeaBoxType.white) {
       // Hòm trắng - Tất cả góp ý công khai
       return [
@@ -130,15 +130,12 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.appBackgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: AppColors.appBackgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
               _buildHeader(),
               _buildTabBar(),
-              _buildFilterBar(),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -158,13 +155,13 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: AppColors.brand50,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -181,41 +178,265 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Hòm thư góp ý',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.gray900,
-                  ),
-                ),
-                Text(
-                  'Chia sẻ ý kiến của bạn',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.gray500,
-                  ),
-                ),
-              ],
+          Text(
+            'Hòm thư góp ý',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.gray900,
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.gray50,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: IconButton(
-              onPressed: () {
-                // TODO: Thêm chức năng tìm kiếm
-              },
-              icon: const Icon(Icons.search),
-              color: AppColors.gray600,
-              iconSize: 22,
-            ),
+          const Spacer(),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.filter_list, color: AppColors.gray600, size: 22),
+            color: Colors.white,
+            offset: const Offset(0, 40),
+            onSelected: (_) {}, // Empty handler
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedFilters.clear());
+                        setMenuState(() {});
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.transparent,
+                        child: Text(
+                          'Tất cả',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              PopupMenuItem(
+                enabled: false,
+                height: 1,
+                child: Divider(height: 1, color: AppColors.brand500),
+              ),
+              // Row 1: An toàn | Đang xem xét
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('safety')
+                                    ? _selectedFilters.remove('safety')
+                                    : _selectedFilters.add('safety');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'An toàn',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('safety')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('safety')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('underReview')
+                                    ? _selectedFilters.remove('underReview')
+                                    : _selectedFilters.add('underReview');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Đang xem xét',
+                                style: TextStyle(
+                                  color:
+                                      _selectedFilters.contains('underReview')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('underReview')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              // Row 2: Chất lượng | Đã phê duyệt
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('quality')
+                                    ? _selectedFilters.remove('quality')
+                                    : _selectedFilters.add('quality');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Chất lượng',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('quality')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('quality')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('approved')
+                                    ? _selectedFilters.remove('approved')
+                                    : _selectedFilters.add('approved');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Đã phê duyệt',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('approved')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('approved')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              // Row 3: Quy trình | Hoàn thành
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('process')
+                                    ? _selectedFilters.remove('process')
+                                    : _selectedFilters.add('process');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Quy trình',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('process')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('process')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilters.contains('completed')
+                                    ? _selectedFilters.remove('completed')
+                                    : _selectedFilters.add('completed');
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Hoàn thành',
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('completed')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('completed')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -241,18 +462,12 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           gradient: LinearGradient(
-            colors: [
-              AppColors.brand500,
-              AppColors.brand400,
-            ],
+            colors: [AppColors.brand500, AppColors.brand400],
           ),
         ),
         labelColor: AppColors.white,
         unselectedLabelColor: AppColors.gray600,
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
         tabs: [
@@ -281,64 +496,56 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
     );
   }
 
-  Widget _buildFilterBar() {
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        children: [
-          _buildFilterChip('Tất cả', 'all'),
-          _buildFilterChip('Đang xem xét', 'review'),
-          _buildFilterChip('Đã phê duyệt', 'approved'),
-          _buildFilterChip('Hoàn thành', 'completed'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, String value) {
-    final isSelected = _selectedFilter == value;
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (selected) {
-          setState(() {
-            _selectedFilter = value;
-          });
-        },
-        backgroundColor: AppColors.white,
-        selectedColor: AppColors.brand50,
-        checkmarkColor: AppColors.brand600,
-        labelStyle: TextStyle(
-          color: isSelected ? AppColors.brand600 : AppColors.gray600,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          fontSize: 13,
-        ),
-        side: BorderSide(
-          color: isSelected ? AppColors.brand500 : AppColors.gray200,
-          width: isSelected ? 1.5 : 1,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-    );
-  }
-
   Widget _buildIdeaList(IdeaBoxType type) {
     final ideas = _getMockData(type);
-    
-    if (ideas.isEmpty) {
+
+    // Áp dụng bộ lọc
+    final filteredIdeas = _selectedFilters.isEmpty
+        ? ideas
+        : ideas.where((idea) {
+            // Kiểm tra loại (type)
+            final hasTypeFilter = _selectedFilters.any(
+              (f) => ['quality', 'safety', 'process'].contains(f),
+            );
+            final matchesType =
+                !hasTypeFilter ||
+                (_selectedFilters.contains('quality') &&
+                    idea.issueType == IssueType.quality) ||
+                (_selectedFilters.contains('safety') &&
+                    idea.issueType == IssueType.safety) ||
+                (_selectedFilters.contains('process') &&
+                    idea.issueType == IssueType.process);
+
+            // Kiểm tra trạng thái (status)
+            final hasStatusFilter = _selectedFilters.any(
+              (f) => ['underReview', 'approved', 'completed'].contains(f),
+            );
+            final matchesStatus =
+                !hasStatusFilter ||
+                (_selectedFilters.contains('underReview') &&
+                    idea.status == IdeaStatus.underReview) ||
+                (_selectedFilters.contains('approved') &&
+                    idea.status == IdeaStatus.approved) ||
+                (_selectedFilters.contains('completed') &&
+                    idea.status == IdeaStatus.completed);
+
+            return matchesType && matchesStatus;
+          }).toList();
+
+    if (filteredIdeas.isEmpty) {
       return _buildEmptyState(type);
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120), // Bottom padding để tránh bottom nav
-      itemCount: ideas.length,
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        20,
+        20,
+        120,
+      ), // Bottom padding để tránh bottom nav
+      itemCount: filteredIdeas.length,
       itemBuilder: (context, index) {
-        return _buildIdeaCard(ideas[index]);
+        return _buildIdeaCard(filteredIdeas[index]);
       },
     );
   }
@@ -382,10 +589,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
             type == IdeaBoxType.white
                 ? 'Hãy là người đầu tiên chia sẻ ý kiến!'
                 : 'Gửi góp ý ẩn danh để bảo vệ thông tin của bạn',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.gray500,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.gray500),
             textAlign: TextAlign.center,
           ),
         ],
@@ -514,10 +718,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                     ],
                     Text(
                       _formatDate(idea.createdAt),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.gray400,
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppColors.gray400),
                     ),
                   ],
                 ),

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'config/app_colors.dart';
 import 'screens/home/home_screen.dart';
-import 'screens/report/report_screen.dart';
+import 'screens/report/report_list_screen.dart';
+import 'screens/report/leader_report_management_screen.dart';
 import 'screens/idea_box/idea_box_list_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'providers/user_provider.dart';
 
 class BottomNavScreen extends StatefulWidget {
   const BottomNavScreen({super.key});
@@ -42,12 +44,17 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     }
   }
 
-  final pages = [
-    const HomeScreen(),
-    const ReportScreen(),
-    const IdeaBoxListScreen(),
-    const ProfileScreen(),
-  ];
+  List<Widget> get pages {
+    final userProvider = UserProvider();
+    return [
+      const HomeScreen(),
+      userProvider.isLeader
+          ? const LeaderReportManagementScreen()
+          : const ReportListScreen(),
+      const IdeaBoxListScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
