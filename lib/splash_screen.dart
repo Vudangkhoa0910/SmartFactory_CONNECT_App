@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'screens/auth/login_screen.dart';
+import 'bottom_nav_screen.dart';
 import 'config/app_colors.dart';
+import 'services/auth_service.dart';
+import 'providers/user_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -14,22 +17,48 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   double _opacity = 0.0;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
     // Fade in the logo
     Timer(const Duration(milliseconds: 100), () {
-      setState(() => _opacity = 1.0);
+      if (mounted) {
+        setState(() => _opacity = 1.0);
+      }
     });
 
-    // After 2 seconds go to the login screen
-    Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
-    });
+    // Check login status and navigate
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    // Delay for splash animation
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    // Check if user is logged in
+    final isLoggedIn = await _authService.isLoggedIn();
+
+    if (isLoggedIn) {
+      // Load user info
+      final userInfo = await _authService.getUserInfo();
+      if (userInfo['role'] != null) {
+        UserProvider().setUserRole(userInfo['role']!);
+      }
+
+      // Navigate to home
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const BottomNavScreen()),
+      );
+    } else {
+      // Navigate to login
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    }
   }
 
   @override
