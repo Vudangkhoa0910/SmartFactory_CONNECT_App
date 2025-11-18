@@ -69,6 +69,8 @@ dependencies:
   # Timezone for scheduled notifications
   timezone: ^0.10.1
   speech_to_text: ^7.3.0
+  # Biometric authentication (Face ID, Touch ID, Fingerprint)
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:
