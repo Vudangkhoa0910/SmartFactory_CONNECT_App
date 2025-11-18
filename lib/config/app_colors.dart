@@ -13,20 +13,20 @@ class AppColors {
   static const Color transparent = Colors.transparent;
 
   // ============================================================================
-  // MÀU THƯƠNG HIỆU (Brand Colors) - Đỏ
+  // MÀU THƯƠNG HIỆU (Brand Colors) - Đỏ DENSO
   // ============================================================================
-  static const Color brand25 = Color(0xFFFEF2F2);
-  static const Color brand50 = Color(0xFFFEE2E2);
-  static const Color brand100 = Color(0xFFFECACA);
-  static const Color brand200 = Color(0xFFFCA5A5);
-  static const Color brand300 = Color(0xFFF87171);
-  static const Color brand400 = Color(0xFFEF4444);
-  static const Color brand500 = Color(0xFFDC2626); // Màu chính
-  static const Color brand600 = Color(0xFFB91C1C);
-  static const Color brand700 = Color(0xFF991B1B);
-  static const Color brand800 = Color(0xFF7F1D1D);
-  static const Color brand900 = Color(0xFF5C0F0F);
-  static const Color brand950 = Color(0xFF450A0A);
+  static const Color brand25 = Color(0xFFFEF2F4);
+  static const Color brand50 = Color(0xFFFEE2E7);
+  static const Color brand100 = Color(0xFFFCCAD6);
+  static const Color brand200 = Color(0xFFFA9FB5);
+  static const Color brand300 = Color(0xFFF5678A);
+  static const Color brand400 = Color(0xFFEE3365);
+  static const Color brand500 = Color(0xFFDC0032); // DENSO Red - Màu chính
+  static const Color brand600 = Color(0xFFB7002A);
+  static const Color brand700 = Color(0xFF960023);
+  static const Color brand800 = Color(0xFF7A001D);
+  static const Color brand900 = Color(0xFF5C0016);
+  static const Color brand950 = Color(0xFF3D000F);
 
   // ============================================================================
   // MÀU XÁM (Gray Colors)
@@ -94,20 +94,20 @@ class AppColors {
   static const Color success950 = Color(0xFF053321);
 
   // ============================================================================
-  // MÀU LỖI (Error Colors) - Đỏ
+  // MÀU LỖI (Error Colors) - Đỏ DENSO (đồng bộ với brand)
   // ============================================================================
-  static const Color error25 = Color(0xFFFFFBFA);
-  static const Color error50 = Color(0xFFFEF3F2);
-  static const Color error100 = Color(0xFFFEE4E2);
-  static const Color error200 = Color(0xFFFECDCA);
-  static const Color error300 = Color(0xFFFDA29B);
-  static const Color error400 = Color(0xFFF97066);
-  static const Color error500 = Color(0xFFF04438);
-  static const Color error600 = Color(0xFFD92D20);
-  static const Color error700 = Color(0xFFB42318);
-  static const Color error800 = Color(0xFF912018);
-  static const Color error900 = Color(0xFF7A271A);
-  static const Color error950 = Color(0xFF55160C);
+  static const Color error25 = Color(0xFFFEF2F4);
+  static const Color error50 = Color(0xFFFEE2E7);
+  static const Color error100 = Color(0xFFFCCAD6);
+  static const Color error200 = Color(0xFFFA9FB5);
+  static const Color error300 = Color(0xFFF5678A);
+  static const Color error400 = Color(0xFFEE3365);
+  static const Color error500 = Color(0xFFDC0032); // DENSO Red
+  static const Color error600 = Color(0xFFB7002A);
+  static const Color error700 = Color(0xFF960023);
+  static const Color error800 = Color(0xFF7A001D);
+  static const Color error900 = Color(0xFF5C0016);
+  static const Color error950 = Color(0xFF3D000F);
 
   // ============================================================================
   // MÀU CẢNH BÁO (Warning Colors) - Vàng

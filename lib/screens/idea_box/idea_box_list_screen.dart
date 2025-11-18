@@ -135,7 +135,11 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
           child: Column(
             children: [
               _buildHeader(),
+              const SizedBox(
+                height: 0,
+              ), // Spacing consistency with Leader Report
               _buildTabBar(),
+              const SizedBox(height: 20), // Match spacing after TabBar
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -154,8 +158,8 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+    return Padding(
+      padding: const EdgeInsets.all(20),
       child: Row(
         children: [
           Container(
@@ -163,13 +167,6 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
             decoration: BoxDecoration(
               color: AppColors.brand50,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.brand500.withOpacity(0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             child: const Icon(
               Icons.mail_outline,
@@ -446,12 +443,14 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
+      height: 45,
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brand500.withOpacity(0.06),
+            color: AppColors.gray200.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -460,37 +459,22 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          gradient: LinearGradient(
-            colors: [AppColors.brand500, AppColors.brand400],
-          ),
+          color: AppColors.error500,
+          borderRadius: BorderRadius.circular(20),
         ),
-        labelColor: AppColors.white,
-        unselectedLabelColor: AppColors.gray600,
-        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.inbox_outlined, size: 18),
-                const SizedBox(width: 6),
-                const Text('Hòm trắng'),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.favorite_border, size: 18),
-                const SizedBox(width: 6),
-                const Text('Hòm hồng'),
-              ],
-            ),
-          ),
+        labelColor: AppColors.white,
+        unselectedLabelColor: AppColors.gray900,
+        labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+        onTap: (index) => setState(() {}),
+        tabs: const [
+          Tab(text: 'HÒM TRẮNG'),
+          Tab(text: 'HÒM HỒNG'),
         ],
       ),
     );
@@ -539,7 +523,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(
         20,
-        20,
+        0, // Top padding removed - spacing handled by SizedBox after TabBar
         20,
         120,
       ), // Bottom padding để tránh bottom nav

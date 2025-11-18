@@ -26,9 +26,24 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill with user's selections
+    // Pre-fill with user's selections or existing data if status is "processing"
     _selectedPriority = widget.report.priority;
-    _selectedCategory = widget.report.category?.name;
+
+    // If report is already in processing/completed status, all fields should be filled
+    if (widget.report.status == ReportStatus.processing ||
+        widget.report.status == ReportStatus.completed) {
+      // Pre-fill all required fields with existing data
+      _selectedCategory = 'Kỹ thuật'; // TODO: Get from report model
+      _selectedComponent = 'Động cơ'; // TODO: Get from report model
+      _selectedProductionLine = 'Dây chuyền A'; // TODO: Get from report model
+      _selectedWorkstation = 'Lắp ráp'; // TODO: Get from report model
+      _selectedDepartment = 'Sản xuất'; // TODO: Get from report model
+      _leaderNotesController.text =
+          'Đã kiểm tra và xác nhận'; // TODO: Get from report model
+    } else {
+      // For new reports, try to use category from report if available
+      _selectedCategory = widget.report.category?.name;
+    }
   }
 
   @override

@@ -317,29 +317,20 @@ class _LeaderReportManagementScreenState
 
   Widget _buildSearchAndFilter() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 5, 20, 0),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _searchQuery = value),
-              style: TextStyle(fontSize: 14, color: AppColors.gray900),
               decoration: InputDecoration(
-                hintText: 'Tìm theo ID, tiêu đề, người gửi...',
-                hintStyle: TextStyle(fontSize: 14, color: AppColors.gray400),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: AppColors.gray400,
-                  size: 20,
-                ),
+                hintText: 'Tìm kiếm theo mã, tiêu đề, người gửi...',
+                hintStyle: TextStyle(color: AppColors.gray400, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: AppColors.gray400),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: AppColors.gray400,
-                          size: 20,
-                        ),
+                        icon: Icon(Icons.clear, color: AppColors.gray400),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -347,14 +338,22 @@ class _LeaderReportManagementScreenState
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: AppColors.gray200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: AppColors.gray200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: AppColors.brand500, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
                 ),
               ),
             ),
