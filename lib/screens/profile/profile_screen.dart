@@ -180,11 +180,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               ElevatedButton(
                                 onPressed: () {
-                                  Navigator.pop(context);
-                                  // TODO: Implement logout logic
+                                  Navigator.pop(context); // Close dialog
+
+                                  // Navigate to Login screen and clear navigation stack
+                                  Navigator.of(context).pushNamedAndRemoveUntil(
+                                    '/login',
+                                    (route) => false, // Remove all routes
+                                  );
+
+                                  // TODO: Clear user session data (SharedPreferences, tokens, etc.)
+
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Đã đăng xuất'),
+                                    SnackBar(
+                                      content: const Text(
+                                        'Đã đăng xuất thành công',
+                                      ),
+                                      backgroundColor: AppColors.success500,
+                                      behavior: SnackBarBehavior.floating,
                                     ),
                                   );
                                 },

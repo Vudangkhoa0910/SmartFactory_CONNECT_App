@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'bottom_nav_screen.dart';
+import 'screens/auth/login_screen.dart';
 import 'config/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -23,12 +23,12 @@ class _SplashScreenState extends State<SplashScreen> {
       setState(() => _opacity = 1.0);
     });
 
-    // After 2 seconds go to the bottom navigation screen
+    // After 2 seconds go to the login screen
     Timer(const Duration(seconds: 2), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const BottomNavScreen()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
     });
   }
 
@@ -51,6 +51,5 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-// Simple placeholder home shown after the splash. Main app can replace this.
-// After the splash we navigate to `BottomNavScreen` (implemented in
-// `lib/bottom_nav_screen.dart`). The previous placeholder home was removed.
+// App flow: SplashScreen (2s) → LoginScreen → (after login) → BottomNavScreen (Home)
+// User must login before accessing the main app
