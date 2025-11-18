@@ -50,7 +50,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>SmartFactory Connect cần quyền sử dụng camera để chụp ảnh đính kèm vào góp ý</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>SmartFactory Connect cần quyền sử dụng microphone để ghi âm video</string>
+	<string>SmartFactory Connect cần quyền microphone để ghi âm và chuyển giọng nói thành văn bản</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>SmartFactory Connect cần quyền nhận dạng giọng nói để chuyển đổi giọng nói thành văn bản trong báo cáo</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>SmartFactory Connect cần quyền lưu ảnh vào thư viện</string>
 	<key>NSFaceIDUsageDescription</key>
