@@ -773,7 +773,7 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
                   elevation: 0,
                 ),
                 child: Text(
-                  'GỬI BÁO CÁO LEADER NGAY',
+                  'GỬI NGAY',
                   style: TextStyle(
                     color: AppColors.white,
                     fontSize: 16,
