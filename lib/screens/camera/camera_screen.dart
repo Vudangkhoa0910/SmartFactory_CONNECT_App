@@ -131,6 +131,7 @@ class _CameraScreenState extends State<CameraScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppColors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
@@ -147,7 +148,10 @@ class _CameraScreenState extends State<CameraScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Đã quét QR Code'),
+            const Text(
+              'Đã quét QR Code',
+              style: TextStyle(color: AppColors.black),
+            ),
           ],
         ),
         content: Column(

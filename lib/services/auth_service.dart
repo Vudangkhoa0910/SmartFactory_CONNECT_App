@@ -27,7 +27,7 @@ class AuthService {
     required bool rememberMe,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (rememberMe) {
       // Lưu username và password vào secure storage
       await _secureStorage.write(key: _keyUsername, value: username);
@@ -37,7 +37,7 @@ class AuthService {
       // Xóa credentials nếu không remember
       await clearCredentials();
     }
-    
+
     // Đánh dấu đã đăng nhập
     await prefs.setBool(_keyIsLoggedIn, true);
   }
@@ -46,11 +46,8 @@ class AuthService {
   Future<Map<String, String?>> getSavedCredentials() async {
     final username = await _secureStorage.read(key: _keyUsername);
     final password = await _secureStorage.read(key: _keyPassword);
-    
-    return {
-      'username': username,
-      'password': password,
-    };
+
+    return {'username': username, 'password': password};
   }
 
   /// Kiểm tra có remember me không
@@ -69,7 +66,7 @@ class AuthService {
   Future<void> clearCredentials() async {
     await _secureStorage.delete(key: _keyUsername);
     await _secureStorage.delete(key: _keyPassword);
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyRememberMe, false);
   }
@@ -78,13 +75,13 @@ class AuthService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyIsLoggedIn, false);
-    
+
     // Không xóa credentials nếu remember me enabled
     final rememberMe = await isRememberMeEnabled();
     if (!rememberMe) {
       await clearCredentials();
     }
-    
+
     // Xóa thông tin user
     await prefs.remove(_keyUserRole);
     await prefs.remove(_keyUserFullName);
@@ -168,9 +165,9 @@ class AuthService {
   /// Lấy tên loại sinh trắc học (để hiển thị)
   Future<String> getBiometricTypeName() async {
     final biometrics = await getAvailableBiometrics();
-    
+
     if (biometrics.isEmpty) return 'Sinh trắc học';
-    
+
     if (biometrics.contains(BiometricType.face)) {
       return 'Face ID';
     } else if (biometrics.contains(BiometricType.fingerprint)) {
@@ -195,8 +192,9 @@ class AuthService {
       // Giả lập các user khác nhau
       String role = 'user';
       String fullName = 'Người dùng';
-      
-      if (username.toLowerCase() == 'admin' || username.toLowerCase() == 'leader') {
+
+      if (username.toLowerCase() == 'admin' ||
+          username.toLowerCase() == 'leader') {
         role = 'leader';
         fullName = 'Quản lý';
       } else if (username.toLowerCase().contains('manager')) {
