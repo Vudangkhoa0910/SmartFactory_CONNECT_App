@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 import '../../../services/api_service.dart';
+import '../../../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,13 +13,56 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _portController = TextEditingController();
+  final AuthService _authService = AuthService();
+  
   bool _isLoading = false;
   bool _isTesting = false;
+  bool _biometricEnabled = false;
+  bool _canUseBiometric = false;
+  String _biometricType = 'Sinh trắc học';
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _loadBiometricSettings();
+  }
+
+  Future<void> _loadBiometricSettings() async {
+    final canUse = await _authService.canUseBiometric();
+    final enabled = await _authService.isBiometricEnabled();
+    final typeName = await _authService.getBiometricTypeName();
+    
+    setState(() {
+      _canUseBiometric = canUse;
+      _biometricEnabled = enabled;
+      _biometricType = typeName;
+    });
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    if (value) {
+      // Yêu cầu xác thực trước khi bật
+      final authenticated = await _authService.authenticateWithBiometric(
+        reason: 'Xác thực để bật $_biometricType cho đăng nhập',
+      );
+      
+      if (authenticated) {
+        await _authService.setBiometricEnabled(true);
+        setState(() {
+          _biometricEnabled = true;
+        });
+        _showMessage('Đã bật $_biometricType cho đăng nhập');
+      } else {
+        _showMessage('Xác thực thất bại', isError: true);
+      }
+    } else {
+      await _authService.setBiometricEnabled(false);
+      setState(() {
+        _biometricEnabled = false;
+      });
+      _showMessage('Đã tắt $_biometricType');
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -150,8 +194,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ========== SECURITY SETTINGS ==========
+                  if (_canUseBiometric) ...[
+                    Text(
+                      'Bảo mật',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.brand50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              _biometricType == 'Face ID' 
+                                  ? Icons.face 
+                                  : Icons.fingerprint,
+                              color: AppColors.brand500,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Đăng nhập bằng $_biometricType',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.gray900,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Đăng nhập nhanh và bảo mật hơn',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.gray600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _biometricEnabled,
+                            onChanged: _toggleBiometric,
+                            activeColor: AppColors.brand500,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // ========== SERVER SETTINGS ==========
                   Text(
-                    'Cài đặt thêm',
+                    'Cài đặt Server',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
