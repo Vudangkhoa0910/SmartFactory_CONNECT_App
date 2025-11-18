@@ -53,5 +53,7 @@
 	<string>SmartFactory Connect cần quyền sử dụng microphone để ghi âm video</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>SmartFactory Connect cần quyền lưu ảnh vào thư viện</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>SmartFactory Connect sử dụng Face ID để đăng nhập nhanh chóng và bảo mật</string>
 </dict>
 </plist>
