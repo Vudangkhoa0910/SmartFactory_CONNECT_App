@@ -39,6 +39,7 @@ dependencies:
   camera: ^0.11.3
   image_picker: ^1.0.7
   mobile_scanner: ^7.1.3
+  lottie: ^3.3.2
   record: ^6.1.2
   permission_handler: ^12.0.1
   audioplayers: ^6.5.1
@@ -67,6 +68,7 @@ dependencies:
   workmanager: ^0.9.0+3
   # Timezone for scheduled notifications
   timezone: ^0.10.1
+  speech_to_text: ^7.3.0
 
 dev_dependencies:
   flutter_test:
@@ -98,6 +100,7 @@ flutter:
     - assets/notifications.svg
     - assets/person.svg
     - assets/box.svg
+    - assets/lottie/loading_infinity.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -119,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ProfileMenuCard(
                           icon: Icons.settings_outlined,
                           title: 'Cài đặt',
-                          subtitle: 'Cấu hình server backend',
+                          subtitle: 'Cài đặt hệ thống',
                           onTap: () {
                             Navigator.push(
                               context,
@@ -159,6 +159,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
 
+                  const SizedBox(height: 20),
+
+                  // Additional menu section
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.gray200.withOpacity(0.5),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        ProfileMenuCard(
+                          icon: Icons.history,
+                          title: 'Lịch sử hoạt động',
+                          subtitle: 'Xem lại các hoạt động đã thực hiện',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tính năng đang phát triển'),
+                              ),
+                            );
+                          },
+                        ),
+
+                        ProfileMenuCard(
+                          icon: Icons.notifications_outlined,
+                          title: 'Thông báo',
+                          subtitle: 'Cài đặt thông báo',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tính năng đang phát triển'),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 30),
 
                   // Logout button
@@ -168,23 +214,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text('Xác nhận đăng xuất'),
-                            content: const Text('Bạn có chắc muốn đăng xuất?'),
+                            backgroundColor: AppColors.white,
+                            title: Text(
+                              'Xác nhận đăng xuất',
+                              style: TextStyle(color: AppColors.black),
+                            ),
+                            content: Text(
+                              'Bạn có chắc muốn đăng xuất?',
+                              style: TextStyle(color: AppColors.gray700),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),
-                                child: const Text('Hủy'),
+                                child: Text(
+                                  'Hủy',
+                                  style: TextStyle(color: AppColors.gray600),
+                                ),
                               ),
                               ElevatedButton(
                                 onPressed: () {
-                                  Navigator.pop(context);
-                                  // TODO: Implement logout logic
+                                  Navigator.pop(context); // Close dialog
+
+                                  // Navigate to Login screen and clear navigation stack
+                                  Navigator.of(context).pushNamedAndRemoveUntil(
+                                    '/login',
+                                    (route) => false, // Remove all routes
+                                  );
+
+                                  // TODO: Clear user session data (SharedPreferences, tokens, etc.)
+
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Đã đăng xuất'),
+                                    SnackBar(
+                                      content: const Text(
+                                        'Đã đăng xuất thành công',
+                                      ),
+                                      backgroundColor: AppColors.success500,
+                                      behavior: SnackBarBehavior.floating,
                                     ),
                                   );
                                 },

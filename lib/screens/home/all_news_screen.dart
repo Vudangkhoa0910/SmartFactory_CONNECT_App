@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../config/app_colors.dart';
+import '../../models/news_model.dart';
+import 'news_detail_screen.dart';
 
 class AllNewsScreen extends StatefulWidget {
   const AllNewsScreen({super.key});
@@ -348,7 +350,19 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
             category: news['category']!,
             imageUrl: news['imageUrl']!,
             onTap: () {
-              // TODO: Navigate to news detail
+              // Use sample news for detail view
+              // In real app, should fetch actual news by ID
+              final sampleNews = NewsModel.getSampleNews();
+              final newsItem = index < sampleNews.length
+                  ? sampleNews[index]
+                  : sampleNews[0]; // Fallback to first news
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NewsDetailScreen(news: newsItem),
+                ),
+              );
             },
           );
         },

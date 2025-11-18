@@ -95,7 +95,7 @@ extension UserRoleExtension on UserRole {
       case UserRole.worker:
         return 'Worker';
       case UserRole.sv:
-        return 'SV';
+        return 'Team Leader';
       case UserRole.mgr:
         return 'Mgr';
       case UserRole.gm:
