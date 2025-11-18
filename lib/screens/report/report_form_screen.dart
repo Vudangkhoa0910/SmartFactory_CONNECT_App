@@ -67,26 +67,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
   // Speech to text function
   Future<void> _startListening() async {
-    // Chỉ request microphone permission, speech_to_text sẽ tự xử lý speech permission
-    final micStatus = await Permission.microphone.request();
-    if (!micStatus.isGranted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Cần cấp quyền microphone để sử dụng'),
-            backgroundColor: AppColors.error500,
-            action: SnackBarAction(
-              label: 'Cài đặt',
-              textColor: AppColors.white,
-              onPressed: () => openAppSettings(),
-            ),
-          ),
-        );
-      }
-      return;
-    }
-
-    // Initialize speech_to_text - nó sẽ tự động request speech permission trên iOS
+    // Không xin quyền trước, để speech_to_text tự xử lý
+    // Điều này cho phép iOS hiển thị popup quyền đúng cách
+    
+    // Initialize speech_to_text - nó sẽ tự động request tất cả permissions cần thiết
     bool available = await _speechToText.initialize(
       onStatus: (status) {
         if (status == 'done' && mounted) {
