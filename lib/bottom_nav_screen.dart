@@ -34,21 +34,35 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   }
 
   void updateCurrentIndex(int index) {
-    // Skip the dummy camera item (index 2)
-    if (index == 2) return;
-
-    // Adjust index for actual pages (remove dummy item from count)
-    final actualIndex = index > 2 ? index - 1 : index;
-
-    if (currentSelectedIndex == actualIndex) return;
+    if (currentSelectedIndex == index) return;
 
     setState(() {
-      currentSelectedIndex = actualIndex;
+      currentSelectedIndex = index;
     });
 
     if (!_isUserSwiping) {
-      _pageController.jumpToPage(actualIndex);
+      _pageController.jumpToPage(index);
     }
+  }
+
+  Widget _buildNavItem(int index, String iconPath) {
+    final isSelected = currentSelectedIndex == index;
+    
+    return Expanded(
+      child: InkWell(
+        onTap: () => updateCurrentIndex(index),
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: SvgPicture.asset(
+            iconPath,
+            color: isSelected ? AppColors.brand500 : AppColors.gray400,
+            width: 26,
+            height: 26,
+          ),
+        ),
+      ),
+    );
   }
 
   List<Widget> get pages {
@@ -82,16 +96,17 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
             children: pages,
           ),
           Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
+            bottom: 16,
+            left: 20,
+            right: 20,
             child: Stack(
               clipBehavior: Clip.none, // Allow overflow for floating button
               alignment: Alignment.topCenter,
               children: [
                 // Bottom Navigation Bar
                 Container(
-                  height: 70,
+                  height: 65,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(30),
@@ -104,97 +119,24 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                       ),
                     ],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: BottomNavigationBar(
-                      onTap: updateCurrentIndex,
-                      currentIndex: currentSelectedIndex < 2
-                          ? currentSelectedIndex
-                          : currentSelectedIndex +
-                                1, // Adjust for dummy item at index 2
-                      showSelectedLabels: false,
-                      showUnselectedLabels: false,
-                      type: BottomNavigationBarType.fixed,
-                      backgroundColor:
-                          AppColors.white, // Set explicit white background
-                      elevation: 0,
-                      enableFeedback: false,
-                      items: [
-                        BottomNavigationBarItem(
-                          icon: SvgPicture.asset(
-                            'assets/home.svg',
-                            color: AppColors.gray400,
-                            width: 26,
-                            height: 25,
-                          ),
-                          activeIcon: SvgPicture.asset(
-                            'assets/home.svg',
-                            color: AppColors.brand500,
-                            width: 26,
-                            height: 25,
-                          ),
-                          label: "Home",
-                        ),
-                        BottomNavigationBarItem(
-                          icon: SvgPicture.asset(
-                            'assets/report.svg',
-                            color: AppColors.gray400,
-                            width: 26,
-                            height: 25,
-                          ),
-                          activeIcon: SvgPicture.asset(
-                            'assets/report.svg',
-                            color: AppColors.brand500,
-                            width: 26,
-                            height: 25,
-                          ),
-                          label: "Báo cáo",
-                        ),
-                        // Empty item for center button space
-                        BottomNavigationBarItem(
-                          icon: SizedBox(width: 26, height: 25),
-                          label: "",
-                        ),
-                        BottomNavigationBarItem(
-                          icon: SvgPicture.asset(
-                            'assets/box.svg',
-                            color: AppColors.gray400,
-                            width: 26,
-                            height: 25,
-                          ),
-                          activeIcon: SvgPicture.asset(
-                            'assets/box.svg',
-                            color: AppColors.brand500,
-                            width: 26,
-                            height: 25,
-                          ),
-                          label: "Hòm thư góp ý",
-                        ),
-                        BottomNavigationBarItem(
-                          icon: SvgPicture.asset(
-                            'assets/person.svg',
-                            color: AppColors.gray400,
-                            width: 26,
-                            height: 25,
-                          ),
-                          activeIcon: SvgPicture.asset(
-                            'assets/person.svg',
-                            color: AppColors.brand500,
-                            width: 26,
-                            height: 25,
-                          ),
-                          label: "Profile",
-                        ),
-                      ],
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildNavItem(0, 'assets/home.svg'),
+                      _buildNavItem(1, 'assets/report.svg'),
+                      const SizedBox(width: 56), // Space for floating button
+                      _buildNavItem(2, 'assets/box.svg'),
+                      _buildNavItem(3, 'assets/person.svg'),
+                    ],
                   ),
+
                 ),
                 // Floating Camera Button
                 Positioned(
-                  top: -15, // More negative to be clearly above navbar
+                  top: -20, // More negative to be clearly above navbar
                   child: Container(
-                    width: 64,
-                    height: 64,
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
                       color: AppColors.error500, // DENSO Red
                       shape: BoxShape.circle,
@@ -230,7 +172,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                           child: Icon(
                             Icons.camera_alt,
                             color: AppColors.white,
-                            size: 30,
+                            size: 28,
                           ),
                         ),
                       ),
