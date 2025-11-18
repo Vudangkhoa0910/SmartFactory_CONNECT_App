@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/user_profile_model.dart';
 import '../../providers/user_provider.dart';
+import '../../services/auth_service.dart';
 import 'pages/personal_info_screen.dart';
 import 'pages/settings_screen.dart';
 import 'widgets/profile_header_card.dart';
@@ -235,26 +236,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               ElevatedButton(
-                                onPressed: () {
+                                onPressed: () async {
                                   Navigator.pop(context); // Close dialog
 
+                                  // Clear user session using AuthService
+                                  await AuthService().logout();
+
                                   // Navigate to Login screen and clear navigation stack
-                                  Navigator.of(context).pushNamedAndRemoveUntil(
-                                    '/login',
-                                    (route) => false, // Remove all routes
-                                  );
+                                  if (context.mounted) {
+                                    Navigator.of(context).pushNamedAndRemoveUntil(
+                                      '/login',
+                                      (route) => false, // Remove all routes
+                                    );
 
-                                  // TODO: Clear user session data (SharedPreferences, tokens, etc.)
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                        'Đã đăng xuất thành công',
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text(
+                                          'Đã đăng xuất thành công',
+                                        ),
+                                        backgroundColor: AppColors.success500,
+                                        behavior: SnackBarBehavior.floating,
                                       ),
-                                      backgroundColor: AppColors.success500,
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
+                                    );
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.brand500,
