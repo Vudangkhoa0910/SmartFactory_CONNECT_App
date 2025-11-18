@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/loading_overlay.dart';
+import '../../services/auth_service.dart';
+import '../../providers/user_provider.dart';
 
 /// Màn hình đăng nhập
 /// User nhập username/email và password để đăng nhập
+/// Hỗ trợ: Remember Me, Auto Login, Biometric Authentication
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -16,17 +19,72 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _rememberMe = false;
+  bool _canUseBiometric = false;
+  String _biometricType = 'Sinh trắc học';
 
   @override
-  void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _initializeAuth();
   }
 
+  /// Khởi tạo và kiểm tra trạng thái authentication
+  Future<void> _initializeAuth() async {
+    // Kiểm tra thiết bị có hỗ trợ sinh trắc học không
+    final canUse = await _authService.canUseBiometric();
+    final biometricName = await _authService.getBiometricTypeName();
+    
+    setState(() {
+      _canUseBiometric = canUse;
+      _biometricType = biometricName;
+    });
+
+    // Tự động load thông tin đăng nhập đã lưu
+    await _loadSavedCredentials();
+
+    // Nếu đã đăng nhập và có bật sinh trắc học, tự động xác thực
+    final isLoggedIn = await _authService.isLoggedIn();
+    final biometricEnabled = await _authService.isBiometricEnabled();
+    
+    if (isLoggedIn && biometricEnabled && _canUseBiometric) {
+      // Delay một chút để UI render xong
+      await Future.delayed(const Duration(milliseconds: 500));
+      _authenticateWithBiometric();
+    }
+  }
+
+  /// Load thông tin đăng nhập đã lưu
+  Future<void> _loadSavedCredentials() async {
+    final rememberMe = await _authService.isRememberMeEnabled();
+    
+    if (rememberMe) {
+      final credentials = await _authService.getSavedCredentials();
+      setState(() {
+        _rememberMe = true;
+        _usernameController.text = credentials['username'] ?? '';
+        _passwordController.text = credentials['password'] ?? '';
+      });
+    }
+  }
+
+  /// Xác thực bằng sinh trắc học
+  Future<void> _authenticateWithBiometric() async {
+    final authenticated = await _authService.authenticateWithBiometric(
+      reason: 'Xác thực để đăng nhập vào SmartFactory Connect',
+    );
+
+    if (authenticated && mounted) {
+      // Đăng nhập thành công
+      _navigateToHome();
+    }
+  }
+
+  /// Xử lý đăng nhập
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -36,30 +94,76 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // TODO: Implement actual authentication API call
-    await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+    try {
+      // Gọi API authentication
+      final result = await _authService.authenticateUser(
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (!mounted) return;
 
-      // Mock authentication - replace with real API check
-      if (_usernameController.text.isNotEmpty &&
-          _passwordController.text.isNotEmpty) {
-        // Navigate to main app
-        Navigator.of(context).pushReplacementNamed('/home');
+      if (result['success'] == true) {
+        // Lưu thông tin đăng nhập
+        await _authService.saveCredentials(
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
+          rememberMe: _rememberMe,
+        );
+
+        // Lưu thông tin user
+        await _authService.saveUserInfo(
+          fullName: result['fullName'] ?? 'User',
+          role: result['role'] ?? 'user',
+        );
+
+        // Cập nhật UserProvider
+        final userProvider = UserProvider();
+        userProvider.setUserRole(result['role'] ?? 'user');
+
+        // Navigate to home
+        _navigateToHome();
       } else {
-        // Show error
+        // Hiển thị lỗi
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Đăng nhập thất bại'),
+              backgroundColor: AppColors.error500,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Tên đăng nhập hoặc mật khẩu không đúng'),
+            content: const Text('Có lỗi xảy ra. Vui lòng thử lại'),
             backgroundColor: AppColors.error500,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  /// Navigate to home screen
+  void _navigateToHome() {
+    Navigator.of(context).pushReplacementNamed('/home');
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -232,6 +336,38 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
 
+                          const SizedBox(height: 16),
+
+                          // Remember Me checkbox
+                          Row(
+                            children: [
+                              SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _rememberMe = value ?? false;
+                                    });
+                                  },
+                                  activeColor: AppColors.brand500,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Ghi nhớ đăng nhập',
+                                style: TextStyle(
+                                  color: AppColors.gray700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+
                           const SizedBox(height: 24),
 
                           // Login button
@@ -259,6 +395,60 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
+
+                          const SizedBox(height: 16),
+
+                          // Biometric login button (if available)
+                          if (_canUseBiometric)
+                            Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(child: Divider(color: AppColors.gray300)),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      child: Text(
+                                        'Hoặc',
+                                        style: TextStyle(
+                                          color: AppColors.gray500,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(child: Divider(color: AppColors.gray300)),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _authenticateWithBiometric,
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(color: AppColors.brand500, width: 1.5),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    icon: Icon(
+                                      _biometricType == 'Face ID' 
+                                          ? Icons.face 
+                                          : Icons.fingerprint,
+                                      color: AppColors.brand500,
+                                      size: 24,
+                                    ),
+                                    label: Text(
+                                      'Đăng nhập bằng $_biometricType',
+                                      style: TextStyle(
+                                        color: AppColors.brand500,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
 
                           const SizedBox(height: 40),
 
