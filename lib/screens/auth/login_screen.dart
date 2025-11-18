@@ -117,9 +117,14 @@ class _LoginScreenState extends State<LoginScreen> {
           role: result['role'] ?? 'user',
         );
 
-        // Cập nhật UserProvider
+        // Cập nhật UserProvider và đợi hoàn tất
         final userProvider = UserProvider();
-        userProvider.setUserRole(result['role'] ?? 'user');
+        await userProvider.setUserRole(result['role'] ?? 'user');
+
+        // Đảm bảo UserProvider đã load xong
+        while (!userProvider.isLoaded) {
+          await Future.delayed(const Duration(milliseconds: 50));
+        }
 
         // Navigate to home
         _navigateToHome();

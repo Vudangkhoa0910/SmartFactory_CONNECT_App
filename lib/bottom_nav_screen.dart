@@ -20,16 +20,30 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   int currentSelectedIndex = 0;
   late PageController _pageController;
   bool _isUserSwiping = false;
+  late UserProvider _userProvider;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _userProvider = UserProvider();
+
+    // Listen to role changes
+    _userProvider.addListener(_onRoleChanged);
+  }
+
+  void _onRoleChanged() {
+    if (mounted) {
+      setState(() {
+        // Rebuild to reflect role changes
+      });
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _userProvider.removeListener(_onRoleChanged);
     super.dispose();
   }
 
@@ -66,10 +80,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   }
 
   List<Widget> get pages {
-    final userProvider = UserProvider();
     return [
       const HomeScreen(),
-      userProvider.isLeader
+      _userProvider.isLeader
           ? const LeaderReportManagementScreen()
           : const ReportListScreen(),
       const IdeaBoxListScreen(),

@@ -179,40 +179,55 @@ class AuthService {
     }
   }
 
-  /// Demo: Xác thực user (thay thế bằng API call thực tế)
+  /// Demo: Xác thực user với 2 tài khoản demo
+  /// WORKER: user: worker, pass: 123456
+  /// LEADER: user: leader, pass: 123456
   Future<Map<String, dynamic>> authenticateUser({
     required String username,
     required String password,
   }) async {
-    // TODO: Thay thế bằng API call thực tế
-    await Future.delayed(const Duration(seconds: 1));
+    // Giả lập delay API call
+    await Future.delayed(const Duration(milliseconds: 800));
 
-    // Demo data - giả lập API response
-    if (username.isNotEmpty && password.length >= 6) {
-      // Giả lập các user khác nhau
-      String role = 'user';
-      String fullName = 'Người dùng';
+    final String user = username.toLowerCase().trim();
+    final String pass = password.trim();
 
-      if (username.toLowerCase() == 'admin' ||
-          username.toLowerCase() == 'leader') {
-        role = 'leader';
-        fullName = 'Quản lý';
-      } else if (username.toLowerCase().contains('manager')) {
-        role = 'manager';
-        fullName = 'Ban quản lý';
+    // Demo accounts
+    const Map<String, Map<String, String>> demoAccounts = {
+      'worker': {
+        'password': '123456',
+        'fullName': 'Nguyễn Văn A',
+        'role': 'worker',
+        'department': 'Sản xuất',
+        'employeeId': 'EMP001',
+      },
+      'leader': {
+        'password': '123456',
+        'fullName': 'Trần Thị Q',
+        'role': 'leader',
+        'department': 'Quản lý sản xuất',
+        'employeeId': 'MGR001',
+      },
+    };
+
+    if (demoAccounts.containsKey(user)) {
+      final account = demoAccounts[user]!;
+      if (account['password'] == pass) {
+        return {
+          'success': true,
+          'fullName': account['fullName'],
+          'role': account['role'],
+          'department': account['department'],
+          'employeeId': account['employeeId'],
+          'username': username,
+        };
       }
-
-      return {
-        'success': true,
-        'fullName': fullName,
-        'role': role,
-        'username': username,
-      };
     }
 
     return {
       'success': false,
-      'message': 'Tên đăng nhập hoặc mật khẩu không đúng',
+      'message':
+          'Tài khoản demo:\n• Worker: user=worker, pass=123456\n• Leader: user=leader, pass=123456',
     };
   }
 }

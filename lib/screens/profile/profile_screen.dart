@@ -41,22 +41,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Mock data - replace with actual user data
-  UserProfile get _currentUser => UserProfile(
-    id: '1',
-    fullName: 'Nguyễn Văn A',
-    employeeId: 'NV-2024-001',
-    gender: Gender.male,
-    dateOfBirth: DateTime(1990, 5, 15),
-    phoneNumber: '0123456789',
-    email: 'nguyenvana@denso.com',
-    address: 'TP. Hồ Chí Minh',
-    role: _currentRole,
-    department: 'Dây chuyền sản xuất A',
-    joinDate: DateTime(2020, 1, 10),
-    shift: ShiftType.shift1,
-    workStatus: WorkStatus.active,
-  );
+  // User data based on current role
+  UserProfile get _currentUser {
+    if (_currentRole == UserRole.sv) {
+      // Leader profile
+      return UserProfile(
+        id: 'MGR001',
+        fullName: 'Trần Thị Quản Lý',
+        employeeId: 'MGR001',
+        gender: Gender.female,
+        dateOfBirth: DateTime(1985, 3, 20),
+        phoneNumber: '0987654321',
+        email: 'manager@denso.com',
+        address: 'Quận 1, TP. Hồ Chí Minh',
+        role: _currentRole,
+        department: 'Quản lý sản xuất',
+        joinDate: DateTime(2018, 6, 15),
+        shift: ShiftType.shift1,
+        workStatus: WorkStatus.active,
+      );
+    } else {
+      // Worker profile
+      return UserProfile(
+        id: 'EMP001',
+        fullName: 'Nguyễn Văn Công Nhân',
+        employeeId: 'EMP001',
+        gender: Gender.male,
+        dateOfBirth: DateTime(1992, 8, 10),
+        phoneNumber: '0123456789',
+        email: 'worker@denso.com',
+        address: 'Quận 7, TP. Hồ Chí Minh',
+        role: _currentRole,
+        department: 'Dây chuyền sản xuất A',
+        joinDate: DateTime(2020, 1, 10),
+        shift: ShiftType.shift1,
+        workStatus: WorkStatus.active,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -244,7 +267,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                                   // Navigate to Login screen and clear navigation stack
                                   if (context.mounted) {
-                                    Navigator.of(context).pushNamedAndRemoveUntil(
+                                    Navigator.of(
+                                      context,
+                                    ).pushNamedAndRemoveUntil(
                                       '/login',
                                       (route) => false, // Remove all routes
                                     );
