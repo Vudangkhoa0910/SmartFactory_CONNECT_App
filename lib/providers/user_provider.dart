@@ -59,6 +59,24 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  /// Set role by string (from API response)
+  Future<void> setUserRole(String roleString) async {
+    UserRole role;
+    switch (roleString.toLowerCase()) {
+      case 'leader':
+      case 'sv':
+      case 'manager':
+        role = UserRole.sv;
+        break;
+      case 'worker':
+      case 'user':
+      default:
+        role = UserRole.worker;
+        break;
+    }
+    await setRole(role);
+  }
+
   bool get isLeader => _currentRole == UserRole.sv;
   bool get isWorker => _currentRole == UserRole.worker;
 }
