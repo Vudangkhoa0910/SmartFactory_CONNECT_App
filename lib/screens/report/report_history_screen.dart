@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/report_model.dart';
-import 'report_detail_screen.dart';
+import 'report_detail_view_screen.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
   const ReportHistoryScreen({super.key});

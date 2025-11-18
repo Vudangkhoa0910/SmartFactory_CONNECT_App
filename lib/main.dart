@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'splash_screen.dart';
 import 'bottom_nav_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/report/report_form_screen.dart';
+import 'screens/report/leader_report_form_screen.dart';
 import 'config/app_colors.dart';
 
 void main() {
@@ -43,6 +45,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const BottomNavScreen(),
+        '/report-form': (context) => const ReportFormScreen(),
+        '/leader-report-form': (context) => const LeaderReportFormScreen(),
       },
     );
   }

@@ -183,6 +183,25 @@ class _LeaderReportManagementScreenState
           ),
         ),
       ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80), // Đẩy lên khỏi bottom nav
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.pushNamed(context, '/leader-report-form');
+          },
+          backgroundColor: AppColors.error500,
+          elevation: 4,
+          icon: Icon(Icons.add, color: AppColors.white, size: 22),
+          label: Text(
+            'Tạo báo cáo',
+            style: TextStyle(
+              color: AppColors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
