@@ -375,7 +375,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: double.infinity,
                             height: 52,
                             child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleLogin,
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      // Dismiss keyboard
+                                      FocusScope.of(context).unfocus();
+                                      _handleLogin();
+                                    },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.brand500,
                                 disabledBackgroundColor: AppColors.gray300,

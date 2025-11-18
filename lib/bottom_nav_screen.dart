@@ -47,7 +47,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
   Widget _buildNavItem(int index, String iconPath) {
     final isSelected = currentSelectedIndex == index;
-    
+
     return Expanded(
       child: InkWell(
         onTap: () => updateCurrentIndex(index),
@@ -80,6 +80,8 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset:
+          false, // Prevent bottom nav from moving when keyboard appears
       extendBody: true,
       body: Stack(
         children: [
@@ -129,7 +131,6 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                       _buildNavItem(3, 'assets/person.svg'),
                     ],
                   ),
-
                 ),
                 // Floating Camera Button
                 Positioned(
