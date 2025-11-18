@@ -38,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Kiểm tra thiết bị có hỗ trợ sinh trắc học không
     final canUse = await _authService.canUseBiometric();
     final biometricName = await _authService.getBiometricTypeName();
-    
+
     setState(() {
       _canUseBiometric = canUse;
       _biometricType = biometricName;
@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Nếu đã đăng nhập và có bật sinh trắc học, tự động xác thực
     final isLoggedIn = await _authService.isLoggedIn();
     final biometricEnabled = await _authService.isBiometricEnabled();
-    
+
     if (isLoggedIn && biometricEnabled && _canUseBiometric) {
       // Delay một chút để UI render xong
       await Future.delayed(const Duration(milliseconds: 500));
@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Load thông tin đăng nhập đã lưu
   Future<void> _loadSavedCredentials() async {
     final rememberMe = await _authService.isRememberMeEnabled();
-    
+
     if (rememberMe) {
       final credentials = await _authService.getSavedCredentials();
       setState(() {
@@ -404,9 +404,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Expanded(child: Divider(color: AppColors.gray300)),
+                                    Expanded(
+                                      child: Divider(color: AppColors.gray300),
+                                    ),
                                     Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
                                       child: Text(
                                         'Hoặc',
                                         style: TextStyle(
@@ -415,7 +419,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       ),
                                     ),
-                                    Expanded(child: Divider(color: AppColors.gray300)),
+                                    Expanded(
+                                      child: Divider(color: AppColors.gray300),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 16),
@@ -425,14 +431,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: OutlinedButton.icon(
                                     onPressed: _authenticateWithBiometric,
                                     style: OutlinedButton.styleFrom(
-                                      side: BorderSide(color: AppColors.brand500, width: 1.5),
+                                      side: BorderSide(
+                                        color: AppColors.brand500,
+                                        width: 1.5,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
                                     icon: Icon(
-                                      _biometricType == 'Face ID' 
-                                          ? Icons.face 
+                                      _biometricType == 'Face ID'
+                                          ? Icons.face
                                           : Icons.fingerprint,
                                       color: AppColors.brand500,
                                       size: 24,
