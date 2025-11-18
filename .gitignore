@@ -43,3 +43,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# IPA build files
+*.ipa
+build_ipa.sh
+BUILD_IPA_GUIDE.md
+
+# macOS
+.DS_Store
+*.swp
+*.swo
+*~
