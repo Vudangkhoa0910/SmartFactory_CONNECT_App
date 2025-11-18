@@ -5,8 +5,9 @@ import 'package:record/record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../config/app_colors.dart';
+import '../../widgets/text_field_with_mic.dart';
+import '../../widgets/expanded_text_dialog.dart';
 
 class ReportFormScreen extends StatefulWidget {
   const ReportFormScreen({super.key});
@@ -20,9 +21,11 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _customCategoryController = TextEditingController();
 
   String? _selectedPriority;
   List<String> _selectedCategories = [];
+  bool _showCustomCategory = false;
 
   final List<String> _priorities = ['Thấp', 'Trung bình', 'Cao', 'Khẩn cấp'];
 
@@ -44,15 +47,9 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   bool _isRecording = false;
   bool _isPlaying = false;
 
-  // Speech to text
-  late stt.SpeechToText _speechToText;
-  bool _isListening = false;
-  String _lastRecognizedWords = '';
-
   @override
   void initState() {
     super.initState();
-    _speechToText = stt.SpeechToText();
   }
 
   @override
@@ -60,104 +57,27 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     _titleController.dispose();
     _locationController.dispose();
     _descriptionController.dispose();
+    _customCategoryController.dispose();
     _audioRecorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
 
-  // Speech to text function
-  Future<void> _startListening() async {
-    // Không xin quyền trước, để speech_to_text tự xử lý
-    // Điều này cho phép iOS hiển thị popup quyền đúng cách
-    
-    // Initialize speech_to_text - nó sẽ tự động request tất cả permissions cần thiết
-    bool available = await _speechToText.initialize(
-      onStatus: (status) {
-        if (status == 'done' && mounted) {
-          setState(() => _isListening = false);
-        }
-      },
-      onError: (error) {
-        if (mounted) {
-          setState(() => _isListening = false);
-          
-          String errorMessage = 'Lỗi nhận dạng giọng nói';
-          if (error.errorMsg.toLowerCase().contains('not_allowed') || 
-              error.errorMsg.toLowerCase().contains('permission')) {
-            errorMessage = 'Vui lòng cấp quyền Speech Recognition trong Settings > Privacy > Speech Recognition';
-          } else {
-            errorMessage = 'Lỗi: ${error.errorMsg}';
-          }
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: AppColors.error500,
-              duration: const Duration(seconds: 4),
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: AppColors.white,
-                onPressed: () {},
-              ),
-            ),
-          );
-        }
-      },
+  void _openExpandedTextDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: ExpandedTextDialog(
+          controller: _descriptionController,
+          title: 'Mô tả chi tiết',
+          hintText: 'Mô tả chi tiết về sự cố...',
+        ),
+      ),
     );
-
-    if (!available) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Không thể khởi tạo nhận dạng giọng nói. Vui lòng kiểm tra quyền trong Settings.'),
-            backgroundColor: AppColors.error500,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Mở Settings',
-              textColor: AppColors.white,
-              onPressed: () => openAppSettings(),
-            ),
-          ),
-        );
-      }
-      return;
-    }
-
-    if (available) {
-      // Save current text before listening
-      _lastRecognizedWords = _descriptionController.text;
-      setState(() => _isListening = true);
-      _speechToText.listen(
-        onResult: (result) {
-          setState(() {
-            // Real-time update: append recognized words to existing text
-            if (_lastRecognizedWords.isNotEmpty &&
-                !_lastRecognizedWords.endsWith(' ')) {
-              _descriptionController.text =
-                  '$_lastRecognizedWords ${result.recognizedWords}';
-            } else {
-              _descriptionController.text =
-                  '$_lastRecognizedWords${result.recognizedWords}';
-            }
-            // Move cursor to end
-            _descriptionController.selection = TextSelection.fromPosition(
-              TextPosition(offset: _descriptionController.text.length),
-            );
-          });
-        },
-        localeId: 'vi_VN', // Vietnamese
-        listenMode:
-            stt.ListenMode.confirmation, // Get partial and final results
-        partialResults: true, // Enable real-time partial results
-        listenFor: const Duration(minutes: 1), // Maximum listening duration
-        pauseFor: const Duration(seconds: 3), // Pause after silence
-      );
-    }
-  }
-
-  void _stopListening() {
-    _speechToText.stop();
-    setState(() => _isListening = false);
+    // Trigger rebuild to show updated text
+    setState(() {});
   }
 
   // Camera functions
@@ -316,26 +236,9 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               // Tiêu đề sự cố
               _buildSectionTitle('Tiêu đề sự cố', isRequired: true),
               const SizedBox(height: 8),
-              TextFormField(
+              TextFieldWithMic(
                 controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập tiêu đề sự cố',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
+                hintText: 'Nhập tiêu đề sự cố',
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Vui lòng nhập tiêu đề sự cố';
@@ -348,26 +251,9 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               // Vị trí / Thiết bị
               _buildSectionTitle('Vị trí / Thiết bị', isRequired: true),
               const SizedBox(height: 8),
-              TextFormField(
+              TextFieldWithMic(
                 controller: _locationController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập vị trí hoặc tên thiết bị',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
+                hintText: 'Nhập vị trí hoặc tên thiết bị',
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Vui lòng nhập vị trí hoặc thiết bị';
@@ -427,15 +313,6 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                   return FilterChip(
                     label: Text(category),
                     selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedCategories.add(category);
-                        } else {
-                          _selectedCategories.remove(category);
-                        }
-                      });
-                    },
                     backgroundColor: AppColors.white,
                     selectedColor: AppColors.error500,
                     showCheckmark: false,
@@ -454,101 +331,76 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedCategories.add(category);
+                          if (category == 'Khác') {
+                            _showCustomCategory = true;
+                          }
+                        } else {
+                          _selectedCategories.remove(category);
+                          if (category == 'Khác') {
+                            _showCustomCategory = false;
+                            _customCategoryController.clear();
+                          }
+                        }
+                      });
+                    },
                   );
                 }).toList(),
               ),
+              
+              // Custom category input (only show when "Khác" is selected)
+              if (_showCustomCategory) ...[
+                const SizedBox(height: 12),
+                TextFieldWithMic(
+                  controller: _customCategoryController,
+                  hintText: 'Nhập loại vấn đề khác...',
+                ),
+              ],
               const SizedBox(height: 20),
 
               // Mô tả chi tiết
               _buildSectionTitle('Mô tả chi tiết'),
               const SizedBox(height: 8),
-              Stack(
-                children: [
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 5,
-                    style: TextStyle(color: AppColors.black),
-                    decoration: InputDecoration(
-                      hintText: 'Mô tả chi tiết về sự cố...',
-                      hintStyle: TextStyle(color: AppColors.gray400),
-                      filled: true,
-                      fillColor: AppColors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.gray200),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.gray200),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.brand500,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.fromLTRB(
-                        12,
-                        12,
-                        50,
-                        12,
-                      ), // Right padding for mic button
-                    ),
+              GestureDetector(
+                onTap: _openExpandedTextDialog,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.gray200),
                   ),
-                  // Mic button overlay
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onLongPressStart: (_) => _startListening(),
-                      onLongPressEnd: (_) => _stopListening(),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: _isListening
-                              ? AppColors.error500
-                              : AppColors.error500,
-                          shape: BoxShape.circle,
-                          boxShadow: _isListening
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.error500.withOpacity(0.4),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Icon(
-                          _isListening ? Icons.mic : Icons.mic_none,
-                          color: AppColors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (_isListening)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
                   child: Row(
                     children: [
-                      Icon(Icons.mic, size: 16, color: AppColors.error500),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Đang nghe... Thả ra để dừng',
-                        style: TextStyle(
-                          color: AppColors.error500,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
+                      Expanded(
+                        child: Text(
+                          _descriptionController.text.isEmpty
+                              ? 'Nhấn để nhập mô tả chi tiết...'
+                              : _descriptionController.text,
+                          style: TextStyle(
+                            color: _descriptionController.text.isEmpty
+                                ? AppColors.gray400
+                                : AppColors.black,
+                            fontSize: 14,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.edit_note,
+                        color: AppColors.brand500,
+                        size: 24,
                       ),
                     ],
                   ),
                 ),
+              ),
               const SizedBox(height: 20),
 
               // Đính kèm bằng chứng
