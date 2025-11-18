@@ -116,9 +116,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Username field
                         TextFormField(
                           controller: _usernameController,
+                          style: TextStyle(color: AppColors.black),
                           decoration: InputDecoration(
                             labelText: 'Tên đăng nhập hoặc Email',
                             hintText: 'Nhập tên đăng nhập hoặc email',
+                            labelStyle: TextStyle(color: AppColors.gray600),
+                            hintStyle: TextStyle(color: AppColors.gray400),
                             prefixIcon: Icon(
                               Icons.person_outline,
                               color: AppColors.gray400,
@@ -159,9 +162,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextFormField(
                           controller: _passwordController,
                           obscureText: !_isPasswordVisible,
+                          style: TextStyle(color: AppColors.black),
                           decoration: InputDecoration(
                             labelText: 'Mật khẩu',
                             hintText: 'Nhập mật khẩu',
+                            labelStyle: TextStyle(color: AppColors.gray600),
+                            hintStyle: TextStyle(color: AppColors.gray400),
                             prefixIcon: Icon(
                               Icons.lock_outline,
                               color: AppColors.gray400,

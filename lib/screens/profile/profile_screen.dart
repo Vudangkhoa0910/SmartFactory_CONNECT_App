@@ -119,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ProfileMenuCard(
                           icon: Icons.settings_outlined,
                           title: 'Cài đặt',
-                          subtitle: 'Cấu hình server backend',
+                          subtitle: 'Cài đặt hệ thống',
                           onTap: () {
                             Navigator.push(
                               context,
@@ -168,15 +168,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text('Xác nhận đăng xuất'),
-                            content: const Text('Bạn có chắc muốn đăng xuất?'),
+                            backgroundColor: AppColors.white,
+                            title: Text(
+                              'Xác nhận đăng xuất',
+                              style: TextStyle(color: AppColors.black),
+                            ),
+                            content: Text(
+                              'Bạn có chắc muốn đăng xuất?',
+                              style: TextStyle(color: AppColors.gray700),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),
-                                child: const Text('Hủy'),
+                                child: Text(
+                                  'Hủy',
+                                  style: TextStyle(color: AppColors.gray600),
+                                ),
                               ),
                               ElevatedButton(
                                 onPressed: () {

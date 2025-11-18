@@ -5,6 +5,7 @@ import 'package:record/record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../config/app_colors.dart';
 
 class ReportFormScreen extends StatefulWidget {
@@ -43,6 +44,17 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   bool _isRecording = false;
   bool _isPlaying = false;
 
+  // Speech to text
+  late stt.SpeechToText _speechToText;
+  bool _isListening = false;
+  String _lastRecognizedWords = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _speechToText = stt.SpeechToText();
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -51,6 +63,77 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     _audioRecorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  // Speech to text function
+  Future<void> _startListening() async {
+    final status = await Permission.microphone.request();
+    if (!status.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Cần cấp quyền microphone để sử dụng'),
+            backgroundColor: AppColors.error500,
+          ),
+        );
+      }
+      return;
+    }
+
+    bool available = await _speechToText.initialize(
+      onStatus: (status) {
+        if (status == 'done' && mounted) {
+          setState(() => _isListening = false);
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() => _isListening = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi: ${error.errorMsg}'),
+              backgroundColor: AppColors.error500,
+            ),
+          );
+        }
+      },
+    );
+
+    if (available) {
+      // Save current text before listening
+      _lastRecognizedWords = _descriptionController.text;
+      setState(() => _isListening = true);
+      _speechToText.listen(
+        onResult: (result) {
+          setState(() {
+            // Real-time update: append recognized words to existing text
+            if (_lastRecognizedWords.isNotEmpty &&
+                !_lastRecognizedWords.endsWith(' ')) {
+              _descriptionController.text =
+                  '$_lastRecognizedWords ${result.recognizedWords}';
+            } else {
+              _descriptionController.text =
+                  '$_lastRecognizedWords${result.recognizedWords}';
+            }
+            // Move cursor to end
+            _descriptionController.selection = TextSelection.fromPosition(
+              TextPosition(offset: _descriptionController.text.length),
+            );
+          });
+        },
+        localeId: 'vi_VN', // Vietnamese
+        listenMode:
+            stt.ListenMode.confirmation, // Get partial and final results
+        partialResults: true, // Enable real-time partial results
+        listenFor: const Duration(minutes: 1), // Maximum listening duration
+        pauseFor: const Duration(seconds: 3), // Pause after silence
+      );
+    }
+  }
+
+  void _stopListening() {
+    _speechToText.stop();
+    setState(() => _isListening = false);
   }
 
   // Camera functions
@@ -285,18 +368,18 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     });
                   },
                   backgroundColor: AppColors.white,
-                  selectedColor: AppColors.error500.withOpacity(0.1),
-                  checkmarkColor: AppColors.error500,
+                  selectedColor: AppColors.error500,
+                  showCheckmark: false,
                   labelStyle: TextStyle(
-                    color: isSelected ? AppColors.error500 : AppColors.gray700,
+                    color: isSelected ? AppColors.white : AppColors.gray700,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                   side: BorderSide(
-                    color: AppColors.error500,
+                    color: isSelected ? AppColors.error500 : AppColors.gray200,
                     width: isSelected ? 2 : 1,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 );
               }).toList(),
@@ -324,15 +407,14 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     });
                   },
                   backgroundColor: AppColors.white,
-                  selectedColor: AppColors.brand500.withOpacity(0.1),
-                  checkmarkColor: AppColors.brand500,
-                  showCheckmark: true,
+                  selectedColor: AppColors.error500,
+                  showCheckmark: false,
                   labelStyle: TextStyle(
-                    color: isSelected ? AppColors.brand500 : AppColors.gray700,
+                    color: isSelected ? AppColors.white : AppColors.gray700,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                   side: BorderSide(
-                    color: isSelected ? AppColors.brand500 : AppColors.gray200,
+                    color: isSelected ? AppColors.error500 : AppColors.gray200,
                     width: isSelected ? 2 : 1,
                   ),
                   shape: RoundedRectangleBorder(
@@ -346,28 +428,93 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             // Mô tả chi tiết
             _buildSectionTitle('Mô tả chi tiết'),
             const SizedBox(height: 8),
-            TextFormField(
-              controller: _descriptionController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Mô tả chi tiết về sự cố...',
-                hintStyle: TextStyle(color: AppColors.gray400),
-                filled: true,
-                fillColor: AppColors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.gray200),
+            Stack(
+              children: [
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 5,
+                  style: TextStyle(color: AppColors.black),
+                  decoration: InputDecoration(
+                    hintText: 'Mô tả chi tiết về sự cố...',
+                    hintStyle: TextStyle(color: AppColors.gray400),
+                    filled: true,
+                    fillColor: AppColors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.gray200),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.gray200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.brand500,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.fromLTRB(
+                      12,
+                      12,
+                      50,
+                      12,
+                    ), // Right padding for mic button
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.gray200),
+                // Mic button overlay
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onLongPressStart: (_) => _startListening(),
+                    onLongPressEnd: (_) => _stopListening(),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _isListening
+                            ? AppColors.error500
+                            : AppColors.error500,
+                        shape: BoxShape.circle,
+                        boxShadow: _isListening
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.error500.withOpacity(0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Icon(
+                        _isListening ? Icons.mic : Icons.mic_none,
+                        color: AppColors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.brand500, width: 2),
+              ],
+            ),
+            if (_isListening)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.mic, size: 16, color: AppColors.error500),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Đang nghe... Thả ra để dừng',
+                      style: TextStyle(
+                        color: AppColors.error500,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
             const SizedBox(height: 20),
 
             // Đính kèm bằng chứng

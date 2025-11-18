@@ -68,6 +68,7 @@ dependencies:
   workmanager: ^0.9.0+3
   # Timezone for scheduled notifications
   timezone: ^0.10.1
+  speech_to_text: ^7.3.0
 
 dev_dependencies:
   flutter_test:

@@ -149,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cấu hình Server',
+                  'Cài đặt thêm',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -201,7 +201,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           keyboardType: TextInputType.text,
-                          style: TextStyle(fontSize: 13),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.black,
+                          ),
                         ),
                       ),
                     ),
@@ -257,7 +260,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           keyboardType: TextInputType.number,
-                          style: TextStyle(fontSize: 13),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.black,
+                          ),
                         ),
                       ),
                     ),
