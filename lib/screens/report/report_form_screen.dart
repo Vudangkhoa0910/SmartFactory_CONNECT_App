@@ -67,7 +67,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
   // Speech to text function
   Future<void> _startListening() async {
-    // Request microphone permission
+    // Chỉ request microphone permission, speech_to_text sẽ tự xử lý speech permission
     final micStatus = await Permission.microphone.request();
     if (!micStatus.isGranted) {
       if (mounted) {
@@ -86,25 +86,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       return;
     }
 
-    // Request speech recognition permission (iOS)
-    final speechStatus = await Permission.speech.request();
-    if (!speechStatus.isGranted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Cần cấp quyền nhận dạng giọng nói để sử dụng'),
-            backgroundColor: AppColors.error500,
-            action: SnackBarAction(
-              label: 'Cài đặt',
-              textColor: AppColors.white,
-              onPressed: () => openAppSettings(),
-            ),
-          ),
-        );
-      }
-      return;
-    }
-
+    // Initialize speech_to_text - nó sẽ tự động request speech permission trên iOS
     bool available = await _speechToText.initialize(
       onStatus: (status) {
         if (status == 'done' && mounted) {
@@ -114,15 +96,48 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       onError: (error) {
         if (mounted) {
           setState(() => _isListening = false);
+          
+          String errorMessage = 'Lỗi nhận dạng giọng nói';
+          if (error.errorMsg.toLowerCase().contains('not_allowed') || 
+              error.errorMsg.toLowerCase().contains('permission')) {
+            errorMessage = 'Vui lòng cấp quyền Speech Recognition trong Settings > Privacy > Speech Recognition';
+          } else {
+            errorMessage = 'Lỗi: ${error.errorMsg}';
+          }
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Lỗi: ${error.errorMsg}'),
+              content: Text(errorMessage),
               backgroundColor: AppColors.error500,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: AppColors.white,
+                onPressed: () {},
+              ),
             ),
           );
         }
       },
     );
+
+    if (!available) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Không thể khởi tạo nhận dạng giọng nói. Vui lòng kiểm tra quyền trong Settings.'),
+            backgroundColor: AppColors.error500,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Mở Settings',
+              textColor: AppColors.white,
+              onPressed: () => openAppSettings(),
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     if (available) {
       // Save current text before listening
