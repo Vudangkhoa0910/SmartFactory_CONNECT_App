@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/idea_box_model.dart';
+import '../../widgets/text_field_with_mic.dart';
 
 /// Màn hình chi tiết góp ý
 /// Hiển thị timeline xử lý và cho phép vote mức độ hài lòng
@@ -825,20 +826,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             }),
           ),
           const SizedBox(height: 20),
-          TextField(
+          TextFieldWithMic(
             controller: _feedbackController,
+            hintText: 'Nhận xét của bạn (tùy chọn)',
             maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'Nhận xét của bạn (tùy chọn)',
-              hintStyle: TextStyle(color: AppColors.gray400),
-              filled: true,
-              fillColor: AppColors.gray50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.all(16),
-            ),
           ),
           const SizedBox(height: 16),
           SizedBox(
