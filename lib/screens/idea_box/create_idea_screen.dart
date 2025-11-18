@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../config/app_colors.dart';
 import '../../models/idea_box_model.dart';
+import '../../widgets/text_field_with_mic.dart';
+import '../../widgets/expanded_text_dialog.dart';
 
 /// Màn hình tạo góp ý mới
 /// Hỗ trợ cả Hòm thư trắng (công khai) và Hòm thư hồng (ẩn danh)
@@ -44,6 +46,22 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     _positionController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  void _openExpandedContentDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: ExpandedTextDialog(
+          controller: _contentController,
+          title: 'Ý kiến / Nội dung góp ý',
+          hintText: 'Nhập ý kiến hoặc nội dung góp ý của bạn...',
+        ),
+      ),
+    );
+    setState(() {});
   }
 
   @override
@@ -368,29 +386,9 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         const SizedBox(height: 12),
 
         // Họ và tên
-        TextFormField(
+        TextFieldWithMic(
           controller: _nameController,
-          decoration: InputDecoration(
-            labelText: isRequired ? 'Họ và tên *' : 'Họ và tên',
-            hintText: 'Nhập họ và tên của bạn',
-            hintStyle: TextStyle(color: AppColors.gray400),
-            filled: true,
-            fillColor: AppColors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.gray200),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.gray200),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.brand500, width: 2),
-            ),
-            contentPadding: const EdgeInsets.all(16),
-            prefixIcon: Icon(Icons.person_outline, color: AppColors.gray400),
-          ),
+          hintText: 'Nhập họ và tên của bạn',
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
               return 'Vui lòng nhập họ và tên';
@@ -401,29 +399,9 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         const SizedBox(height: 16),
 
         // Mã nhân viên
-        TextFormField(
+        TextFieldWithMic(
           controller: _employeeIdController,
-          decoration: InputDecoration(
-            labelText: isRequired ? 'Mã nhân viên *' : 'Mã nhân viên',
-            hintText: 'VD: NV001',
-            hintStyle: TextStyle(color: AppColors.gray400),
-            filled: true,
-            fillColor: AppColors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.gray200),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.gray200),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.brand500, width: 2),
-            ),
-            contentPadding: const EdgeInsets.all(16),
-            prefixIcon: Icon(Icons.badge_outlined, color: AppColors.gray400),
-          ),
+          hintText: 'VD: NV001',
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
               return 'Vui lòng nhập mã nhân viên';
@@ -434,29 +412,9 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         const SizedBox(height: 16),
 
         // Chức vụ
-        TextFormField(
+        TextFieldWithMic(
           controller: _positionController,
-          decoration: InputDecoration(
-            labelText: isRequired ? 'Chức vụ *' : 'Chức vụ',
-            hintText: 'VD: Công nhân sản xuất',
-            hintStyle: TextStyle(color: AppColors.gray400),
-            filled: true,
-            fillColor: AppColors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.gray200),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.gray200),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.brand500, width: 2),
-            ),
-            contentPadding: const EdgeInsets.all(16),
-            prefixIcon: Icon(Icons.work_outline, color: AppColors.gray400),
-          ),
+          hintText: 'VD: Công nhân sản xuất',
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
               return 'Vui lòng nhập chức vụ';
@@ -549,38 +507,56 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        TextFormField(
-          controller: _contentController,
-          maxLines: 8,
-          decoration: InputDecoration(
-            hintText: 'Nhập ý kiến hoặc nội dung góp ý của bạn...',
-            hintStyle: TextStyle(color: AppColors.gray400),
-            filled: true,
-            fillColor: AppColors.white,
-            border: OutlineInputBorder(
+        GestureDetector(
+          onTap: _openExpandedContentDialog,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.gray200),
+              border: Border.all(color: AppColors.gray200),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.gray200),
+            constraints: const BoxConstraints(minHeight: 120),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    _contentController.text.isEmpty
+                        ? 'Nhấn để nhập ý kiến hoặc nội dung góp ý...'
+                        : _contentController.text,
+                    style: TextStyle(
+                      color: _contentController.text.isEmpty
+                          ? AppColors.gray400
+                          : AppColors.black,
+                      fontSize: 14,
+                    ),
+                    maxLines: 5,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.edit_note,
+                  color: AppColors.brand500,
+                  size: 24,
+                ),
+              ],
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.brand500, width: 2),
-            ),
-            contentPadding: const EdgeInsets.all(16),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Vui lòng nhập nội dung góp ý';
-            }
-            if (value.length < 10) {
-              return 'Nội dung góp ý phải có ít nhất 10 ký tự';
-            }
-            return null;
-          },
         ),
+        if (_contentController.text.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Nội dung góp ý phải có ít nhất 10 ký tự',
+              style: TextStyle(
+                color: AppColors.gray500,
+                fontSize: 12,
+              ),
+            ),
+          ),
       ],
     );
   }
