@@ -67,13 +67,38 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
   // Speech to text function
   Future<void> _startListening() async {
-    final status = await Permission.microphone.request();
-    if (!status.isGranted) {
+    // Request microphone permission
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Cần cấp quyền microphone để sử dụng'),
             backgroundColor: AppColors.error500,
+            action: SnackBarAction(
+              label: 'Cài đặt',
+              textColor: AppColors.white,
+              onPressed: () => openAppSettings(),
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Request speech recognition permission (iOS)
+    final speechStatus = await Permission.speech.request();
+    if (!speechStatus.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Cần cấp quyền nhận dạng giọng nói để sử dụng'),
+            backgroundColor: AppColors.error500,
+            action: SnackBarAction(
+              label: 'Cài đặt',
+              textColor: AppColors.white,
+              onPressed: () => openAppSettings(),
+            ),
           ),
         );
       }
