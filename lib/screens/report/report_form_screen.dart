@@ -264,346 +264,357 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
         backgroundColor: AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.gray800),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Báo cáo sự cố / Yêu cầu hỗ trợ',
-          style: TextStyle(
-            color: AppColors.gray800,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+        appBar: AppBar(
+          backgroundColor: AppColors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: AppColors.gray800),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            'Báo cáo sự cố / Yêu cầu hỗ trợ',
+            style: TextStyle(
+              color: AppColors.gray800,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Tiêu đề sự cố
-            _buildSectionTitle('Tiêu đề sự cố', isRequired: true),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: 'Nhập tiêu đề sự cố',
-                hintStyle: TextStyle(color: AppColors.gray400),
-                filled: true,
-                fillColor: AppColors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.gray200),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.gray200),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng nhập tiêu đề sự cố';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-
-            // Vị trí / Thiết bị
-            _buildSectionTitle('Vị trí / Thiết bị', isRequired: true),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _locationController,
-              decoration: InputDecoration(
-                hintText: 'Nhập vị trí hoặc tên thiết bị',
-                hintStyle: TextStyle(color: AppColors.gray400),
-                filled: true,
-                fillColor: AppColors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.gray200),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.gray200),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng nhập vị trí hoặc thiết bị';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-
-            // Mức độ ưu tiên
-            _buildSectionTitle('Mức độ ưu tiên', isRequired: true),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _priorities.map((priority) {
-                final isSelected = _selectedPriority == priority;
-                return FilterChip(
-                  label: Text(priority),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedPriority = selected ? priority : null;
-                    });
-                  },
-                  backgroundColor: AppColors.white,
-                  selectedColor: AppColors.error500,
-                  showCheckmark: false,
-                  labelStyle: TextStyle(
-                    color: isSelected ? AppColors.white : AppColors.gray700,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Tiêu đề sự cố
+              _buildSectionTitle('Tiêu đề sự cố', isRequired: true),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Nhập tiêu đề sự cố',
+                  hintStyle: TextStyle(color: AppColors.gray400),
+                  filled: true,
+                  fillColor: AppColors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.gray200),
                   ),
-                  side: BorderSide(
-                    color: isSelected ? AppColors.error500 : AppColors.gray200,
-                    width: isSelected ? 2 : 1,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.gray200),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // Phân loại vấn đề
-            _buildSectionTitle('Phân loại vấn đề'),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _categories.map((category) {
-                final isSelected = _selectedCategories.contains(category);
-                return FilterChip(
-                  label: Text(category),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedCategories.add(category);
-                      } else {
-                        _selectedCategories.remove(category);
-                      }
-                    });
-                  },
-                  backgroundColor: AppColors.white,
-                  selectedColor: AppColors.error500,
-                  showCheckmark: false,
-                  labelStyle: TextStyle(
-                    color: isSelected ? AppColors.white : AppColors.gray700,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                  side: BorderSide(
-                    color: isSelected ? AppColors.error500 : AppColors.gray200,
-                    width: isSelected ? 2 : 1,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // Mô tả chi tiết
-            _buildSectionTitle('Mô tả chi tiết'),
-            const SizedBox(height: 8),
-            Stack(
-              children: [
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 5,
-                  style: TextStyle(color: AppColors.black),
-                  decoration: InputDecoration(
-                    hintText: 'Mô tả chi tiết về sự cố...',
-                    hintStyle: TextStyle(color: AppColors.gray400),
-                    filled: true,
-                    fillColor: AppColors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.gray200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.gray200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.brand500,
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.fromLTRB(
-                      12,
-                      12,
-                      50,
-                      12,
-                    ), // Right padding for mic button
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
                   ),
                 ),
-                // Mic button overlay
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onLongPressStart: (_) => _startListening(),
-                    onLongPressEnd: (_) => _stopListening(),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: _isListening
-                            ? AppColors.error500
-                            : AppColors.error500,
-                        shape: BoxShape.circle,
-                        boxShadow: _isListening
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.error500.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Icon(
-                        _isListening ? Icons.mic : Icons.mic_none,
-                        color: AppColors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (_isListening)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    Icon(Icons.mic, size: 16, color: AppColors.error500),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Đang nghe... Thả ra để dừng',
-                      style: TextStyle(
-                        color: AppColors.error500,
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 20),
-
-            // Đính kèm bằng chứng
-            _buildSectionTitle('Đính kèm bằng chứng'),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildAttachmentButton(
-                    icon: Icons.camera_alt,
-                    label: 'Chụp ảnh',
-                    onTap: _takePicture,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildAttachmentButton(
-                    icon: Icons.photo_library,
-                    label: 'Tải ảnh/Video',
-                    onTap: _pickMedia,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildAttachmentButton(
-              icon: _isRecording ? Icons.stop : Icons.mic,
-              label: _isRecording ? 'Dừng ghi âm' : 'Ghi âm',
-              onTap: _toggleRecording,
-              isRecording: _isRecording,
-            ),
-
-            // Display attached media
-            if (_images.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _buildMediaPreview('Ảnh đã chọn', _images, Icons.image),
-            ],
-            if (_videos.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _buildMediaPreview('Video đã chọn', _videos, Icons.videocam),
-            ],
-            if (_audioPath != null) ...[
-              const SizedBox(height: 16),
-              _buildAudioPreview(),
-            ],
-            const SizedBox(height: 32),
-
-            // Nút gửi báo cáo
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  if (_selectedPriority == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Vui lòng chọn mức độ ưu tiên'),
-                        backgroundColor: AppColors.error500,
-                      ),
-                    );
-                    return;
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập tiêu đề sự cố';
                   }
-                  // TODO: Submit form
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Đã gửi báo cáo thành công!'),
-                      backgroundColor: AppColors.success500,
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Vị trí / Thiết bị
+              _buildSectionTitle('Vị trí / Thiết bị', isRequired: true),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _locationController,
+                decoration: InputDecoration(
+                  hintText: 'Nhập vị trí hoặc tên thiết bị',
+                  hintStyle: TextStyle(color: AppColors.gray400),
+                  filled: true,
+                  fillColor: AppColors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.gray200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.gray200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập vị trí hoặc thiết bị';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Mức độ ưu tiên
+              _buildSectionTitle('Mức độ ưu tiên', isRequired: true),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _priorities.map((priority) {
+                  final isSelected = _selectedPriority == priority;
+                  return FilterChip(
+                    label: Text(priority),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedPriority = selected ? priority : null;
+                      });
+                    },
+                    backgroundColor: AppColors.white,
+                    selectedColor: AppColors.error500,
+                    showCheckmark: false,
+                    labelStyle: TextStyle(
+                      color: isSelected ? AppColors.white : AppColors.gray700,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                    side: BorderSide(
+                      color: isSelected
+                          ? AppColors.error500
+                          : AppColors.gray200,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
                   );
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand500,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
+                }).toList(),
               ),
-              child: Text(
-                'GỬI BÁO CÁO NGAY',
-                style: TextStyle(
-                  color: AppColors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(height: 20),
+
+              // Phân loại vấn đề
+              _buildSectionTitle('Phân loại vấn đề'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _categories.map((category) {
+                  final isSelected = _selectedCategories.contains(category);
+                  return FilterChip(
+                    label: Text(category),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedCategories.add(category);
+                        } else {
+                          _selectedCategories.remove(category);
+                        }
+                      });
+                    },
+                    backgroundColor: AppColors.white,
+                    selectedColor: AppColors.error500,
+                    showCheckmark: false,
+                    labelStyle: TextStyle(
+                      color: isSelected ? AppColors.white : AppColors.gray700,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                    side: BorderSide(
+                      color: isSelected
+                          ? AppColors.error500
+                          : AppColors.gray200,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+
+              // Mô tả chi tiết
+              _buildSectionTitle('Mô tả chi tiết'),
+              const SizedBox(height: 8),
+              Stack(
+                children: [
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 5,
+                    style: TextStyle(color: AppColors.black),
+                    decoration: InputDecoration(
+                      hintText: 'Mô tả chi tiết về sự cố...',
+                      hintStyle: TextStyle(color: AppColors.gray400),
+                      filled: true,
+                      fillColor: AppColors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.gray200),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.gray200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppColors.brand500,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.fromLTRB(
+                        12,
+                        12,
+                        50,
+                        12,
+                      ), // Right padding for mic button
+                    ),
+                  ),
+                  // Mic button overlay
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onLongPressStart: (_) => _startListening(),
+                      onLongPressEnd: (_) => _stopListening(),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: _isListening
+                              ? AppColors.error500
+                              : AppColors.error500,
+                          shape: BoxShape.circle,
+                          boxShadow: _isListening
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.error500.withOpacity(0.4),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Icon(
+                          _isListening ? Icons.mic : Icons.mic_none,
+                          color: AppColors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (_isListening)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.mic, size: 16, color: AppColors.error500),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Đang nghe... Thả ra để dừng',
+                        style: TextStyle(
+                          color: AppColors.error500,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 20),
+
+              // Đính kèm bằng chứng
+              _buildSectionTitle('Đính kèm bằng chứng'),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildAttachmentButton(
+                      icon: Icons.camera_alt,
+                      label: 'Chụp ảnh',
+                      onTap: _takePicture,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildAttachmentButton(
+                      icon: Icons.photo_library,
+                      label: 'Tải ảnh/Video',
+                      onTap: _pickMedia,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildAttachmentButton(
+                icon: _isRecording ? Icons.stop : Icons.mic,
+                label: _isRecording ? 'Dừng ghi âm' : 'Ghi âm',
+                onTap: _toggleRecording,
+                isRecording: _isRecording,
+              ),
+
+              // Display attached media
+              if (_images.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildMediaPreview('Ảnh đã chọn', _images, Icons.image),
+              ],
+              if (_videos.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildMediaPreview('Video đã chọn', _videos, Icons.videocam),
+              ],
+              if (_audioPath != null) ...[
+                const SizedBox(height: 16),
+                _buildAudioPreview(),
+              ],
+              const SizedBox(height: 32),
+
+              // Nút gửi báo cáo
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    if (_selectedPriority == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Vui lòng chọn mức độ ưu tiên'),
+                          backgroundColor: AppColors.error500,
+                        ),
+                      );
+                      return;
+                    }
+                    // TODO: Submit form
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Đã gửi báo cáo thành công!'),
+                        backgroundColor: AppColors.success500,
+                      ),
+                    );
+                    Navigator.pop(context);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand500,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'GỬI BÁO CÁO NGAY',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

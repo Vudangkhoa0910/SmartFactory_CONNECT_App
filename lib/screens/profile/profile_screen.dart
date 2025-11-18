@@ -159,6 +159,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
 
+                  const SizedBox(height: 20),
+
+                  // Additional menu section
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.gray200.withOpacity(0.5),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        ProfileMenuCard(
+                          icon: Icons.history,
+                          title: 'Lịch sử hoạt động',
+                          subtitle: 'Xem lại các hoạt động đã thực hiện',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tính năng đang phát triển'),
+                              ),
+                            );
+                          },
+                        ),
+
+                        ProfileMenuCard(
+                          icon: Icons.notifications_outlined,
+                          title: 'Thông báo',
+                          subtitle: 'Cài đặt thông báo',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tính năng đang phát triển'),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 30),
 
                   // Logout button

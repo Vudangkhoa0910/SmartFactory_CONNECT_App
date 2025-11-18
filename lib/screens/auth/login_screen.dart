@@ -64,209 +64,224 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: AppColors.appBackgroundGradient,
-            ),
-            child: SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Logo
-                        SvgPicture.asset(
-                          'assets/logo-denso.svg',
-                          width: 60,
-                          height: 60,
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // Title
-                        Text(
-                          'SmartFactory CONNECT',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.gray900,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: AppColors.appBackgroundGradient,
+              ),
+              child: SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Logo
+                          SvgPicture.asset(
+                            'assets/logo-denso.svg',
+                            width: 60,
+                            height: 60,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
 
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 32),
 
-                        Text(
-                          'Đăng nhập để tiếp tục',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.gray600,
+                          // Title
+                          Text(
+                            'SmartFactory CONNECT',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.gray900,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
 
-                        const SizedBox(height: 40),
+                          const SizedBox(height: 8),
 
-                        // Username field
-                        TextFormField(
-                          controller: _usernameController,
-                          style: TextStyle(color: AppColors.black),
-                          decoration: InputDecoration(
-                            labelText: 'Tên đăng nhập hoặc Email',
-                            hintText: 'Nhập tên đăng nhập hoặc email',
-                            labelStyle: TextStyle(color: AppColors.gray600),
-                            hintStyle: TextStyle(color: AppColors.gray400),
-                            prefixIcon: Icon(
-                              Icons.person_outline,
-                              color: AppColors.gray400,
+                          Text(
+                            'Đăng nhập để tiếp tục',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray600,
                             ),
-                            filled: true,
-                            fillColor: AppColors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.gray200),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.gray200),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.brand500,
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.error500),
-                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Vui lòng nhập tên đăng nhập hoặc email';
-                            }
-                            return null;
-                          },
-                        ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 40),
 
-                        // Password field
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: !_isPasswordVisible,
-                          style: TextStyle(color: AppColors.black),
-                          decoration: InputDecoration(
-                            labelText: 'Mật khẩu',
-                            hintText: 'Nhập mật khẩu',
-                            labelStyle: TextStyle(color: AppColors.gray600),
-                            hintStyle: TextStyle(color: AppColors.gray400),
-                            prefixIcon: Icon(
-                              Icons.lock_outline,
-                              color: AppColors.gray400,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
+                          // Username field
+                          TextFormField(
+                            controller: _usernameController,
+                            style: TextStyle(color: AppColors.black),
+                            decoration: InputDecoration(
+                              labelText: 'Tên đăng nhập hoặc Email',
+                              hintText: 'Nhập tên đăng nhập hoặc email',
+                              labelStyle: TextStyle(color: AppColors.gray600),
+                              hintStyle: TextStyle(color: AppColors.gray400),
+                              prefixIcon: Icon(
+                                Icons.person_outline,
                                 color: AppColors.gray400,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
-                            ),
-                            filled: true,
-                            fillColor: AppColors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.gray200),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.gray200),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.brand500,
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.error500),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Vui lòng nhập mật khẩu';
-                            }
-                            if (value.length < 6) {
-                              return 'Mật khẩu phải có ít nhất 6 ký tự';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Login button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.brand500,
-                              disabledBackgroundColor: AppColors.gray300,
-                              shape: RoundedRectangleBorder(
+                              filled: true,
+                              fillColor: AppColors.white,
+                              border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.gray200,
+                                ),
                               ),
-                              elevation: 2,
-                              padding: EdgeInsets.zero, // Remove padding
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.gray200,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.brand500,
+                                  width: 2,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.error500,
+                                ),
+                              ),
                             ),
-                            child: Text(
-                              'Đăng nhập',
-                              style: TextStyle(
-                                color: AppColors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Vui lòng nhập tên đăng nhập hoặc email';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Password field
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: !_isPasswordVisible,
+                            style: TextStyle(color: AppColors.black),
+                            decoration: InputDecoration(
+                              labelText: 'Mật khẩu',
+                              hintText: 'Nhập mật khẩu',
+                              labelStyle: TextStyle(color: AppColors.gray600),
+                              hintStyle: TextStyle(color: AppColors.gray400),
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                color: AppColors.gray400,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordVisible
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: AppColors.gray400,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isPasswordVisible = !_isPasswordVisible;
+                                  });
+                                },
+                              ),
+                              filled: true,
+                              fillColor: AppColors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.gray200,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.gray200,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.brand500,
+                                  width: 2,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.error500,
+                                ),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Vui lòng nhập mật khẩu';
+                              }
+                              if (value.length < 6) {
+                                return 'Mật khẩu phải có ít nhất 6 ký tự';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Login button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.brand500,
+                                disabledBackgroundColor: AppColors.gray300,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                                padding: EdgeInsets.zero, // Remove padding
+                              ),
+                              child: Text(
+                                'Đăng nhập',
+                                style: TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 40),
+                          const SizedBox(height: 40),
 
-                        // App version
-                        Text(
-                          'SmartFactory CONNECT v1.0.0',
-                          style: TextStyle(
-                            color: AppColors.gray400,
-                            fontSize: 12,
+                          // App version
+                          Text(
+                            'SmartFactory CONNECT v1.0.0',
+                            style: TextStyle(
+                              color: AppColors.gray400,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // Loading overlay
-          LoadingOverlay(isLoading: _isLoading),
-        ],
+            // Loading overlay
+            LoadingOverlay(isLoading: _isLoading),
+          ],
+        ),
       ),
     );
   }
