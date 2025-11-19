@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/idea_box_model.dart';
+import '../../services/idea_service.dart';
 import 'create_idea_screen.dart';
 import 'idea_detail_screen.dart';
 
@@ -17,113 +18,66 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   Set<String> _selectedFilters = {};
+  final IdeaService _ideaService = IdeaService();
+  
+  List<IdeaBoxItem> _whiteBoxIdeas = [];
+  List<IdeaBoxItem> _pinkBoxIdeas = [];
+  bool _isLoadingWhite = true;
+  bool _isLoadingPink = true;
+  String? _errorWhite;
+  String? _errorPink;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _fetchIdeas(IdeaBoxType.white);
+    _fetchIdeas(IdeaBoxType.pink);
+  }
+
+  Future<void> _fetchIdeas(IdeaBoxType type) async {
+    setState(() {
+      if (type == IdeaBoxType.white) {
+        _isLoadingWhite = true;
+        _errorWhite = null;
+      } else {
+        _isLoadingPink = true;
+        _errorPink = null;
+      }
+    });
+
+    try {
+      final ideas = await _ideaService.getIdeas(type: type);
+      if (mounted) {
+        setState(() {
+          if (type == IdeaBoxType.white) {
+            _whiteBoxIdeas = ideas;
+            _isLoadingWhite = false;
+          } else {
+            _pinkBoxIdeas = ideas;
+            _isLoadingPink = false;
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          if (type == IdeaBoxType.white) {
+            _errorWhite = e.toString();
+            _isLoadingWhite = false;
+          } else {
+            _errorPink = e.toString();
+            _isLoadingPink = false;
+          }
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  // Mock data - Trong thực tế sẽ lấy từ API
-  List<IdeaBoxItem> _getMockData(IdeaBoxType type) {
-    // Hòm trắng: Hiển thị TẤT CẢ góp ý công khai (ai cũng xem được)
-    // Hòm hồng: Chỉ hiển thị góp ý ẩn danh của NGƯỜI DÙNG HIỆN TẠI
-
-    if (type == IdeaBoxType.white) {
-      // Hòm trắng - Tất cả góp ý công khai
-      return [
-        IdeaBoxItem(
-          id: '1',
-          boxType: IdeaBoxType.white,
-          issueType: IssueType.quality,
-          title: 'Cải tiến quy trình kiểm tra chất lượng',
-          content: 'Đề xuất sử dụng máy quét tự động để tăng độ chính xác...',
-          attachments: [],
-          createdAt: DateTime.now().subtract(const Duration(days: 2)),
-          status: IdeaStatus.underReview,
-          difficultyLevel: DifficultyLevel.medium,
-          senderName: 'Nguyễn Văn A',
-          senderEmployeeId: 'NV001',
-          senderDepartment: 'Sản xuất 1',
-          processLogs: [],
-          currentHandlerName: 'Nguyễn Thị B',
-          currentHandlerRole: 'Supervisor',
-        ),
-        IdeaBoxItem(
-          id: '2',
-          boxType: IdeaBoxType.white,
-          issueType: IssueType.safety,
-          title: 'Tăng cường biện pháp an toàn tại khu vực A',
-          content: 'Cần lắp đặt thêm biển báo và rào chắn...',
-          attachments: [],
-          createdAt: DateTime.now().subtract(const Duration(days: 5)),
-          status: IdeaStatus.approved,
-          difficultyLevel: DifficultyLevel.easy,
-          senderName: 'Trần Văn C',
-          senderEmployeeId: 'NV002',
-          senderDepartment: 'An toàn',
-          processLogs: [],
-          currentHandlerName: 'Lê Văn D',
-          currentHandlerRole: 'Manager',
-        ),
-        IdeaBoxItem(
-          id: '3',
-          boxType: IdeaBoxType.white,
-          issueType: IssueType.process,
-          title: 'Cải thiện quy trình vận chuyển nguyên liệu',
-          content: 'Đề xuất sử dụng xe nâng tự động để tăng hiệu suất...',
-          attachments: [],
-          createdAt: DateTime.now().subtract(const Duration(days: 7)),
-          status: IdeaStatus.completed,
-          difficultyLevel: DifficultyLevel.hard,
-          senderName: 'Lê Thị E',
-          senderEmployeeId: 'NV003',
-          senderDepartment: 'Kho vận',
-          processLogs: [],
-        ),
-      ];
-    } else {
-      // Hòm hồng - Chỉ góp ý ẩn danh của người dùng hiện tại
-      // TODO: Trong thực tế sẽ filter theo userId từ API
-      return [
-        IdeaBoxItem(
-          id: '101',
-          boxType: IdeaBoxType.pink,
-          issueType: IssueType.welfare,
-          title: 'Góp ý về chế độ phúc lợi',
-          content: 'Đề xuất tăng thêm ngày nghỉ phép hàng năm...',
-          attachments: [],
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-          status: IdeaStatus.underReview,
-          senderName: null, // Ẩn danh
-          senderEmployeeId: null,
-          senderDepartment: null,
-          processLogs: [],
-          currentHandlerName: 'Admin HR',
-          currentHandlerRole: 'Admin',
-        ),
-        IdeaBoxItem(
-          id: '102',
-          boxType: IdeaBoxType.pink,
-          issueType: IssueType.workEnvironment,
-          title: 'Cải thiện điều kiện làm việc',
-          content: 'Cần lắp đặt thêm quạt làm mát tại khu vực sản xuất...',
-          attachments: [],
-          createdAt: DateTime.now().subtract(const Duration(days: 10)),
-          status: IdeaStatus.completed,
-          senderName: null, // Ẩn danh
-          senderEmployeeId: null,
-          senderDepartment: null,
-          processLogs: [],
-        ),
-      ];
-    }
   }
 
   @override
@@ -481,7 +435,29 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   }
 
   Widget _buildIdeaList(IdeaBoxType type) {
-    final ideas = _getMockData(type);
+    final isLoading = type == IdeaBoxType.white ? _isLoadingWhite : _isLoadingPink;
+    final error = type == IdeaBoxType.white ? _errorWhite : _errorPink;
+    final ideas = type == IdeaBoxType.white ? _whiteBoxIdeas : _pinkBoxIdeas;
+
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Lỗi: $error', style: TextStyle(color: AppColors.error500)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _fetchIdeas(type),
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      );
+    }
 
     // Áp dụng bộ lọc
     final filteredIdeas = _selectedFilters.isEmpty
@@ -520,17 +496,20 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
       return _buildEmptyState(type);
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        0, // Top padding removed - spacing handled by SizedBox after TabBar
-        20,
-        120,
-      ), // Bottom padding để tránh bottom nav
-      itemCount: filteredIdeas.length,
-      itemBuilder: (context, index) {
-        return _buildIdeaCard(filteredIdeas[index]);
-      },
+    return RefreshIndicator(
+      onRefresh: () => _fetchIdeas(type),
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(
+          20,
+          0, // Top padding removed - spacing handled by SizedBox after TabBar
+          20,
+          120,
+        ), // Bottom padding để tránh bottom nav
+        itemCount: filteredIdeas.length,
+        itemBuilder: (context, index) {
+          return _buildIdeaCard(filteredIdeas[index]);
+        },
+      ),
     );
   }
 
@@ -804,8 +783,8 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
     return Padding(
       padding: const EdgeInsets.only(bottom: 80), // Đẩy lên khỏi bottom nav
       child: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => CreateIdeaScreen(
@@ -815,6 +794,11 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
               ),
             ),
           );
+
+          if (result == true) {
+            _fetchIdeas(IdeaBoxType.white);
+            _fetchIdeas(IdeaBoxType.pink);
+          }
         },
         backgroundColor: AppColors.brand500,
         elevation: 4,

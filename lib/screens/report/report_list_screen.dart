@@ -3,6 +3,7 @@ import '../../config/app_colors.dart';
 import 'report_form_screen.dart';
 import 'report_detail_view_screen.dart';
 import '../../models/report_model.dart';
+import '../../services/incident_service.dart';
 
 class ReportListScreen extends StatefulWidget {
   const ReportListScreen({super.key});
@@ -15,43 +16,32 @@ class _ReportListScreenState extends State<ReportListScreen> {
   Set<String> _selectedFilters = {};
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  List<ReportModel> _reports = [];
+  bool _isLoading = true;
 
-  // Sample data
-  List<ReportModel> get _reports => [
-    ReportModel(
-      id: 'SC-1024',
-      title: 'Máy dập Line 3 bị kẹt',
-      location: 'Line 3 - Khu vực sản xuất',
-      priority: ReportPriority.high,
-      category: ReportCategory.technical,
-      status: ReportStatus.processing,
-      department: 'Bộ phận bảo trì',
-      createdDate: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    ReportModel(
-      id: 'SC-1021',
-      title: 'Rò rỉ khí nén',
-      location: 'Line 5 - Máy hàn tự động',
-      priority: ReportPriority.urgent,
-      category: ReportCategory.safety,
-      status: ReportStatus.completed,
-      department: 'Bộ phận kỹ thuật',
-      createdDate: DateTime.now().subtract(const Duration(days: 5)),
-      completedDate: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    ReportModel(
-      id: 'SC-1015',
-      title: 'Hỏng cảm biến nhiệt',
-      location: 'Line 2 - Máy sơn',
-      priority: ReportPriority.medium,
-      category: ReportCategory.technical,
-      status: ReportStatus.closed,
-      department: 'Bộ phận điện tử',
-      createdDate: DateTime.now().subtract(const Duration(days: 10)),
-      completedDate: DateTime.now().subtract(const Duration(days: 7)),
-      rating: 4.5,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchReports();
+  }
+
+  Future<void> _fetchReports() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final data = await IncidentService.getIncidents();
+      setState(() {
+        _reports = data.map((json) => ReportModel.fromJson(json)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching reports: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   List<ReportModel> get _filteredReports {
     var reports = _reports;
@@ -135,8 +125,8 @@ class _ReportListScreenState extends State<ReportListScreen> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80),
         child: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            await Navigator.push(
               context,
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) =>
@@ -185,6 +175,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
                 transitionDuration: const Duration(milliseconds: 500),
               ),
             );
+            _fetchReports();
           },
           backgroundColor: AppColors.brand500,
           elevation: 4,
@@ -686,56 +677,66 @@ class _ReportListScreenState extends State<ReportListScreen> {
 
                 // Main content - Report history list
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _filteredReports.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.assignment_outlined,
-                                  size: 64,
-                                  color: AppColors.gray300,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchQuery.isNotEmpty ||
-                                          _selectedFilters.isNotEmpty
-                                      ? 'Không tìm thấy kết quả phù hợp.'
-                                      : 'Chưa có báo cáo sự cố nào.',
-                                  style: TextStyle(
-                                    color: AppColors.gray500,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 80),
-                            itemCount: _filteredReports.length,
-                            itemBuilder: (context, index) {
-                              final report = _filteredReports[index];
-                              return _ReportCard(
-                                report: report,
-                                statusColor: _getStatusColor(report.status),
-                                priorityColor: _getPriorityColor(
-                                  report.priority,
-                                ),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          ReportDetailScreen(report: report),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                  child: _isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.brand500,
                           ),
-                  ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _filteredReports.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.assignment_outlined,
+                                        size: 64,
+                                        color: AppColors.gray300,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        _searchQuery.isNotEmpty ||
+                                                _selectedFilters.isNotEmpty
+                                            ? 'Không tìm thấy kết quả phù hợp.'
+                                            : 'Chưa có báo cáo sự cố nào.',
+                                        style: TextStyle(
+                                          color: AppColors.gray500,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.only(bottom: 80),
+                                  itemCount: _filteredReports.length,
+                                  itemBuilder: (context, index) {
+                                    final report = _filteredReports[index];
+                                    return _ReportCard(
+                                      report: report,
+                                      statusColor: _getStatusColor(
+                                        report.status,
+                                      ),
+                                      priorityColor: _getPriorityColor(
+                                        report.priority,
+                                      ),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ReportDetailScreen(
+                                                  report: report,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                        ),
                 ),
               ],
             ),
@@ -784,77 +785,87 @@ class _ReportCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header row with ID and priority
+                // Header row with Title, Priority and Status
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.gray100,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                    Expanded(
                       child: Text(
-                        report.id,
+                        report.title,
                         style: TextStyle(
-                          color: AppColors.gray700,
-                          fontSize: 12,
+                          color: AppColors.gray800,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: priorityColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        report.priorityLabel,
-                        style: TextStyle(
-                          color: priorityColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: priorityColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            report.priorityLabel,
+                            style: TextStyle(
+                              color: priorityColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        report.statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            report.statusLabel,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
-                // Title
-                Text(
-                  report.title,
-                  style: TextStyle(
-                    color: AppColors.gray800,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                // Reporter Name
+                Row(
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      size: 16,
+                      color: AppColors.gray500,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      report.reporterName ?? 'N/A',
+                      style: TextStyle(
+                        color: AppColors.gray700,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
 

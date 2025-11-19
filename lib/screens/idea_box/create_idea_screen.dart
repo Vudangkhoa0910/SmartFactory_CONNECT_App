@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../config/app_colors.dart';
 import '../../models/idea_box_model.dart';
+import '../../services/idea_service.dart';
 import '../../widgets/text_field_with_mic.dart';
 import '../../widgets/expanded_text_dialog.dart';
 
@@ -23,11 +24,14 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   final _employeeIdController = TextEditingController();
   final _positionController = TextEditingController();
   final _contentController = TextEditingController();
+  final _expectedBenefitController = TextEditingController();
+  final IdeaService _ideaService = IdeaService();
 
   late IdeaBoxType _selectedBoxType;
   IssueType? _selectedIssueType;
   DifficultyLevel? _selectedDifficulty;
   bool _isAnonymous = false;
+  bool _isSubmitting = false;
   List<File> _attachments = [];
   final ImagePicker _picker = ImagePicker();
   DateTime _selectedDate = DateTime.now();
@@ -45,6 +49,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     _employeeIdController.dispose();
     _positionController.dispose();
     _contentController.dispose();
+    _expectedBenefitController.dispose();
     super.dispose();
   }
 
@@ -70,50 +75,65 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
       body: Container(
         decoration: BoxDecoration(gradient: AppColors.appBackgroundGradient),
         child: SafeArea(
-          child: Column(
+          child: Stack(
             children: [
-              _buildHeader(),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildBoxTypeSelector(),
-                        const SizedBox(height: 24),
-                        _buildIssueTypeSelector(),
-                        const SizedBox(height: 24),
+              Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildBoxTypeSelector(),
+                            const SizedBox(height: 24),
+                            _buildIssueTypeSelector(),
+                            const SizedBox(height: 24),
 
-                        // Thông tin cá nhân
-                        _buildPersonalInfoSection(),
-                        const SizedBox(height: 24),
+                            // Thông tin cá nhân
+                            _buildPersonalInfoSection(),
+                            const SizedBox(height: 24),
 
-                        // Ngày gửi
-                        _buildDateField(),
-                        const SizedBox(height: 20),
+                            // Ngày gửi
+                            _buildDateField(),
+                            const SizedBox(height: 20),
 
-                        // Nội dung góp ý
-                        _buildContentField(),
-                        const SizedBox(height: 20),
+                            // Nội dung góp ý
+                            _buildContentField(),
+                            const SizedBox(height: 20),
 
-                        if (_selectedBoxType == IdeaBoxType.white) ...[
-                          _buildDifficultySelector(),
-                          const SizedBox(height: 20),
-                        ],
-                        _buildAttachmentSection(),
-                        const SizedBox(height: 24),
-                        if (_selectedBoxType == IdeaBoxType.pink)
-                          _buildAnonymousNote(),
-                        const SizedBox(height: 32),
-                        _buildSubmitButton(),
-                        const SizedBox(height: 20),
-                      ],
+                            // Lợi ích dự kiến
+                            _buildExpectedBenefitField(),
+                            const SizedBox(height: 20),
+
+                            if (_selectedBoxType == IdeaBoxType.white) ...[
+                              _buildDifficultySelector(),
+                              const SizedBox(height: 20),
+                            ],
+                            _buildAttachmentSection(),
+                            const SizedBox(height: 24),
+                            if (_selectedBoxType == IdeaBoxType.pink)
+                              _buildAnonymousNote(),
+                            const SizedBox(height: 32),
+                            _buildSubmitButton(),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
+              if (_isSubmitting)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
             ],
           ),
         ),
@@ -561,6 +581,28 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     );
   }
 
+  Widget _buildExpectedBenefitField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Lợi ích dự kiến (tùy chọn)',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.gray900,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextFieldWithMic(
+          controller: _expectedBenefitController,
+          hintText: 'Mô tả lợi ích dự kiến nếu ý tưởng được áp dụng...',
+          maxLines: 3,
+        ),
+      ],
+    );
+  }
+
   Widget _buildDifficultySelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -852,7 +894,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     }
   }
 
-  void _submitIdea() {
+  Future<void> _submitIdea() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedIssueType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -864,25 +906,62 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         return;
       }
 
-      // TODO: Gọi API để lưu góp ý
+      setState(() {
+        _isSubmitting = true;
+      });
 
-      final successMessage = _selectedBoxType == IdeaBoxType.white
-          ? 'Đã ghi nhận ý kiến của bạn'
-          : 'Góp ý của bạn đã được gửi ẩn danh';
+      try {
+        await _ideaService.createIdea(
+          type: _selectedBoxType,
+          issueType: _selectedIssueType!,
+          title: _contentController.text.split('\n').first, // Use first line as title
+          content: _contentController.text,
+          expectedBenefit: _expectedBenefitController.text.isNotEmpty 
+              ? _expectedBenefitController.text 
+              : null,
+          attachments: _attachments,
+          // Note: Backend doesn't seem to support difficulty level directly in create?
+          // It calculates feasibility_score later.
+          // We can pass it in description or if backend supports it.
+          // For now, we just send basic info.
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(successMessage),
-          backgroundColor: AppColors.success500,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+        if (mounted) {
+          final successMessage = _selectedBoxType == IdeaBoxType.white
+              ? 'Đã ghi nhận ý kiến của bạn'
+              : 'Góp ý của bạn đã được gửi ẩn danh';
 
-      Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(successMessage),
+              backgroundColor: AppColors.success500,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+
+          Navigator.pop(context, true); // Return true to refresh list
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi: $e'),
+              backgroundColor: AppColors.error500,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
+      }
     }
   }
 }

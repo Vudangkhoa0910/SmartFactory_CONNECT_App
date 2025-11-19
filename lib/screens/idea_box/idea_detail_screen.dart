@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/idea_box_model.dart';
+import '../../services/idea_service.dart';
 import '../../widgets/text_field_with_mic.dart';
 
 /// Màn hình chi tiết góp ý
@@ -20,6 +21,35 @@ class IdeaDetailScreen extends StatefulWidget {
 class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   int _selectedRating = 0;
   final _feedbackController = TextEditingController();
+  final IdeaService _ideaService = IdeaService();
+  late IdeaBoxItem _idea;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _idea = widget.idea;
+    _fetchDetail();
+  }
+
+  Future<void> _fetchDetail() async {
+    try {
+      final updatedIdea = await _ideaService.getIdeaDetail(_idea.id);
+      if (mounted) {
+        setState(() {
+          _idea = updatedIdea;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching idea detail: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -39,27 +69,30 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             children: [
               _buildHeader(),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildStatusCard(),
-                      const SizedBox(height: 20),
-                      _buildIdeaDetails(),
-                      const SizedBox(height: 20),
-                      if (widget.idea.attachments.isNotEmpty) ...[
-                        _buildAttachments(),
+                child: RefreshIndicator(
+                  onRefresh: _fetchDetail,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStatusCard(),
                         const SizedBox(height: 20),
+                        _buildIdeaDetails(),
+                        const SizedBox(height: 20),
+                        if (_idea.attachments.isNotEmpty) ...[
+                          _buildAttachments(),
+                          const SizedBox(height: 20),
+                        ],
+                        _buildSenderInfo(),
+                        const SizedBox(height: 20),
+                        _buildProcessTimeline(),
+                        const SizedBox(height: 20),
+                        if (_idea.status == IdeaStatus.completed &&
+                            _idea.satisfactionRating == null)
+                          _buildSatisfactionRating(),
                       ],
-                      _buildSenderInfo(),
-                      const SizedBox(height: 20),
-                      _buildProcessTimeline(),
-                      const SizedBox(height: 20),
-                      if (widget.idea.status == IdeaStatus.completed &&
-                          widget.idea.satisfactionRating == null)
-                        _buildSatisfactionRating(),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -88,22 +121,22 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                 Row(
                   children: [
                     Icon(
-                      widget.idea.boxType == IdeaBoxType.white
+                      _idea.boxType == IdeaBoxType.white
                           ? Icons.inbox_outlined
                           : Icons.favorite_border,
                       size: 16,
-                      color: widget.idea.boxType == IdeaBoxType.white
+                      color: _idea.boxType == IdeaBoxType.white
                           ? AppColors.brand500
                           : AppColors.themePink500,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      widget.idea.boxType == IdeaBoxType.white
+                      _idea.boxType == IdeaBoxType.white
                           ? 'Hòm trắng'
                           : 'Hòm hồng',
                       style: TextStyle(
                         fontSize: 14,
-                        color: widget.idea.boxType == IdeaBoxType.white
+                        color: _idea.boxType == IdeaBoxType.white
                             ? AppColors.brand600
                             : AppColors.themePink500,
                         fontWeight: FontWeight.w600,
@@ -123,13 +156,20 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {
-              // TODO: Share functionality
-            },
-            icon: const Icon(Icons.share_outlined),
-            color: AppColors.gray600,
-          ),
+          if (_isLoading)
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            IconButton(
+              onPressed: () {
+                // TODO: Share functionality
+              },
+              icon: const Icon(Icons.share_outlined),
+              color: AppColors.gray600,
+            ),
         ],
       ),
     );
@@ -168,7 +208,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  widget.idea.issueType.label,
+                  _idea.issueType.label,
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -184,7 +224,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  widget.idea.status.label,
+                  _idea.status.label,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -196,7 +236,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            widget.idea.title,
+            _idea.title,
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -214,13 +254,13 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                _formatDate(widget.idea.createdAt),
+                _formatDate(_idea.createdAt),
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.white,
                 ),
               ),
-              if (widget.idea.difficultyLevel != null) ...[
+              if (_idea.difficultyLevel != null) ...[
                 const SizedBox(width: 16),
                 const Icon(
                   Icons.speed,
@@ -229,7 +269,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  widget.idea.difficultyLevel!.label,
+                  _idea.difficultyLevel!.label,
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.white,
@@ -280,13 +320,43 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            widget.idea.content,
+            _idea.content,
             style: TextStyle(
               fontSize: 15,
               color: AppColors.gray700,
               height: 1.6,
             ),
           ),
+          if (_idea.expectedBenefit != null && _idea.expectedBenefit!.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Icon(
+                  Icons.trending_up,
+                  size: 20,
+                  color: AppColors.brand500,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Lợi ích dự kiến',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _idea.expectedBenefit!,
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.gray700,
+                height: 1.6,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -319,7 +389,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           height: 120,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: widget.idea.attachments.length,
+            itemCount: _idea.attachments.length,
             itemBuilder: (context, index) {
               return Container(
                 width: 120,
@@ -341,7 +411,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                     fit: StackFit.expand,
                     children: [
                       Image.network(
-                        widget.idea.attachments[index],
+                        _idea.attachments[index],
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
@@ -410,11 +480,11 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           Row(
             children: [
               Icon(
-                widget.idea.senderName != null
+                _idea.senderName != null
                     ? Icons.person_outline
                     : Icons.privacy_tip_outlined,
                 size: 20,
-                color: widget.idea.senderName != null
+                color: _idea.senderName != null
                     ? AppColors.brand500
                     : AppColors.themePink500,
               ),
@@ -430,14 +500,14 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          if (widget.idea.senderName != null) ...[
+          if (_idea.senderName != null) ...[
             Row(
               children: [
                 CircleAvatar(
                   radius: 28,
                   backgroundColor: AppColors.brand100,
                   child: Text(
-                    widget.idea.senderName![0],
+                    _idea.senderName![0],
                     style: const TextStyle(
                       fontSize: 20,
                       color: AppColors.brand600,
@@ -451,7 +521,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.idea.senderName!,
+                        _idea.senderName!,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -460,14 +530,14 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Mã NV: ${widget.idea.senderEmployeeId}',
+                        'Mã NV: ${_idea.senderEmployeeId}',
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.gray600,
                         ),
                       ),
                       Text(
-                        widget.idea.senderDepartment ?? '',
+                        _idea.senderDepartment ?? '',
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.gray500,
@@ -506,7 +576,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               ),
             ),
           ],
-          if (widget.idea.currentHandlerName != null) ...[
+          if (_idea.currentHandlerName != null) ...[
             const SizedBox(height: 16),
             Divider(color: AppColors.gray100),
             const SizedBox(height: 16),
@@ -538,7 +608,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    widget.idea.currentHandlerRole ?? '',
+                    _idea.currentHandlerRole ?? '',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -548,7 +618,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  widget.idea.currentHandlerName ?? '',
+                  _idea.currentHandlerName ?? '',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
@@ -599,7 +669,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          if (widget.idea.processLogs.isEmpty) ...[
+          if (_idea.processLogs.isEmpty) ...[
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -626,10 +696,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: widget.idea.processLogs.length,
+              itemCount: _idea.processLogs.length,
               itemBuilder: (context, index) {
-                final log = widget.idea.processLogs[index];
-                final isLast = index == widget.idea.processLogs.length - 1;
+                final log = _idea.processLogs[index];
+                final isLast = index == _idea.processLogs.length - 1;
                 return _buildTimelineItem(log, isLast);
               },
             ),

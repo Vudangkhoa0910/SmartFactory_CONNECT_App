@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class NewsModel {
   final String id;
   final String title;
@@ -6,6 +8,8 @@ class NewsModel {
   final String imageUrl;
   final String date;
   final String author;
+  final String category;
+  final bool isPriority;
 
   NewsModel({
     required this.id,
@@ -15,7 +19,53 @@ class NewsModel {
     required this.imageUrl,
     required this.date,
     this.author = 'DENSO',
+    this.category = 'company_announcement',
+    this.isPriority = false,
   });
+
+  factory NewsModel.fromJson(Map<String, dynamic> json) {
+    // Format date
+    String formattedDate = '';
+    if (json['created_at'] != null) {
+      try {
+        final DateTime dt = DateTime.parse(json['created_at']);
+        formattedDate = DateFormat('dd Tháng MM, yyyy').format(dt);
+      } catch (e) {
+        formattedDate = json['created_at'].toString();
+      }
+    }
+
+    // Extract image from attachments if available
+    String imgUrl = '';
+    if (json['attachments'] != null) {
+      final List attachments = json['attachments'];
+      if (attachments.isNotEmpty) {
+        // Check for image mime type
+        final imageAttachment = attachments.firstWhere(
+          (att) => att['mime_type'].toString().startsWith('image/'),
+          orElse: () => null,
+        );
+        if (imageAttachment != null) {
+          // Construct full URL if needed, or just path
+          // For now, we might need to handle this in UI or Service to prepend base URL
+          // Assuming the path is relative like 'uploads/news/...'
+          imgUrl = imageAttachment['path'] ?? '';
+        }
+      }
+    }
+
+    return NewsModel(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['excerpt'] ?? '',
+      content: json['content'] ?? '',
+      imageUrl: imgUrl,
+      date: formattedDate,
+      author: json['author_name'] ?? 'DENSO',
+      category: json['category'] ?? 'company_announcement',
+      isPriority: json['is_priority'] ?? false,
+    );
+  }
 
   // Sample data for testing
   static List<NewsModel> getSampleNews() {
@@ -51,6 +101,8 @@ Mọi nhân viên đều được khuyến khích tham gia đầy đủ để đ
         imageUrl: '',
         date: '15 Tháng 11, 2025',
         author: 'Phòng Nhân sự',
+        category: 'safety_alert',
+        isPriority: true,
       ),
       NewsModel(
         id: '2',
@@ -82,6 +134,8 @@ Toàn bộ nhân viên sẽ được đào tạo về cách sử dụng hệ th�
         imageUrl: '',
         date: '12 Tháng 11, 2025',
         author: 'Phòng IT',
+        category: 'production_update',
+        isPriority: false,
       ),
       NewsModel(
         id: '3',
@@ -111,6 +165,8 @@ Chúc toàn thể cán bộ nhân viên một kỳ nghỉ Tết vui vẻ, an là
         imageUrl: '',
         date: '10 Tháng 11, 2025',
         author: 'Ban Giám đốc',
+        category: 'company_announcement',
+        isPriority: true,
       ),
     ];
   }

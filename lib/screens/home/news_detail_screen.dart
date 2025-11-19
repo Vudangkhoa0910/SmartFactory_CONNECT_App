@@ -2,11 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../config/app_colors.dart';
 import '../../models/news_model.dart';
+import '../../services/news_service.dart';
 
-class NewsDetailScreen extends StatelessWidget {
+class NewsDetailScreen extends StatefulWidget {
   final NewsModel news;
 
   const NewsDetailScreen({super.key, required this.news});
+
+  @override
+  State<NewsDetailScreen> createState() => _NewsDetailScreenState();
+}
+
+class _NewsDetailScreenState extends State<NewsDetailScreen> {
+  late NewsModel _news;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _news = widget.news;
+    _fetchNewsDetail();
+  }
+
+  Future<void> _fetchNewsDetail() async {
+    try {
+      final newsData = await NewsService.getNewsById(_news.id);
+      if (newsData != null && mounted) {
+        setState(() {
+          _news = NewsModel.fromJson(newsData);
+          _isLoading = false;
+        });
+      } else {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    } catch (e) {
+      print('Error fetching news detail: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +72,7 @@ class NewsDetailScreen extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   // Hero Image
-                  news.imageUrl.isEmpty
+                  _news.imageUrl.isEmpty
                       ? Container(
                           color: AppColors.white,
                           padding: const EdgeInsets.all(60),
@@ -45,7 +82,7 @@ class NewsDetailScreen extends StatelessWidget {
                           ),
                         )
                       : Image.network(
-                          news.imageUrl,
+                          _news.imageUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
@@ -85,7 +122,7 @@ class NewsDetailScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            news.title,
+                            _news.title,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 24,
@@ -102,7 +139,7 @@ class NewsDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                news.date,
+                                _news.date,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 14,
@@ -116,7 +153,7 @@ class NewsDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                news.author,
+                                _news.author,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 14,
@@ -158,7 +195,7 @@ class NewsDetailScreen extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            news.description,
+                            _news.description,
                             style: TextStyle(
                               fontSize: 15,
                               color: AppColors.gray700,
@@ -173,14 +210,17 @@ class NewsDetailScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Content
-                  Text(
-                    news.content,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.gray800,
-                      height: 1.6,
+                  if (_isLoading && _news.content.isEmpty)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    Text(
+                      _news.content,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.gray800,
+                        height: 1.6,
+                      ),
                     ),
-                  ),
 
                   const SizedBox(height: 40),
 

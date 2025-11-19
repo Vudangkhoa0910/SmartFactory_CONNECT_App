@@ -2,11 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../config/app_colors.dart';
 import '../../../models/news_model.dart';
+import '../../../services/news_service.dart';
 import '../all_news_screen.dart';
 import '../news_detail_screen.dart';
 
-class NewsAndEvents extends StatelessWidget {
+class NewsAndEvents extends StatefulWidget {
   const NewsAndEvents({super.key});
+
+  @override
+  State<NewsAndEvents> createState() => _NewsAndEventsState();
+}
+
+class _NewsAndEventsState extends State<NewsAndEvents> {
+  List<NewsModel> _newsList = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNews();
+  }
+
+  Future<void> _fetchNews() async {
+    try {
+      final newsData = await NewsService.getNews(limit: 5);
+      if (mounted) {
+        setState(() {
+          _newsList = newsData.map((json) => NewsModel.fromJson(json)).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching news: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,26 +93,44 @@ class NewsAndEvents extends StatelessWidget {
           ),
 
           // News List
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: NewsModel.getSampleNews().length,
-            itemBuilder: (context, index) {
-              final news = NewsModel.getSampleNews()[index];
-              return _NewsCard(
-                news: news,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => NewsDetailScreen(news: news),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
+          if (_isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_newsList.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  'Không có tin tức nào',
+                  style: TextStyle(color: AppColors.gray600),
+                ),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _newsList.length,
+              itemBuilder: (context, index) {
+                final news = _newsList[index];
+                return _NewsCard(
+                  news: news,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NewsDetailScreen(news: news),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
         ],
       ),
     );
@@ -90,6 +142,38 @@ class _NewsCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _NewsCard({required this.news, required this.onTap});
+
+  String _getCategoryName(String code) {
+    switch (code) {
+      case 'company_announcement':
+        return 'Thông báo';
+      case 'safety_alert':
+        return 'An toàn';
+      case 'event':
+        return 'Sự kiện';
+      case 'production_update':
+        return 'Sản xuất';
+      case 'maintenance':
+        return 'Bảo trì';
+      default:
+        return 'Tin tức';
+    }
+  }
+
+  Color _getCategoryColor(String code) {
+    switch (code) {
+      case 'safety_alert':
+        return Colors.red;
+      case 'event':
+        return Colors.purple;
+      case 'production_update':
+        return Colors.blue;
+      case 'maintenance':
+        return Colors.orange;
+      default:
+        return AppColors.brand500;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +241,52 @@ class _NewsCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        if (news.isPriority)
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.red),
+                            ),
+                            child: const Text(
+                              'QUAN TRỌNG',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getCategoryColor(
+                              news.category,
+                            ).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _getCategoryName(news.category),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: _getCategoryColor(news.category),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     Text(
                       news.title,
                       style: TextStyle(

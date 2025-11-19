@@ -34,6 +34,9 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkLoginStatus() async {
+    // Initialize auth service (load token)
+    await _authService.initialize();
+
     // Delay for splash animation
     await Future.delayed(const Duration(seconds: 2));
 
@@ -55,9 +58,9 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     } else {
       // Navigate to login
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
     }
   }
 

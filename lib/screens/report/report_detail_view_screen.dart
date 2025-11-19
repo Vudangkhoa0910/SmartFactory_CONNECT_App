@@ -56,7 +56,7 @@ class ReportDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ID and Status Card
+            // Title and Status Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -74,56 +74,87 @@ class ReportDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.gray100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                      Expanded(
                         child: Text(
-                          report.id,
+                          report.title,
                           style: TextStyle(
-                            color: AppColors.gray700,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            color: AppColors.gray800,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(
-                            report.status,
-                          ).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          report.statusLabel,
-                          style: TextStyle(
-                            color: _getStatusColor(report.status),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getPriorityColor(
+                                report.priority,
+                              ).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              report.priorityLabel,
+                              style: TextStyle(
+                                color: _getPriorityColor(report.priority),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(
+                                report.status,
+                              ).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              report.statusLabel,
+                              style: TextStyle(
+                                color: _getStatusColor(report.status),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    report.title,
-                    style: TextStyle(
-                      color: AppColors.gray800,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+
+                  // Reporter Name
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.person_outline,
+                        size: 20,
+                        color: AppColors.gray500,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        report.reporterName ?? 'N/A',
+                        style: TextStyle(
+                          color: AppColors.gray700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -138,12 +169,6 @@ class ReportDetailScreen extends StatelessWidget {
                   icon: Icons.location_on,
                   label: 'Vị trí / Thiết bị',
                   value: report.location,
-                ),
-                _buildDetailRow(
-                  icon: Icons.priority_high,
-                  label: 'Mức độ ưu tiên',
-                  value: report.priorityLabel,
-                  valueColor: _getPriorityColor(report.priority),
                 ),
                 if (report.category != null)
                   _buildDetailRow(

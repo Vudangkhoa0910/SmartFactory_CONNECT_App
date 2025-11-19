@@ -8,6 +8,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../config/app_colors.dart';
 import '../../widgets/text_field_with_mic.dart';
 import '../../widgets/expanded_text_dialog.dart';
+import '../../services/incident_service.dart';
 
 class ReportFormScreen extends StatefulWidget {
   const ReportFormScreen({super.key});
@@ -24,7 +25,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   final _customCategoryController = TextEditingController();
 
   String? _selectedPriority;
-  List<String> _selectedCategories = [];
+  String? _selectedCategory;
   bool _showCustomCategory = false;
 
   final List<String> _priorities = ['Thấp', 'Trung bình', 'Cao', 'Khẩn cấp'];
@@ -38,6 +39,34 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     'Khác',
   ];
 
+  String _mapCategoryToBackend(String category) {
+    switch (category) {
+      case 'An toàn':
+        return 'safety';
+      case 'Chất lượng':
+        return 'quality';
+      case 'Kỹ thuật':
+        return 'equipment';
+      default:
+        return 'other';
+    }
+  }
+
+  String _mapPriorityToBackend(String priority) {
+    switch (priority) {
+      case 'Thấp':
+        return 'low';
+      case 'Trung bình':
+        return 'medium';
+      case 'Cao':
+        return 'high';
+      case 'Khẩn cấp':
+        return 'critical';
+      default:
+        return 'medium';
+    }
+  }
+
   // Media attachments
   final List<File> _images = [];
   final List<File> _videos = [];
@@ -46,6 +75,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isRecording = false;
   bool _isPlaying = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -303,19 +333,18 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               const SizedBox(height: 20),
 
               // Phân loại vấn đề
-              _buildSectionTitle('Phân loại vấn đề'),
+              _buildSectionTitle('Phân loại vấn đề', isRequired: true),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: _categories.map((category) {
-                  final isSelected = _selectedCategories.contains(category);
-                  return FilterChip(
+                  final isSelected = _selectedCategory == category;
+                  return ChoiceChip(
                     label: Text(category),
                     selected: isSelected,
                     backgroundColor: AppColors.white,
                     selectedColor: AppColors.error500,
-                    showCheckmark: false,
                     labelStyle: TextStyle(
                       color: isSelected ? AppColors.white : AppColors.gray700,
                       fontWeight: isSelected
@@ -333,24 +362,20 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     ),
                     onSelected: (selected) {
                       setState(() {
-                        if (selected) {
-                          _selectedCategories.add(category);
-                          if (category == 'Khác') {
-                            _showCustomCategory = true;
-                          }
+                        _selectedCategory = selected ? category : null;
+                        if (category == 'Khác') {
+                          _showCustomCategory = selected;
+                          if (!selected) _customCategoryController.clear();
                         } else {
-                          _selectedCategories.remove(category);
-                          if (category == 'Khác') {
-                            _showCustomCategory = false;
-                            _customCategoryController.clear();
-                          }
+                          _showCustomCategory = false;
+                          _customCategoryController.clear();
                         }
                       });
                     },
                   );
                 }).toList(),
               ),
-              
+
               // Custom category input (only show when "Khác" is selected)
               if (_showCustomCategory) ...[
                 const SizedBox(height: 12),
@@ -450,27 +475,96 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
               // Nút gửi báo cáo
               ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    if (_selectedPriority == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Vui lòng chọn mức độ ưu tiên'),
-                          backgroundColor: AppColors.error500,
-                        ),
-                      );
-                      return;
-                    }
-                    // TODO: Submit form
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Đã gửi báo cáo thành công!'),
-                        backgroundColor: AppColors.success500,
-                      ),
-                    );
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _isSubmitting
+                    ? null
+                    : () async {
+                        if (_formKey.currentState!.validate()) {
+                          if (_selectedPriority == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Vui lòng chọn mức độ ưu tiên'),
+                                backgroundColor: AppColors.error500,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (_selectedCategory == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Vui lòng chọn loại vấn đề'),
+                                backgroundColor: AppColors.error500,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setState(() {
+                            _isSubmitting = true;
+                          });
+
+                          // Map category
+                          String incidentType = _mapCategoryToBackend(
+                            _selectedCategory!,
+                          );
+                          String priority = _mapPriorityToBackend(
+                            _selectedPriority!,
+                          );
+
+                          // Append category info to description if needed
+                          String description = _descriptionController.text;
+                          if (_selectedCategory == 'Khác' &&
+                              _customCategoryController.text.isNotEmpty) {
+                            description =
+                                'Loại sự cố: ${_customCategoryController.text}\n\n$description';
+                          } else if (![
+                            'An toàn',
+                            'Chất lượng',
+                            'Kỹ thuật',
+                          ].contains(_selectedCategory)) {
+                            description =
+                                'Loại sự cố: $_selectedCategory\n\n$description';
+                          }
+
+                          final result = await IncidentService.createIncident(
+                            title: _titleController.text,
+                            description: description,
+                            location: _locationController.text,
+                            priority: priority,
+                            incidentType: incidentType,
+                            images: _images,
+                            videos: _videos,
+                            audioPath: _audioPath,
+                          );
+
+                          setState(() {
+                            _isSubmitting = false;
+                          });
+
+                          if (result['success'] == true) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Đã gửi báo cáo thành công!'),
+                                  backgroundColor: AppColors.success500,
+                                ),
+                              );
+                              Navigator.pop(context);
+                            }
+                          } else {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    result['message'] ?? 'Gửi báo cáo thất bại',
+                                  ),
+                                  backgroundColor: AppColors.error500,
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brand500,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -479,14 +573,23 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: Text(
-                  'GỬI BÁO CÁO NGAY',
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: AppColors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        'GỬI BÁO CÁO NGAY',
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
               const SizedBox(height: 20),
             ],

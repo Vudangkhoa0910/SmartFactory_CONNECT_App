@@ -29,6 +29,7 @@ class ReportModel {
   final String? description;
   final ReportStatus status;
   final String? department;
+  final String? reporterName; // Add this
   final DateTime createdDate;
   final DateTime? completedDate;
   final double? rating;
@@ -43,6 +44,7 @@ class ReportModel {
     this.description,
     required this.status,
     this.department,
+    this.reporterName, // Add this
     required this.createdDate,
     this.completedDate,
     this.rating,
@@ -89,6 +91,68 @@ class ReportModel {
         return 'Nhân sự';
       case ReportCategory.other:
         return 'Khác';
+    }
+  }
+
+  factory ReportModel.fromJson(Map<String, dynamic> json) {
+    return ReportModel(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      location: json['location'] ?? '',
+      priority: _parsePriority(json['priority']),
+      category: _parseCategory(json['incident_type']),
+      description: json['description'],
+      status: _parseStatus(json['status']),
+      department: json['department_name'],
+      reporterName: json['reporter_name'], // Add this
+      createdDate: DateTime.parse(json['created_at']),
+      completedDate: json['resolved_at'] != null
+          ? DateTime.parse(json['resolved_at'])
+          : null,
+      rating: json['rating'] != null
+          ? (json['rating'] as num).toDouble()
+          : null,
+      // attachments handling might need adjustment based on actual JSON structure
+    );
+  }
+
+  static ReportPriority _parsePriority(String? priority) {
+    switch (priority) {
+      case 'low':
+        return ReportPriority.low;
+      case 'medium':
+        return ReportPriority.medium;
+      case 'high':
+        return ReportPriority.high;
+      case 'critical':
+        return ReportPriority.urgent;
+      default:
+        return ReportPriority.medium;
+    }
+  }
+
+  static ReportCategory _parseCategory(String? category) {
+    switch (category) {
+      case 'equipment':
+        return ReportCategory.technical;
+      case 'safety':
+        return ReportCategory.safety;
+      case 'quality':
+        return ReportCategory.quality;
+      default:
+        return ReportCategory.other;
+    }
+  }
+
+  static ReportStatus _parseStatus(String? status) {
+    switch (status) {
+      case 'resolved':
+        return ReportStatus.completed;
+      case 'closed':
+      case 'cancelled':
+        return ReportStatus.closed;
+      default:
+        return ReportStatus.processing;
     }
   }
 }

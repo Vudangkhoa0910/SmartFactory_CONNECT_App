@@ -1,6 +1,9 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
+import 'dart:convert';
+import 'api_service.dart';
+import 'api_constants.dart';
 
 /// Service quản lý authentication và lưu trữ thông tin đăng nhập
 class AuthService {
@@ -19,6 +22,15 @@ class AuthService {
   static const String _keyIsLoggedIn = 'is_logged_in';
   static const String _keyUserRole = 'user_role';
   static const String _keyUserFullName = 'user_full_name';
+  static const String _keyAuthToken = 'auth_token';
+
+  /// Khởi tạo service (load token nếu có)
+  Future<void> initialize() async {
+    final token = await _secureStorage.read(key: _keyAuthToken);
+    if (token != null) {
+      ApiService.setAuthToken(token);
+    }
+  }
 
   /// Lưu thông tin đăng nhập
   Future<void> saveCredentials({
@@ -85,6 +97,10 @@ class AuthService {
     // Xóa thông tin user
     await prefs.remove(_keyUserRole);
     await prefs.remove(_keyUserFullName);
+
+    // Xóa token
+    await _secureStorage.delete(key: _keyAuthToken);
+    ApiService.setAuthToken(null);
   }
 
   /// Lưu thông tin user sau khi đăng nhập thành công
@@ -179,55 +195,59 @@ class AuthService {
     }
   }
 
-  /// Demo: Xác thực user với 2 tài khoản demo
-  /// WORKER: user: worker, pass: 123456
-  /// LEADER: user: leader, pass: 123456
+  /// Xác thực user với Backend API
   Future<Map<String, dynamic>> authenticateUser({
     required String username,
     required String password,
   }) async {
-    // Giả lập delay API call
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      // Determine if input is email or employee code
+      final isEmail = username.contains('@');
 
-    final String user = username.toLowerCase().trim();
-    final String pass = password.trim();
+      final body = {
+        if (isEmail) 'email': username else 'employee_code': username,
+        'password': password,
+      };
 
-    // Demo accounts
-    const Map<String, Map<String, String>> demoAccounts = {
-      'worker': {
-        'password': '123456',
-        'fullName': 'Nguyễn Văn A',
-        'role': 'worker',
-        'department': 'Sản xuất',
-        'employeeId': 'EMP001',
-      },
-      'leader': {
-        'password': '123456',
-        'fullName': 'Trần Thị Q',
-        'role': 'leader',
-        'department': 'Quản lý sản xuất',
-        'employeeId': 'MGR001',
-      },
-    };
+      final response = await ApiService.post(ApiConstants.login, body);
+      final responseData = jsonDecode(response.body);
 
-    if (demoAccounts.containsKey(user)) {
-      final account = demoAccounts[user]!;
-      if (account['password'] == pass) {
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        final data = responseData['data'];
+        final token = data['token'];
+        final user = data['user'];
+
+        // Save token
+        await _secureStorage.write(key: _keyAuthToken, value: token);
+        ApiService.setAuthToken(token);
+
+        // Map backend role to app role (if needed)
+        // Backend roles: admin, manager, supervisor, team_leader, operator, etc.
+        // App roles: leader, worker (simplified for now based on previous code)
+        // Logic: Level <= 5 (Team Leader and above) -> leader, else -> worker
+        final int level = user['level'] ?? 10;
+        final String appRole = level <= 5 ? 'leader' : 'worker';
+
         return {
           'success': true,
-          'fullName': account['fullName'],
-          'role': account['role'],
-          'department': account['department'],
-          'employeeId': account['employeeId'],
+          'fullName': user['full_name'],
+          'role': appRole, // Mapped role
+          'originalRole': user['role'], // Keep original role just in case
+          'department': user['department'] != null
+              ? user['department']['name']
+              : '',
+          'employeeId': user['employee_code'],
           'username': username,
+          'userId': user['id'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Đăng nhập thất bại',
         };
       }
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
     }
-
-    return {
-      'success': false,
-      'message':
-          'Tài khoản demo:\n• Worker: user=worker, pass=123456\n• Leader: user=leader, pass=123456',
-    };
   }
 }
