@@ -8,8 +8,23 @@ class ApiService {
   static const String _keyServerPort = 'server_port';
 
   // Default values
-  static const String defaultIp = '192.168.79.19';
+  static const String defaultIp = '172.16.0.100';
   static const String defaultPort = '3001';
+  
+  // Available IP range
+  static const List<String> availableIps = [
+    '172.16.0.100',
+    '172.16.0.101',
+    '172.16.0.102',
+    '172.16.0.103',
+    '172.16.0.104',
+    '172.16.0.105',
+    '172.16.0.106',
+    '172.16.0.107',
+    '172.16.0.108',
+    '172.16.0.109',
+    '172.16.0.110',
+  ];
 
   static String? _authToken;
 
