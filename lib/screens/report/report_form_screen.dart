@@ -112,8 +112,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
   // Camera functions
   Future<void> _takePicture() async {
-    final status = await Permission.camera.request();
-    if (status.isGranted) {
+    try {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(source: ImageSource.camera);
       if (image != null) {
@@ -121,33 +120,45 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           _images.add(File(image.path));
         });
       }
-    } else {
-      _showPermissionDialog('Camera');
+    } catch (e) {
+      if (mounted) {
+        // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
+        final status = await Permission.camera.status;
+        if (status.isPermanentlyDenied) {
+          _showPermissionDialog('camera');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi mở camera: ${e.toString()}'),
+              backgroundColor: AppColors.error500,
+            ),
+          );
+        }
+      }
     }
   }
 
   // Gallery functions
   Future<void> _pickMedia() async {
-    final status = await Permission.photos.request();
-    if (status.isGranted || status.isLimited) {
+    try {
       final picker = ImagePicker();
 
       // Show dialog to choose between image or video
       final choice = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Chọn loại file'),
+          title: const Text('Chọn loại file'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 leading: Icon(Icons.image, color: AppColors.brand500),
-                title: Text('Ảnh'),
+                title: const Text('Ảnh'),
                 onTap: () => Navigator.pop(context, 'image'),
               ),
               ListTile(
                 leading: Icon(Icons.video_library, color: AppColors.brand500),
-                title: Text('Video'),
+                title: const Text('Video'),
                 onTap: () => Navigator.pop(context, 'video'),
               ),
             ],
@@ -174,8 +185,21 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           });
         }
       }
-    } else {
-      _showPermissionDialog('Photos/Gallery');
+    } catch (e) {
+      if (mounted) {
+        // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
+        final status = await Permission.photos.status;
+        if (status.isPermanentlyDenied) {
+          _showPermissionDialog('thư viện ảnh');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi mở thư viện: ${e.toString()}'),
+              backgroundColor: AppColors.error500,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -183,30 +207,60 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   Future<void> _toggleRecording() async {
     if (_isRecording) {
       // Stop recording
-      final path = await _audioRecorder.stop();
-      if (path != null) {
-        setState(() {
-          _audioPath = path;
-          _isRecording = false;
-        });
+      try {
+        final path = await _audioRecorder.stop();
+        if (path != null) {
+          setState(() {
+            _audioPath = path;
+            _isRecording = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi dừng ghi âm: ${e.toString()}'),
+              backgroundColor: AppColors.error500,
+            ),
+          );
+        }
       }
     } else {
       // Start recording
-      final status = await Permission.microphone.request();
-      if (status.isGranted) {
-        final directory = await getApplicationDocumentsDirectory();
-        final path =
-            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      try {
+        PermissionStatus status = await Permission.microphone.status;
+        
+        // Nếu chưa được cấp quyền, yêu cầu quyền
+        if (!status.isGranted) {
+          status = await Permission.microphone.request();
+        }
+        
+        if (status.isGranted) {
+          final directory = await getApplicationDocumentsDirectory();
+          final path =
+              '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-        await _audioRecorder.start(
-          const RecordConfig(encoder: AudioEncoder.aacLc),
-          path: path,
-        );
-        setState(() {
-          _isRecording = true;
-        });
-      } else {
-        _showPermissionDialog('Microphone');
+          await _audioRecorder.start(
+            const RecordConfig(encoder: AudioEncoder.aacLc),
+            path: path,
+          );
+          setState(() {
+            _isRecording = true;
+          });
+        } else if (status.isPermanentlyDenied) {
+          // Chỉ hiển thị dialog khi quyền bị từ chối vĩnh viễn
+          _showPermissionDialog('microphone');
+        }
+        // Nếu denied (chưa vĩnh viễn), không làm gì - người dùng có thể thử lại
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi bắt đầu ghi âm: ${e.toString()}'),
+              backgroundColor: AppColors.error500,
+            ),
+          );
+        }
       }
     }
   }
@@ -215,21 +269,21 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Quyền truy cập bị từ chối'),
+        title: const Text('Quyền truy cập bị từ chối'),
         content: Text(
-          'Ứng dụng cần quyền truy cập $permissionType để sử dụng chức năng này.',
+          'Ứng dụng cần quyền truy cập $permissionType để sử dụng chức năng này. Vui lòng cấp quyền trong Cài đặt.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Đóng'),
+            child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: Text('Cài đặt'),
+            child: const Text('Mở Cài đặt'),
           ),
         ],
       ),

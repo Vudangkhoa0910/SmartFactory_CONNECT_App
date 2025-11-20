@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../config/app_colors.dart';
 import '../../models/idea_box_model.dart';
 import '../../services/idea_service.dart';
@@ -833,6 +834,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
+      // Để ImagePicker tự xử lý quyền trên iOS
       final XFile? image = await _picker.pickImage(
         source: source,
         maxWidth: 1920,
@@ -861,37 +863,58 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
       }
     } on Exception catch (e) {
       if (mounted) {
-        String errorMessage = 'Lỗi khi chọn ảnh';
-
-        // Xử lý các lỗi cụ thể
-        if (e.toString().contains('camera_access_denied')) {
-          errorMessage = 'Vui lòng cấp quyền truy cập camera trong Cài đặt';
-        } else if (e.toString().contains('photo_access_denied')) {
-          errorMessage =
-              'Vui lòng cấp quyền truy cập thư viện ảnh trong Cài đặt';
-        } else if (e.toString().contains('No implementation found')) {
-          errorMessage =
-              'Camera không khả dụng trên Simulator. Vui lòng thử trên thiết bị thật';
+        // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
+        Permission permission = source == ImageSource.camera 
+            ? Permission.camera 
+            : Permission.photos;
+        String permissionName = source == ImageSource.camera 
+            ? 'camera' 
+            : 'thư viện ảnh';
+        
+        final status = await permission.status;
+        if (status.isPermanentlyDenied) {
+          _showPermissionDialog(permissionName);
+        } else {
+          String errorMessage = 'Lỗi khi chọn ảnh';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: AppColors.error500,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
         }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: AppColors.error500,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: AppColors.white,
-              onPressed: () {},
-            ),
-          ),
-        );
       }
     }
+  }
+
+  void _showPermissionDialog(String permissionType) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Quyền truy cập bị từ chối'),
+        content: Text(
+          'Ứng dụng cần quyền truy cập $permissionType để sử dụng chức năng này. Vui lòng cấp quyền trong Cài đặt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text('Mở Cài đặt'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _submitIdea() async {
