@@ -226,40 +226,33 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         }
       }
     } else {
-      // Start recording
+      // Start recording - để package record tự xử lý quyền
       try {
-        PermissionStatus status = await Permission.microphone.status;
-        
-        // Nếu chưa được cấp quyền, yêu cầu quyền
-        if (!status.isGranted) {
-          status = await Permission.microphone.request();
-        }
-        
-        if (status.isGranted) {
-          final directory = await getApplicationDocumentsDirectory();
-          final path =
-              '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        final directory = await getApplicationDocumentsDirectory();
+        final path =
+            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-          await _audioRecorder.start(
-            const RecordConfig(encoder: AudioEncoder.aacLc),
-            path: path,
-          );
-          setState(() {
-            _isRecording = true;
-          });
-        } else if (status.isPermanentlyDenied) {
-          // Chỉ hiển thị dialog khi quyền bị từ chối vĩnh viễn
-          _showPermissionDialog('microphone');
-        }
-        // Nếu denied (chưa vĩnh viễn), không làm gì - người dùng có thể thử lại
+        await _audioRecorder.start(
+          const RecordConfig(encoder: AudioEncoder.aacLc),
+          path: path,
+        );
+        setState(() {
+          _isRecording = true;
+        });
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi khi bắt đầu ghi âm: ${e.toString()}'),
-              backgroundColor: AppColors.error500,
-            ),
-          );
+          // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
+          final status = await Permission.microphone.status;
+          if (status.isPermanentlyDenied) {
+            _showPermissionDialog('microphone');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Lỗi khi bắt đầu ghi âm: ${e.toString()}'),
+                backgroundColor: AppColors.error500,
+              ),
+            );
+          }
         }
       }
     }
