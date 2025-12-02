@@ -22,6 +22,7 @@ class AuthService {
   static const String _keyIsLoggedIn = 'is_logged_in';
   static const String _keyUserRole = 'user_role';
   static const String _keyUserFullName = 'user_full_name';
+  static const String _keyUserIdentifier = 'user_identifier';
   static const String _keyAuthToken = 'auth_token';
 
   /// Khởi tạo service (load token nếu có)
@@ -39,15 +40,22 @@ class AuthService {
     required bool rememberMe,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    final biometricEnabled = prefs.getBool(_keyBiometricEnabled) ?? false;
 
-    if (rememberMe) {
+    if (rememberMe || biometricEnabled) {
       // Lưu username và password vào secure storage
       await _secureStorage.write(key: _keyUsername, value: username);
       await _secureStorage.write(key: _keyPassword, value: password);
+    } else {
+      // Xóa credentials nếu không remember và không bật biometric
+      await _secureStorage.delete(key: _keyUsername);
+      await _secureStorage.delete(key: _keyPassword);
+    }
+
+    if (rememberMe) {
       await prefs.setBool(_keyRememberMe, true);
     } else {
-      // Xóa credentials nếu không remember
-      await clearCredentials();
+      await prefs.setBool(_keyRememberMe, false);
     }
 
     // Đánh dấu đã đăng nhập
@@ -71,7 +79,21 @@ class AuthService {
   /// Kiểm tra đã đăng nhập chưa
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyIsLoggedIn) ?? false;
+
+    // 1. Check flag
+    final isLogged = prefs.getBool(_keyIsLoggedIn) ?? false;
+    if (!isLogged) return false;
+
+    // 2. Check token
+    final token = await _secureStorage.read(key: _keyAuthToken);
+    if (token == null || token.isEmpty) return false;
+
+    // 3. Check Remember Me
+    // If Remember Me is disabled, the session should not persist across restarts
+    final rememberMe = prefs.getBool(_keyRememberMe) ?? false;
+    if (!rememberMe) return false;
+
+    return true;
   }
 
   /// Xóa thông tin đăng nhập
@@ -88,15 +110,18 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyIsLoggedIn, false);
 
-    // Không xóa credentials nếu remember me enabled
+    // Không xóa credentials nếu remember me enabled HOẶC biometric enabled
     final rememberMe = await isRememberMeEnabled();
-    if (!rememberMe) {
+    final biometricEnabled = await isBiometricEnabled();
+
+    if (!rememberMe && !biometricEnabled) {
       await clearCredentials();
     }
 
     // Xóa thông tin user
     await prefs.remove(_keyUserRole);
     await prefs.remove(_keyUserFullName);
+    await prefs.remove(_keyUserIdentifier);
 
     // Xóa token
     await _secureStorage.delete(key: _keyAuthToken);
@@ -107,10 +132,12 @@ class AuthService {
   Future<void> saveUserInfo({
     required String fullName,
     required String role,
+    required String username,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyUserFullName, fullName);
     await prefs.setString(_keyUserRole, role);
+    await prefs.setString(_keyUserIdentifier, username);
   }
 
   /// Lấy thông tin user
@@ -119,6 +146,7 @@ class AuthService {
     return {
       'fullName': prefs.getString(_keyUserFullName),
       'role': prefs.getString(_keyUserRole),
+      'username': prefs.getString(_keyUserIdentifier),
     };
   }
 
@@ -146,21 +174,18 @@ class AuthService {
     }
   }
 
-  /// Xác thực bằng sinh trắc học
+  /// Authenticate with biometrics
+  /// [localizedReason] should be passed from UI with translated text
   Future<bool> authenticateWithBiometric({
-    String reason = 'Xác thực để đăng nhập',
+    String? localizedReason,
+    String? reason, // Backward compatibility - alias for localizedReason
   }) async {
     try {
       final canUse = await canUseBiometric();
       if (!canUse) return false;
 
-      return await _localAuth.authenticate(
-        localizedReason: reason,
-        options: const AuthenticationOptions(
-          stickyAuth: true, // Không bị hủy khi chuyển app
-          biometricOnly: true, // Chỉ dùng sinh trắc, không dùng PIN
-        ),
-      );
+      final reasonText = localizedReason ?? reason ?? 'Xác thực để đăng nhập';
+      return await _localAuth.authenticate(localizedReason: reasonText);
     } catch (e) {
       return false;
     }
@@ -178,7 +203,25 @@ class AuthService {
     return prefs.getBool(_keyBiometricEnabled) ?? false;
   }
 
-  /// Lấy tên loại sinh trắc học (để hiển thị)
+  /// Get biometric type key for UI translation
+  /// Returns: 'face', 'fingerprint', 'iris', or 'biometric' (generic)
+  Future<String> getBiometricTypeKey() async {
+    final biometrics = await getAvailableBiometrics();
+
+    if (biometrics.isEmpty) return 'biometric';
+
+    if (biometrics.contains(BiometricType.face)) {
+      return 'face';
+    } else if (biometrics.contains(BiometricType.fingerprint)) {
+      return 'fingerprint';
+    } else if (biometrics.contains(BiometricType.iris)) {
+      return 'iris';
+    } else {
+      return 'biometric';
+    }
+  }
+
+  /// Backward compatibility - return Vietnamese name
   Future<String> getBiometricTypeName() async {
     final biometrics = await getAvailableBiometrics();
 
@@ -192,6 +235,36 @@ class AuthService {
       return 'Mống mắt';
     } else {
       return 'Sinh trắc học';
+    }
+  }
+
+  /// Verify if the current token is valid by checking with backend
+  Future<bool> verifyTokenWithBackend() async {
+    try {
+      // Ping health endpoint to check if server is reachable
+      final healthCheck = await ApiService.pingHealth();
+      if (!healthCheck['success']) {
+        return false;
+      }
+
+      // If we have a token, try to verify it
+      final token = await _secureStorage.read(key: _keyAuthToken);
+      if (token == null || token.isEmpty) {
+        return false;
+      }
+
+      // Try to call an authenticated endpoint to verify token
+      // Using /api/auth/verify or similar endpoint
+      final response = await ApiService.get(ApiConstants.verifyToken);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+
+      return false;
+    } catch (e) {
+      // Network error or server unreachable
+      return false;
     }
   }
 
@@ -243,11 +316,16 @@ class AuthService {
       } else {
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Đăng nhập thất bại',
+          'errorKey': 'login_failed',
+          'message': responseData['message'],
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+      return {
+        'success': false,
+        'errorKey': 'connection_error',
+        'error': e.toString(),
+      };
     }
   }
 }

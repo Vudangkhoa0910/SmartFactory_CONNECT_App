@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../config/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/loading_overlay.dart';
 import '../../services/auth_service.dart';
 import '../../providers/user_provider.dart';
+import '../../utils/toast_utils.dart';
 
 /// Màn hình đăng nhập
 /// User nhập username/email và password để đăng nhập
@@ -25,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _rememberMe = false;
   bool _canUseBiometric = false;
-  String _biometricType = 'Sinh trắc học';
+  String _biometricType = '';
 
   @override
   void initState() {
@@ -74,18 +76,81 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Xác thực bằng sinh trắc học
   Future<void> _authenticateWithBiometric() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    // 1. Xác thực sinh trắc học (Local Auth)
     final authenticated = await _authService.authenticateWithBiometric(
-      reason: 'Xác thực để đăng nhập vào SmartFactory Connect',
+      reason: l10n.pleaseAuthenticate,
     );
 
-    if (authenticated && mounted) {
-      // Đăng nhập thành công
-      _navigateToHome();
+    if (!authenticated) return;
+
+    // 2. Lấy thông tin đăng nhập đã lưu
+    final credentials = await _authService.getSavedCredentials();
+    final username = credentials['username'];
+    final password = credentials['password'];
+
+    if (username != null && password != null) {
+      // 3. Tự động đăng nhập lại với API
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      try {
+        final result = await _authService.authenticateUser(
+          username: username,
+          password: password,
+        );
+
+        if (!mounted) return;
+
+        if (result['success'] == true) {
+          // Cập nhật UserProvider
+          final userProvider = UserProvider();
+          await userProvider.setUserRole(result['role'] ?? 'user');
+
+          // Đảm bảo UserProvider đã load xong
+          while (!userProvider.isLoaded) {
+            await Future.delayed(const Duration(milliseconds: 50));
+          }
+
+          _navigateToHome();
+        } else {
+          ToastUtils.showError(
+            '${l10n.loginFailed}: ${result['message'] ?? l10n.errorGeneral}',
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ToastUtils.showError(l10n.errorNetwork);
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      // Trường hợp không có credentials (ví dụ: token còn hạn nhưng không có pass)
+      // Thử navigate luôn nếu đang logged in
+      final isLoggedIn = await _authService.isLoggedIn();
+      if (isLoggedIn) {
+        _navigateToHome();
+      } else {
+        if (mounted) {
+          ToastUtils.showWarning(l10n.orLoginWithPassword);
+        }
+      }
     }
   }
 
   /// Xử lý đăng nhập
   Future<void> _handleLogin() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -115,6 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await _authService.saveUserInfo(
           fullName: result['fullName'] ?? 'User',
           role: result['role'] ?? 'user',
+          username: result['username'] ?? _usernameController.text.trim(),
         );
 
         // Cập nhật UserProvider và đợi hoàn tất
@@ -131,24 +197,12 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         // Hiển thị lỗi
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Đăng nhập thất bại'),
-              backgroundColor: AppColors.error500,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          ToastUtils.showError(result['message'] ?? l10n.loginFailed);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Có lỗi xảy ra. Vui lòng thử lại'),
-            backgroundColor: AppColors.error500,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        ToastUtils.showError(l10n.errorGeneral);
       }
     } finally {
       if (mounted) {
@@ -173,6 +227,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -214,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 8),
 
                           Text(
-                            'Đăng nhập để tiếp tục',
+                            l10n.loginSubtitle,
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.gray600,
@@ -229,8 +285,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _usernameController,
                             style: TextStyle(color: AppColors.black),
                             decoration: InputDecoration(
-                              labelText: 'Tên đăng nhập hoặc Email',
-                              hintText: 'Nhập tên đăng nhập hoặc email',
+                              labelText: l10n.employeeId,
+                              hintText: l10n.enterEmployeeId,
                               labelStyle: TextStyle(color: AppColors.gray600),
                               hintStyle: TextStyle(color: AppColors.gray400),
                               prefixIcon: Icon(
@@ -267,7 +323,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Vui lòng nhập tên đăng nhập hoặc email';
+                                return l10n.pleaseEnterEmployeeId;
                               }
                               return null;
                             },
@@ -281,8 +337,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: !_isPasswordVisible,
                             style: TextStyle(color: AppColors.black),
                             decoration: InputDecoration(
-                              labelText: 'Mật khẩu',
-                              hintText: 'Nhập mật khẩu',
+                              labelText: l10n.password,
+                              hintText: l10n.enterPassword,
                               labelStyle: TextStyle(color: AppColors.gray600),
                               hintStyle: TextStyle(color: AppColors.gray400),
                               prefixIcon: Icon(
@@ -332,10 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Vui lòng nhập mật khẩu';
-                              }
-                              if (value.length < 6) {
-                                return 'Mật khẩu phải có ít nhất 6 ký tự';
+                                return l10n.pleaseEnterPassword;
                               }
                               return null;
                             },
@@ -364,7 +417,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Ghi nhớ đăng nhập',
+                                l10n.rememberMe,
                                 style: TextStyle(
                                   color: AppColors.gray700,
                                   fontSize: 14,
@@ -397,7 +450,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 padding: EdgeInsets.zero, // Remove padding
                               ),
                               child: Text(
-                                'Đăng nhập',
+                                l10n.loginButton,
                                 style: TextStyle(
                                   color: AppColors.white,
                                   fontSize: 16,
@@ -423,7 +476,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         horizontal: 16,
                                       ),
                                       child: Text(
-                                        'Hoặc',
+                                        l10n.orLoginWithPassword.split(
+                                          ' ',
+                                        )[0], // "Hoặc" / "または"
                                         style: TextStyle(
                                           color: AppColors.gray500,
                                           fontSize: 14,
@@ -458,7 +513,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       size: 24,
                                     ),
                                     label: Text(
-                                      'Đăng nhập bằng $_biometricType',
+                                      l10n.loginWithBiometric,
                                       style: TextStyle(
                                         color: AppColors.brand500,
                                         fontSize: 16,

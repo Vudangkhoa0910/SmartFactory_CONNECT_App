@@ -4,6 +4,7 @@ class ApiConstants {
   static const String register = '/api/auth/register';
   static const String profile = '/api/auth/me';
   static const String changePassword = '/api/auth/change-password';
+  static const String verifyToken = '/api/auth/verify';
 
   // Ideas
   static const String ideas = '/api/ideas';

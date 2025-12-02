@@ -42,10 +42,23 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    // Check if user is logged in
+    // Check if user is logged in (local check)
     final isLoggedIn = await _authService.isLoggedIn();
 
     if (isLoggedIn) {
+      // Verify token with backend - if backend is down, force re-login
+      final isTokenValid = await _authService.verifyTokenWithBackend();
+
+      if (!isTokenValid) {
+        // Token invalid or backend unreachable - clear session and go to login
+        await _authService.logout();
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+        return;
+      }
+
       // Load user info
       final userInfo = await _authService.getUserInfo();
       if (userInfo['role'] != null) {
