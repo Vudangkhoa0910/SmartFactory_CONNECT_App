@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../config/app_colors.dart';
+import '../../utils/toast_utils.dart';
+import '../../l10n/app_localizations.dart';
 
 class LeaderReportFormScreen extends StatefulWidget {
   const LeaderReportFormScreen({super.key});
@@ -86,28 +88,17 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
       onError: (error) {
         if (mounted) {
           setState(() => _isListening = false);
+          final l10n = AppLocalizations.of(context)!;
 
-          String errorMessage = 'Lỗi nhận dạng giọng nói';
+          String errorMessage = l10n.error;
           if (error.errorMsg.toLowerCase().contains('not_allowed') ||
               error.errorMsg.toLowerCase().contains('permission')) {
-            errorMessage =
-                'Vui lòng cấp quyền Speech Recognition trong Settings > Privacy > Speech Recognition';
+            errorMessage = l10n.permissionDenied;
           } else {
-            errorMessage = 'Lỗi: ${error.errorMsg}';
+            errorMessage = '${l10n.error}: ${error.errorMsg}';
           }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: AppColors.error500,
-              duration: const Duration(seconds: 4),
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: AppColors.white,
-                onPressed: () {},
-              ),
-            ),
-          );
+          ToastUtils.showError(errorMessage);
         }
       },
     );
@@ -157,12 +148,8 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
         localeId: 'vi_VN',
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Speech recognition không khả dụng'),
-          backgroundColor: AppColors.error500,
-        ),
-      );
+      final l10n = AppLocalizations.of(context)!;
+      ToastUtils.showError(l10n.error);
     }
   }
 
@@ -197,6 +184,7 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
     if (status.isGranted) {
       final picker = ImagePicker();
 
+      final l10n = AppLocalizations.of(context)!;
       final String? choice = await showModalBottomSheet<String>(
         context: context,
         builder: (context) => Container(
@@ -206,12 +194,12 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
             children: [
               ListTile(
                 leading: Icon(Icons.image),
-                title: Text('Ảnh'),
+                title: Text(l10n.image),
                 onTap: () => Navigator.pop(context, 'image'),
               ),
               ListTile(
                 leading: Icon(Icons.videocam),
-                title: Text('Video'),
+                title: Text(l10n.video),
                 onTap: () => Navigator.pop(context, 'video'),
               ),
             ],
@@ -276,24 +264,23 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
   }
 
   void _showPermissionDialog(String permissionType) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Quyền truy cập bị từ chối'),
-        content: Text(
-          'Ứng dụng cần quyền truy cập $permissionType để sử dụng chức năng này.',
-        ),
+        title: Text(l10n.permissionDenied),
+        content: Text('${l10n.permissionRequired} $permissionType'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Đóng'),
+            child: Text(l10n.close),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: Text('Cài đặt'),
+            child: Text(l10n.settings),
           ),
         ],
       ),
@@ -313,13 +300,18 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
             icon: Icon(Icons.arrow_back, color: AppColors.gray800),
             onPressed: () => Navigator.pop(context),
           ),
-          title: Text(
-            'Báo cáo sự cố Leader',
-            style: TextStyle(
-              color: AppColors.gray800,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+          title: Builder(
+            builder: (context) {
+              final l10n = AppLocalizations.of(context)!;
+              return Text(
+                l10n.leaderIncidentReport,
+                style: TextStyle(
+                  color: AppColors.gray800,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              );
+            },
           ),
         ),
         body: Form(
@@ -328,460 +320,594 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               // Tiêu đề sự cố
-              _buildSectionTitle('Tiêu đề sự cố', isRequired: true),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập tiêu đề sự cố',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập tiêu đề sự cố';
-                  }
-                  return null;
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(l10n.incidentTitle, isRequired: true),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _titleController,
+                        decoration: InputDecoration(
+                          hintText: l10n.enterIncidentTitle,
+                          hintStyle: TextStyle(color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.brand500,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return l10n.pleaseEnterTitle;
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  );
                 },
               ),
               const SizedBox(height: 20),
 
               // Vị trí / Thiết bị
-              _buildSectionTitle('Vị trí / Thiết bị', isRequired: true),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _locationController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập vị trí hoặc tên thiết bị',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập vị trí hoặc thiết bị';
-                  }
-                  return null;
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(l10n.locationDevice, isRequired: true),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _locationController,
+                        decoration: InputDecoration(
+                          hintText: l10n.enterLocationDevice,
+                          hintStyle: TextStyle(color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.brand500,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return l10n.pleaseEnterLocation;
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  );
                 },
               ),
               const SizedBox(height: 20),
 
               // Tên linh kiện
-              _buildSectionTitle('Tên linh kiện'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _componentController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập tên linh kiện',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(l10n.componentName),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _componentController,
+                        decoration: InputDecoration(
+                          hintText: l10n.enterComponentName,
+                          hintStyle: TextStyle(color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.brand500,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 20),
 
               // Tên dây chuyền
-              _buildSectionTitle('Tên dây chuyền'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _productionLineController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập tên dây chuyền',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(l10n.productionLine),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _productionLineController,
+                        decoration: InputDecoration(
+                          hintText: l10n.enterProductionLine,
+                          hintStyle: TextStyle(color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.brand500,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 20),
 
               // Công đoạn
-              _buildSectionTitle('Công đoạn'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _workStationController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập công đoạn',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(l10n.workstation),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _workStationController,
+                        decoration: InputDecoration(
+                          hintText: l10n.enterWorkstation,
+                          hintStyle: TextStyle(color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.brand500,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 20),
 
               // Bộ phận phát hiện
-              _buildSectionTitle('Bộ phận phát hiện'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _departmentController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập bộ phận phát hiện',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(l10n.detectionDepartment),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _departmentController,
+                        decoration: InputDecoration(
+                          hintText: l10n.enterDetectionDepartment,
+                          hintStyle: TextStyle(color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.brand500,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 20),
 
               // Mức độ ưu tiên
-              _buildSectionTitle('Mức độ ưu tiên', isRequired: true),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _priorities.map((priority) {
-                  final isSelected = _selectedPriority == priority;
-                  return FilterChip(
-                    label: Text(priority),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedPriority = selected ? priority : null;
-                      });
-                    },
-                    backgroundColor: AppColors.white,
-                    selectedColor: AppColors.error500,
-                    showCheckmark: false,
-                    labelStyle: TextStyle(
-                      color: isSelected ? AppColors.white : AppColors.gray700,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                    ),
-                    side: BorderSide(
-                      color: isSelected
-                          ? AppColors.error500
-                          : AppColors.gray200,
-                      width: isSelected ? 2 : 1,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(l10n.priority, isRequired: true),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _priorities.map((priority) {
+                          final isSelected = _selectedPriority == priority;
+                          return FilterChip(
+                            label: Text(priority),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                _selectedPriority = selected ? priority : null;
+                              });
+                            },
+                            backgroundColor: AppColors.white,
+                            selectedColor: AppColors.error500,
+                            showCheckmark: false,
+                            labelStyle: TextStyle(
+                              color: isSelected
+                                  ? AppColors.white
+                                  : AppColors.gray700,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? AppColors.error500
+                                  : AppColors.gray200,
+                              width: isSelected ? 2 : 1,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   );
-                }).toList(),
+                },
               ),
               const SizedBox(height: 20),
 
               // Phân loại vấn đề
-              _buildSectionTitle('Phân loại vấn đề'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((category) {
-                  final isSelected = _selectedCategories.contains(category);
-                  return FilterChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedCategories.add(category);
-                        } else {
-                          _selectedCategories.remove(category);
-                        }
-                      });
-                    },
-                    backgroundColor: AppColors.white,
-                    selectedColor: AppColors.error500,
-                    showCheckmark: false,
-                    labelStyle: TextStyle(
-                      color: isSelected ? AppColors.white : AppColors.gray700,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                    ),
-                    side: BorderSide(
-                      color: isSelected
-                          ? AppColors.error500
-                          : AppColors.gray200,
-                      width: isSelected ? 2 : 1,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(l10n.category),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _categories.map((category) {
+                          final isSelected = _selectedCategories.contains(
+                            category,
+                          );
+                          return FilterChip(
+                            label: Text(category),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedCategories.add(category);
+                                } else {
+                                  _selectedCategories.remove(category);
+                                }
+                              });
+                            },
+                            backgroundColor: AppColors.white,
+                            selectedColor: AppColors.error500,
+                            showCheckmark: false,
+                            labelStyle: TextStyle(
+                              color: isSelected
+                                  ? AppColors.white
+                                  : AppColors.gray700,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? AppColors.error500
+                                  : AppColors.gray200,
+                              width: isSelected ? 2 : 1,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   );
-                }).toList(),
+                },
               ),
               const SizedBox(height: 20),
 
               // Mô tả chi tiết
-              _buildSectionTitle('Mô tả chi tiết'),
-              const SizedBox(height: 8),
-              Stack(
-                children: [
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 5,
-                    style: TextStyle(color: AppColors.black),
-                    decoration: InputDecoration(
-                      hintText: 'Mô tả chi tiết về sự cố...',
-                      hintStyle: TextStyle(color: AppColors.gray400),
-                      filled: true,
-                      fillColor: AppColors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.gray200),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.gray200),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.brand500,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.fromLTRB(
-                        12,
-                        12,
-                        50,
-                        12,
-                      ), // Right padding for mic button
-                    ),
-                  ),
-                  // Mic button overlay
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onLongPressStart: (_) => _startListening(),
-                      onLongPressEnd: (_) => _stopListening(),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: _isListening
-                              ? AppColors.error500
-                              : AppColors.error500,
-                          shape: BoxShape.circle,
-                          boxShadow: _isListening
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.error500.withOpacity(0.4),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Icon(
-                          _isListening ? Icons.mic : Icons.mic_none,
-                          color: AppColors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (_isListening)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.mic, size: 16, color: AppColors.error500),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Đang nghe... Thả ra để dừng',
-                        style: TextStyle(
-                          color: AppColors.error500,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                        ),
+                      _buildSectionTitle(l10n.description),
+                      const SizedBox(height: 8),
+                      Stack(
+                        children: [
+                          TextFormField(
+                            controller: _descriptionController,
+                            maxLines: 5,
+                            style: TextStyle(color: AppColors.black),
+                            decoration: InputDecoration(
+                              hintText: l10n.enterDescription,
+                              hintStyle: TextStyle(color: AppColors.gray400),
+                              filled: true,
+                              fillColor: AppColors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.gray200,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.gray200,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.brand500,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.fromLTRB(
+                                12,
+                                12,
+                                50,
+                                12,
+                              ), // Right padding for mic button
+                            ),
+                          ),
+                          // Mic button overlay
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onLongPressStart: (_) => _startListening(),
+                              onLongPressEnd: (_) => _stopListening(),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: _isListening
+                                      ? AppColors.error500
+                                      : AppColors.error500,
+                                  shape: BoxShape.circle,
+                                  boxShadow: _isListening
+                                      ? [
+                                          BoxShadow(
+                                            color: AppColors.error500
+                                                .withOpacity(0.4),
+                                            blurRadius: 8,
+                                            spreadRadius: 2,
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Icon(
+                                  _isListening ? Icons.mic : Icons.mic_none,
+                                  color: AppColors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ),
-              const SizedBox(height: 20),
-
-              // Ghi chú của Leader
-              _buildSectionTitle('Ghi chú của Leader'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _leaderNotesController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Nhập ghi chú của Leader...',
-                  hintStyle: TextStyle(color: AppColors.gray400),
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.gray200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.brand500, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Đính kèm bằng chứng
-              _buildSectionTitle('Đính kèm bằng chứng'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildAttachmentButton(
-                      icon: Icons.camera_alt,
-                      label: 'Chụp ảnh',
-                      onTap: _takePicture,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildAttachmentButton(
-                      icon: Icons.photo_library,
-                      label: 'Tải ảnh/Video',
-                      onTap: _pickMedia,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildAttachmentButton(
-                icon: _isRecording ? Icons.stop : Icons.mic,
-                label: _isRecording ? 'Dừng ghi âm' : 'Ghi âm',
-                onTap: _toggleRecording,
-                isRecording: _isRecording,
-              ),
-
-              // Display attached media
-              if (_images.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _buildMediaPreview('Ảnh đã chọn', _images, Icons.image),
-              ],
-              if (_videos.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _buildMediaPreview('Video đã chọn', _videos, Icons.videocam),
-              ],
-              if (_audioPath != null) ...[
-                const SizedBox(height: 16),
-                _buildAudioPreview(),
-              ],
-              const SizedBox(height: 32),
-
-              // Nút gửi báo cáo
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    if (_selectedPriority == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Vui lòng chọn mức độ ưu tiên'),
-                          backgroundColor: AppColors.error500,
-                        ),
-                      );
-                      return;
-                    }
-                    // TODO: Submit form
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Đã gửi báo cáo thành công!'),
-                        backgroundColor: AppColors.success500,
-                      ),
-                    );
-                    Navigator.pop(context);
-                  }
+                  );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand500,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'GỬI NGAY',
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
               ),
-              const SizedBox(height: 20),
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_isListening)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.mic,
+                                size: 16,
+                                color: AppColors.error500,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                l10n.listening,
+                                style: TextStyle(
+                                  color: AppColors.error500,
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 20),
+
+                      // Ghi chú của Leader
+                      _buildSectionTitle(l10n.leaderNotes),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _leaderNotesController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: l10n.enterLeaderNotes,
+                          hintStyle: TextStyle(color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.brand500,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Đính kèm bằng chứng
+                      _buildSectionTitle(l10n.attachEvidence),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildAttachmentButton(
+                              icon: Icons.camera_alt,
+                              label: l10n.takePhoto,
+                              onTap: _takePicture,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildAttachmentButton(
+                              icon: Icons.photo_library,
+                              label: l10n.uploadMedia,
+                              onTap: _pickMedia,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildAttachmentButton(
+                        icon: _isRecording ? Icons.stop : Icons.mic,
+                        label: _isRecording ? l10n.stopRecording : l10n.record,
+                        onTap: _toggleRecording,
+                        isRecording: _isRecording,
+                      ),
+
+                      // Display attached media
+                      if (_images.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildMediaPreview(
+                          l10n.selectedImages,
+                          _images,
+                          Icons.image,
+                        ),
+                      ],
+                      if (_videos.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildMediaPreview(
+                          l10n.selectedVideos,
+                          _videos,
+                          Icons.videocam,
+                        ),
+                      ],
+                      if (_audioPath != null) ...[
+                        const SizedBox(height: 16),
+                        _buildAudioPreview(l10n),
+                      ],
+                      const SizedBox(height: 32),
+
+                      // Nút gửi báo cáo
+                      ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            if (_selectedPriority == null) {
+                              ToastUtils.showError(l10n.pleaseSelectPriority);
+                              return;
+                            }
+                            // TODO: Submit form
+                            ToastUtils.showSuccess(l10n.reportSubmitSuccess);
+                            Navigator.pop(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brand500,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          l10n.submit.toUpperCase(),
+                          style: TextStyle(
+                            color: AppColors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -927,12 +1053,12 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
     );
   }
 
-  Widget _buildAudioPreview() {
+  Widget _buildAudioPreview(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Audio đã ghi',
+          l10n.recordedAudio,
           style: TextStyle(
             color: AppColors.gray800,
             fontSize: 14,

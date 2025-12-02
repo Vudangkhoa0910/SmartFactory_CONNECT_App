@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/report_model.dart';
+import '../../services/incident_service.dart';
+import '../../components/loading_infinity.dart';
 import 'leader_report_review_screen.dart';
 
-/// Màn hình quản lý báo cáo sự cố cho Leader
-/// Leader nhận báo cáo từ User, xác nhận và gửi lên Admin
 class LeaderReportManagementScreen extends StatefulWidget {
   const LeaderReportManagementScreen({super.key});
 
@@ -20,11 +21,19 @@ class _LeaderReportManagementScreenState
   Set<String> _selectedFilters = {};
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  List<ReportModel> _allReports = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
+    _fetchReports();
   }
 
   @override
@@ -34,31 +43,31 @@ class _LeaderReportManagementScreenState
     super.dispose();
   }
 
-  // Mock data - will be replaced with API calls
+  Future<void> _fetchReports() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await IncidentService.getIncidents();
+      setState(() {
+        _allReports = data.map((json) => ReportModel.fromJson(json)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
   List<ReportModel> _getReportsByTab(int tabIndex) {
-    // Tab 0: NEW (Pending approval)
-    // Tab 1: PROCESSING (Approved, being handled by Admin)
-    // Tab 2: COMPLETED (Closed)
-
-    final allReports = _getMockReports();
-
     switch (tabIndex) {
-      case 0: // NEW
-        return allReports
-            .where(
-              (r) =>
-                  r.status == ReportStatus.processing && r.id.contains('NEW'),
-            )
+      case 0:
+        return _allReports
+            .where((r) => r.status == ReportStatus.pending)
             .toList();
-      case 1: // PROCESSING
-        return allReports
-            .where(
-              (r) =>
-                  r.status == ReportStatus.processing && !r.id.contains('NEW'),
-            )
+      case 1:
+        return _allReports
+            .where((r) => r.status == ReportStatus.processing)
             .toList();
-      case 2: // COMPLETED
-        return allReports
+      case 2:
+        return _allReports
             .where(
               (r) =>
                   r.status == ReportStatus.completed ||
@@ -70,58 +79,8 @@ class _LeaderReportManagementScreenState
     }
   }
 
-  List<ReportModel> _getMockReports() {
-    return [
-      // NEW reports (pending Leader approval)
-      ReportModel(
-        id: 'SC-1025-NEW',
-        title: 'Máy dập Line 3 bị kẹt - Nguyễn Văn A',
-        description: 'Máy không hoạt động, cần kiểm tra ngay',
-        location: 'Dây chuyền A - Line 3',
-        priority: ReportPriority.urgent,
-        status: ReportStatus.processing,
-        createdDate: DateTime.now().subtract(const Duration(hours: 2)),
-        attachments: [],
-      ),
-      ReportModel(
-        id: 'SC-1026-NEW',
-        title: 'Thiếu nguyên liệu - Trần Thị B',
-        description: 'Kho hết vật liệu số 245',
-        location: 'Kho B',
-        priority: ReportPriority.high,
-        status: ReportStatus.processing,
-        createdDate: DateTime.now().subtract(const Duration(hours: 5)),
-        attachments: [],
-      ),
-      // PROCESSING reports
-      ReportModel(
-        id: 'SC-1020',
-        title: 'Lỗi hệ thống điều khiển - Lê Văn C',
-        description: 'Màn hình không hiển thị',
-        location: 'Dây chuyền B',
-        priority: ReportPriority.high,
-        status: ReportStatus.processing,
-        createdDate: DateTime.now().subtract(const Duration(days: 1)),
-        attachments: [],
-      ),
-      // COMPLETED reports
-      ReportModel(
-        id: 'SC-1018',
-        title: 'Hỏng băng tải - Phạm Thị D',
-        description: 'Băng tải bị đứt',
-        location: 'Dây chuyền C',
-        priority: ReportPriority.medium,
-        status: ReportStatus.completed,
-        createdDate: DateTime.now().subtract(const Duration(days: 3)),
-        attachments: [],
-      ),
-    ];
-  }
-
   List<ReportModel> get _filteredReports {
     var reports = _getReportsByTab(_tabController.index);
-
-    // Search filter
     if (_searchQuery.isNotEmpty) {
       reports = reports
           .where(
@@ -132,32 +91,25 @@ class _LeaderReportManagementScreenState
           )
           .toList();
     }
-
-    // Priority filter
     if (_selectedFilters.isNotEmpty) {
-      final hasPriorityFilter = _selectedFilters.any(
-        (f) => ['urgent', 'high', 'medium', 'low'].contains(f),
-      );
-
-      if (hasPriorityFilter) {
-        reports = reports.where((report) {
-          return (_selectedFilters.contains('urgent') &&
-                  report.priority == ReportPriority.urgent) ||
-              (_selectedFilters.contains('high') &&
-                  report.priority == ReportPriority.high) ||
-              (_selectedFilters.contains('medium') &&
-                  report.priority == ReportPriority.medium) ||
-              (_selectedFilters.contains('low') &&
-                  report.priority == ReportPriority.low);
-        }).toList();
-      }
+      reports = reports.where((report) {
+        return (_selectedFilters.contains('urgent') &&
+                report.priority == ReportPriority.urgent) ||
+            (_selectedFilters.contains('high') &&
+                report.priority == ReportPriority.high) ||
+            (_selectedFilters.contains('medium') &&
+                report.priority == ReportPriority.medium) ||
+            (_selectedFilters.contains('low') &&
+                report.priority == ReportPriority.low);
+      }).toList();
     }
-
     return reports;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -166,37 +118,38 @@ class _LeaderReportManagementScreenState
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(),
+              _buildHeader(l10n),
               _buildTabBar(),
               _buildSearchAndFilter(),
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildReportList(),
-                    _buildReportList(),
-                    _buildReportList(),
-                  ],
-                ),
+                child: _isLoading
+                    ? const LoadingInfinity()
+                    : RefreshIndicator(
+                        onRefresh: _fetchReports,
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildReportList(),
+                            _buildReportList(),
+                            _buildReportList(),
+                          ],
+                        ),
+                      ),
               ),
             ],
           ),
         ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80), // Đẩy lên khỏi bottom nav
+        padding: const EdgeInsets.only(bottom: 80),
         child: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.pushNamed(context, '/leader-report-form');
-          },
+          onPressed: () => Navigator.pushNamed(context, '/leader-report-form'),
           backgroundColor: AppColors.error500,
-          elevation: 4,
-          icon: Icon(Icons.add, color: AppColors.white, size: 22),
+          icon: Icon(Icons.add, color: AppColors.white),
           label: Text(
-            'Tạo báo cáo',
+            l10n.createReport,
             style: TextStyle(
               color: AppColors.white,
-              fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -205,7 +158,7 @@ class _LeaderReportManagementScreenState
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -224,12 +177,17 @@ class _LeaderReportManagementScreenState
           ),
           const SizedBox(width: 12),
           Text(
-            'Quản lý Báo cáo sự cố',
+            l10n.leaderReportManagement,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.gray900,
             ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: _fetchReports,
+            icon: Icon(Icons.refresh, color: AppColors.gray600),
           ),
         ],
       ),
@@ -237,6 +195,8 @@ class _LeaderReportManagementScreenState
   }
 
   Widget _buildTabBar() {
+    final pendingCount = _getReportsByTab(0).length;
+    final processingCount = _getReportsByTab(1).length;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       height: 45,
@@ -263,36 +223,16 @@ class _LeaderReportManagementScreenState
         labelColor: AppColors.white,
         unselectedLabelColor: AppColors.gray900,
         labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-        ),
-        onTap: (index) => setState(() {}),
         tabs: [
           Tab(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text('MỚI'),
-                const SizedBox(width: 3),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.error500,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${_getReportsByTab(0).length}',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.white,
-                    ),
-                  ),
-                ),
+                if (pendingCount > 0) ...[
+                  const SizedBox(width: 3),
+                  _buildBadge(pendingCount, 0),
+                ],
               ],
             ),
           ),
@@ -300,43 +240,46 @@ class _LeaderReportManagementScreenState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('ĐANG XỬ LÝ'),
-                const SizedBox(width: 3),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.orange500,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${_getReportsByTab(1).length}',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.white,
-                    ),
-                  ),
-                ),
+                Text(AppLocalizations.of(context)!.tabProcessing),
+                if (processingCount > 0) ...[
+                  const SizedBox(width: 3),
+                  _buildBadge(processingCount, 1),
+                ],
               ],
             ),
           ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [const Text('HOÀN THÀNH')],
-            ),
-          ),
+          Tab(child: Text(AppLocalizations.of(context)!.tabCompleted)),
         ],
       ),
     );
   }
 
+  Widget _buildBadge(int count, int tabIndex) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: _tabController.index == tabIndex
+            ? AppColors.white
+            : (tabIndex == 0 ? AppColors.error500 : AppColors.orange500),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '$count',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: _tabController.index == tabIndex
+              ? (tabIndex == 0 ? AppColors.error500 : AppColors.orange500)
+              : AppColors.white,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSearchAndFilter() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 5, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Row(
         children: [
           Expanded(
@@ -344,7 +287,7 @@ class _LeaderReportManagementScreenState
               controller: _searchController,
               onChanged: (value) => setState(() => _searchQuery = value),
               decoration: InputDecoration(
-                hintText: 'Tìm kiếm theo mã, tiêu đề, người gửi...',
+                hintText: l10n.searchPlaceholder,
                 hintStyle: TextStyle(color: AppColors.gray400, fontSize: 14),
                 prefixIcon: Icon(Icons.search, color: AppColors.gray400),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -370,25 +313,24 @@ class _LeaderReportManagementScreenState
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(color: AppColors.brand500, width: 2),
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 16,
-                ),
               ),
             ),
           ),
           const SizedBox(width: 12),
           PopupMenuButton<String>(
-            icon: Icon(Icons.filter_list, color: AppColors.gray600, size: 22),
-            color: Colors.white,
-            offset: const Offset(0, 40),
-            onSelected: (_) {},
+            icon: Icon(Icons.filter_list, color: AppColors.gray600),
+            onSelected: (filter) => setState(() {
+              if (_selectedFilters.contains(filter)) {
+                _selectedFilters.remove(filter);
+              } else {
+                _selectedFilters.add(filter);
+              }
+            }),
             itemBuilder: (context) => [
-              // Filter menu items here
-              PopupMenuItem(
-                enabled: false,
-                child: Text('Lọc theo mức độ ưu tiên'),
-              ),
+              PopupMenuItem(value: 'urgent', child: Text(l10n.priorityUrgent)),
+              PopupMenuItem(value: 'high', child: Text(l10n.priorityHigh)),
+              PopupMenuItem(value: 'medium', child: Text(l10n.priorityMedium)),
+              PopupMenuItem(value: 'low', child: Text(l10n.priorityLow)),
             ],
           ),
         ],
@@ -397,8 +339,8 @@ class _LeaderReportManagementScreenState
   }
 
   Widget _buildReportList() {
+    final l10n = AppLocalizations.of(context)!;
     final reports = _filteredReports;
-
     if (reports.isEmpty) {
       return Center(
         child: Column(
@@ -407,32 +349,41 @@ class _LeaderReportManagementScreenState
             Icon(Icons.inbox_outlined, size: 64, color: AppColors.gray300),
             const SizedBox(height: 16),
             Text(
-              'Không có báo cáo nào',
+              l10n.noReportsFound,
               style: TextStyle(fontSize: 16, color: AppColors.gray500),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _fetchReports,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: Text(l10n.refresh),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brand500,
+                foregroundColor: AppColors.white,
+              ),
             ),
           ],
         ),
       );
     }
-
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: reports.length,
-      itemBuilder: (context, index) {
-        return _buildReportCard(reports[index]);
-      },
+      itemBuilder: (context, index) => _buildReportCard(reports[index]),
     );
   }
 
   Widget _buildReportCard(ReportModel report) {
+    final isPending = report.status == ReportStatus.pending;
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => LeaderReportReviewScreen(report: report),
           ),
         );
+        if (result == true) _fetchReports();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -463,7 +414,7 @@ class _LeaderReportManagementScreenState
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    report.id,
+                    '#${report.id.length > 8 ? report.id.substring(0, 8) : report.id}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -472,7 +423,7 @@ class _LeaderReportManagementScreenState
                   ),
                 ),
                 const Spacer(),
-                if (report.id.contains('NEW'))
+                if (isPending)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -482,18 +433,48 @@ class _LeaderReportManagementScreenState
                       color: AppColors.error500,
                       borderRadius: BorderRadius.circular(10),
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.pending_actions,
+                          color: AppColors.white,
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Chờ duyệt',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(report.status).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: Text(
-                      'Chờ Leader duyệt',
+                      report.statusLabel,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.white,
+                        color: _getStatusColor(report.status),
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               report.title,
               style: TextStyle(
@@ -501,6 +482,8 @@ class _LeaderReportManagementScreenState
                 fontWeight: FontWeight.w600,
                 color: AppColors.gray900,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
             Row(
@@ -508,9 +491,7 @@ class _LeaderReportManagementScreenState
                 Icon(Icons.person_outline, size: 14, color: AppColors.gray500),
                 const SizedBox(width: 4),
                 Text(
-                  report.title.contains(' - ')
-                      ? report.title.split(' - ').last
-                      : 'N/A',
+                  report.reporterName ?? 'N/A',
                   style: TextStyle(fontSize: 13, color: AppColors.gray600),
                 ),
                 const SizedBox(width: 12),
@@ -576,18 +557,24 @@ class _LeaderReportManagementScreenState
     }
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-
-    if (diff.inMinutes < 60) {
-      return '${diff.inMinutes} phút trước';
-    } else if (diff.inHours < 24) {
-      return '${diff.inHours} giờ trước';
-    } else if (diff.inDays < 7) {
-      return '${diff.inDays} ngày trước';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
+  Color _getStatusColor(ReportStatus status) {
+    switch (status) {
+      case ReportStatus.pending:
+        return AppColors.error500;
+      case ReportStatus.processing:
+        return AppColors.orange500;
+      case ReportStatus.completed:
+        return AppColors.success500;
+      case ReportStatus.closed:
+        return AppColors.gray400;
     }
+  }
+
+  String _formatDate(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 60) return '${diff.inMinutes} phút trước';
+    if (diff.inHours < 24) return '${diff.inHours} giờ trước';
+    if (diff.inDays < 7) return '${diff.inDays} ngày trước';
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

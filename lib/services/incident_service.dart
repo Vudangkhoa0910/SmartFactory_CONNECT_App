@@ -91,4 +91,99 @@ class IncidentService {
       return [];
     }
   }
+
+  // Update incident status
+  static Future<Map<String, dynamic>> updateStatus({
+    required String incidentId,
+    required String status,
+    String? notes,
+  }) async {
+    try {
+      final response = await ApiService.put(
+        '${ApiConstants.incidents}/$incidentId/status',
+        {'status': status, if (notes != null) 'notes': notes},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        try {
+          final errorBody = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorBody['message'] ?? 'Failed to update status',
+          };
+        } catch (_) {
+          return {
+            'success': false,
+            'message': 'Failed to update status: ${response.statusCode}',
+          };
+        }
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
+  // Approve incident (Leader approves and sends to Admin)
+  static Future<Map<String, dynamic>> approveIncident({
+    required String incidentId,
+    required String priority,
+    String? category,
+    String? component,
+    String? productionLine,
+    String? workstation,
+    String? department,
+    String? leaderNotes,
+  }) async {
+    try {
+      final response = await ApiService.put(
+        '${ApiConstants.incidents}/$incidentId/status',
+        {'status': 'assigned', 'notes': leaderNotes ?? 'Approved by Leader'},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        try {
+          final errorBody = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorBody['message'] ?? 'Failed to approve incident',
+          };
+        } catch (_) {
+          return {
+            'success': false,
+            'message': 'Failed to approve incident: ${response.statusCode}',
+          };
+        }
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
+  // Return incident to user
+  static Future<Map<String, dynamic>> returnToUser({
+    required String incidentId,
+    required String reason,
+  }) async {
+    return updateStatus(
+      incidentId: incidentId,
+      status: 'pending',
+      notes: 'Returned: $reason',
+    );
+  }
+
+  // Cancel incident
+  static Future<Map<String, dynamic>> cancelIncident({
+    required String incidentId,
+    String? reason,
+  }) async {
+    return updateStatus(
+      incidentId: incidentId,
+      status: 'cancelled',
+      notes: reason ?? 'Cancelled by Leader',
+    );
+  }
 }

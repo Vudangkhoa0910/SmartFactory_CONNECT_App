@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../utils/toast_utils.dart';
 import '../../models/report_model.dart';
+import '../../services/incident_service.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Màn hình Leader xem chi tiết và duyệt báo cáo sự cố
 class LeaderReportReviewScreen extends StatefulWidget {
@@ -14,6 +17,12 @@ class LeaderReportReviewScreen extends StatefulWidget {
 }
 
 class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
+  // Loading state
+  bool _isLoading = false;
+
+  // Kiểm tra xem báo cáo có ở trạng thái pending không
+  bool get _isPending => widget.report.status == ReportStatus.pending;
+
   // Leader's additional information
   String? _selectedCategory;
   ReportPriority? _selectedPriority;
@@ -54,6 +63,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.white,
@@ -63,7 +73,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Chi tiết sự cố ${widget.report.id}',
+          '${l10n.incidentDetail} ${widget.report.id}',
           style: TextStyle(
             color: AppColors.gray800,
             fontSize: 18,
@@ -81,24 +91,24 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Section 1: User Information (Read-only)
-              _buildSection('Thông tin từ người gửi', [
+              _buildSection(l10n.senderInfo, [
                 _buildReadOnlyRowField(
-                  'Người gửi',
+                  l10n.reporter,
                   widget.report.title.contains(' - ')
                       ? widget.report.title.split(' - ').last
                       : 'N/A',
                 ),
                 _buildReadOnlyRowField(
-                  'Tiêu đề sự cố',
+                  l10n.incidentTitle,
                   widget.report.title.split(' - ').first,
                 ),
                 _buildReadOnlyRowField(
-                  'Mức độ ưu tiên',
+                  l10n.priority,
                   widget.report.priorityLabel,
                 ),
                 _buildReadOnlyField(
-                  'Mô tả chi tiết',
-                  widget.report.description ?? 'Không có mô tả',
+                  l10n.description,
+                  widget.report.description ?? l10n.noData,
                 ),
                 if (widget.report.attachments?.isNotEmpty ?? false)
                   _buildAttachmentsField(),
@@ -107,59 +117,97 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
               const SizedBox(height: 24),
 
               // Section 2: Leader's Additional Information
-              _buildSection('Xác nhận & Bổ sung thông tin', [
-                _buildDropdownField(
-                  'Phân loại vấn đề',
-                  _selectedCategory,
-                  ['Kỹ thuật', 'An toàn', 'Chất lượng', 'Hành chính'],
-                  (value) {
-                    setState(() => _selectedCategory = value);
-                  },
-                ),
-                _buildPriorityDropdown(),
-                _buildDropdownField(
-                  'Tên linh kiện',
-                  _selectedComponent,
-                  ['Động cơ', 'Băng tải', 'Cảm biến', 'Van điều khiển'],
-                  (value) {
-                    setState(() => _selectedComponent = value);
-                  },
-                ),
-                _buildDropdownField(
-                  'Tên dây chuyền',
-                  _selectedProductionLine,
-                  ['Dây chuyền A', 'Dây chuyền B', 'Dây chuyền C'],
-                  (value) {
-                    setState(() => _selectedProductionLine = value);
-                  },
-                ),
-                _buildDropdownField(
-                  'Công đoạn',
-                  _selectedWorkstation,
-                  ['Đúc', 'Dập', 'Lắp ráp', 'Kiểm tra'],
-                  (value) {
-                    setState(() => _selectedWorkstation = value);
-                  },
-                ),
-                _buildDropdownField(
-                  'Bộ phận phát hiện',
-                  _selectedDepartment,
-                  ['QC', 'Sản xuất', 'Bảo trì', 'An toàn'],
-                  (value) {
-                    setState(() => _selectedDepartment = value);
-                  },
-                ),
-                _buildTextAreaField(
-                  'Ghi chú của Leader',
-                  _leaderNotesController,
-                  'Nhập ghi chú (tùy chọn)',
-                ),
-              ]),
+              // Only show edit form when status is pending
+              if (_isPending) ...[
+                _buildSection('Xác nhận & Bổ sung thông tin', [
+                  _buildDropdownField(
+                    'Phân loại vấn đề',
+                    _selectedCategory,
+                    ['Kỹ thuật', 'An toàn', 'Chất lượng', 'Hành chính'],
+                    (value) {
+                      setState(() => _selectedCategory = value);
+                    },
+                  ),
+                  _buildPriorityDropdown(l10n),
+                  _buildDropdownField(
+                    l10n.componentName,
+                    _selectedComponent,
+                    ['Động cơ', 'Băng tải', 'Cảm biến', 'Van điều khiển'],
+                    (value) {
+                      setState(() => _selectedComponent = value);
+                    },
+                  ),
+                  _buildDropdownField(
+                    l10n.productionLine,
+                    _selectedProductionLine,
+                    ['Dây chuyền A', 'Dây chuyền B', 'Dây chuyền C'],
+                    (value) {
+                      setState(() => _selectedProductionLine = value);
+                    },
+                  ),
+                  _buildDropdownField(
+                    'Công đoạn',
+                    _selectedWorkstation,
+                    ['Đúc', 'Dập', 'Lắp ráp', 'Kiểm tra'],
+                    (value) {
+                      setState(() => _selectedWorkstation = value);
+                    },
+                  ),
+                  _buildDropdownField(
+                    'Bộ phận phát hiện',
+                    _selectedDepartment,
+                    ['QC', 'Sản xuất', 'Bảo trì', 'An toàn'],
+                    (value) {
+                      setState(() => _selectedDepartment = value);
+                    },
+                  ),
+                  _buildTextAreaField(
+                    'Ghi chú của Leader',
+                    _leaderNotesController,
+                    'Nhập ghi chú (tùy chọn)',
+                  ),
+                ]),
+              ] else ...[
+                // Read-only section cho trạng thái đang xử lý hoặc hoàn thành
+                _buildSection('Thông tin xử lý', [
+                  _buildReadOnlyRowField(
+                    'Trạng thái',
+                    widget.report.statusLabel,
+                  ),
+                  if (_selectedCategory != null)
+                    _buildReadOnlyRowField(l10n.category, _selectedCategory!),
+                  if (_selectedComponent != null)
+                    _buildReadOnlyRowField(
+                      l10n.componentName,
+                      _selectedComponent!,
+                    ),
+                  if (_selectedProductionLine != null)
+                    _buildReadOnlyRowField(
+                      l10n.productionLine,
+                      _selectedProductionLine!,
+                    ),
+                  if (_selectedWorkstation != null)
+                    _buildReadOnlyRowField(
+                      l10n.workstation,
+                      _selectedWorkstation!,
+                    ),
+                  if (_selectedDepartment != null)
+                    _buildReadOnlyRowField(
+                      l10n.detectionDepartment,
+                      _selectedDepartment!,
+                    ),
+                  if (_leaderNotesController.text.isNotEmpty)
+                    _buildReadOnlyField(
+                      l10n.leaderNotes,
+                      _leaderNotesController.text,
+                    ),
+                ]),
+              ],
 
               const SizedBox(height: 32),
 
-              // Action Buttons
-              _buildActionButtons(),
+              // Action Buttons - Chỉ hiển thị khi trạng thái là pending
+              if (_isPending) _buildActionButtons(),
 
               const SizedBox(height: 20),
             ],
@@ -248,13 +296,14 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
   }
 
   Widget _buildAttachmentsField() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Hình ảnh/Video đính kèm',
+            l10n.attachments,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -268,7 +317,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
             },
             icon: Icon(Icons.attachment, color: AppColors.brand500, size: 18),
             label: Text(
-              'Xem ${widget.report.attachments?.length} file đính kèm',
+              '${l10n.viewDetail} ${widget.report.attachments?.length} ${l10n.attachments.toLowerCase()}',
               style: TextStyle(color: AppColors.brand500, fontSize: 14),
             ),
           ),
@@ -284,6 +333,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
     ValueChanged<String?> onChanged,
   ) {
     final GlobalKey dropdownKey = GlobalKey();
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -362,7 +412,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      value ?? 'Chọn $label',
+                      value ?? '${l10n.select} $label',
                       style: TextStyle(
                         fontSize: 14,
                         color: value != null
@@ -385,7 +435,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
     );
   }
 
-  Widget _buildPriorityDropdown() {
+  Widget _buildPriorityDropdown(AppLocalizations l10n) {
     final GlobalKey dropdownKey = GlobalKey();
 
     return Padding(
@@ -396,7 +446,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
           Row(
             children: [
               Text(
-                'Xác nhận mức độ ưu tiên',
+                l10n.confirmPriority,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -443,16 +493,16 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
                   String displayName;
                   switch (priority) {
                     case ReportPriority.low:
-                      displayName = 'Thấp';
+                      displayName = l10n.low;
                       break;
                     case ReportPriority.medium:
-                      displayName = 'Trung bình';
+                      displayName = l10n.medium;
                       break;
                     case ReportPriority.high:
-                      displayName = 'Cao';
+                      displayName = l10n.high;
                       break;
                     case ReportPriority.urgent:
-                      displayName = 'Khẩn cấp';
+                      displayName = l10n.critical;
                       break;
                   }
                   return PopupMenuItem<ReportPriority>(
@@ -484,16 +534,16 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
                           ? () {
                               switch (_selectedPriority!) {
                                 case ReportPriority.low:
-                                  return 'Thấp';
+                                  return l10n.low;
                                 case ReportPriority.medium:
-                                  return 'Trung bình';
+                                  return l10n.medium;
                                 case ReportPriority.high:
-                                  return 'Cao';
+                                  return l10n.high;
                                 case ReportPriority.urgent:
-                                  return 'Khẩn cấp';
+                                  return l10n.critical;
                               }
                             }()
-                          : 'Chọn mức độ ưu tiên',
+                          : l10n.selectPriority,
                       style: TextStyle(
                         fontSize: 14,
                         color: _selectedPriority != null
@@ -639,6 +689,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
   }
 
   void _validateAndApprove() {
+    final l10n = AppLocalizations.of(context)!;
     // Validate required fields
     if (_selectedCategory == null ||
         _selectedPriority == null ||
@@ -646,124 +697,199 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
         _selectedProductionLine == null ||
         _selectedWorkstation == null ||
         _selectedDepartment == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Vui lòng điền đầy đủ các trường bắt buộc (*)'),
-          backgroundColor: AppColors.error500,
-        ),
-      );
+      ToastUtils.showError(l10n.pleaseFillRequiredFields);
       return;
     }
 
-    // TODO: Submit approval to API
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Xác nhận duyệt'),
-        content: Text('Bạn có chắc muốn duyệt báo cáo này và gửi lên Admin?'),
+        title: Text(l10n.confirmApproval),
+        content: Text(l10n.confirmApproveMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Hủy'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Back to list
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Đã duyệt và gửi báo cáo lên Admin'),
-                  backgroundColor: AppColors.success500,
-                ),
-              );
+              await _performApprove();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success500,
             ),
-            child: Text('Xác nhận'),
+            child: Text(l10n.confirm),
           ),
         ],
       ),
     );
   }
 
+  Future<void> _performApprove() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await IncidentService.approveIncident(
+        incidentId: widget.report.id,
+        priority: _selectedPriority!.name,
+        category: _selectedCategory,
+        component: _selectedComponent,
+        productionLine: _selectedProductionLine,
+        workstation: _selectedWorkstation,
+        department: _selectedDepartment,
+        leaderNotes: _leaderNotesController.text.isNotEmpty
+            ? _leaderNotesController.text
+            : null,
+      );
+
+      setState(() => _isLoading = false);
+
+      final l10n = AppLocalizations.of(context)!;
+      if (result['success'] == true || result['data'] != null) {
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to refresh list
+          ToastUtils.showSuccess(l10n.approvedAndSentToAdmin);
+        }
+      } else {
+        if (mounted) {
+          ToastUtils.showError(result['message'] ?? l10n.cannotApproveReport);
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ToastUtils.showError('${l10n.error}: $e');
+      }
+    }
+  }
+
   void _showReturnDialog() {
+    final l10n = AppLocalizations.of(context)!;
     final reasonController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Trả lại User'),
+        title: Text(l10n.returnToUser),
         content: TextField(
           controller: reasonController,
           maxLines: 3,
           decoration: InputDecoration(
-            hintText: 'Lý do trả lại (VD: Cần chụp ảnh rõ hơn)',
+            hintText: l10n.returnReasonHint,
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Hủy'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (reasonController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Vui lòng nhập lý do trả lại')),
-                );
+                ToastUtils.showWarning(l10n.pleaseEnterReturnReason);
                 return;
               }
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Back to list
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Đã trả lại báo cáo cho User'),
-                  backgroundColor: AppColors.orange500,
-                ),
-              );
+              await _performReturn(reasonController.text.trim());
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.orange500,
             ),
-            child: Text('Xác nhận'),
+            child: Text(l10n.confirm),
           ),
         ],
       ),
     );
   }
 
+  Future<void> _performReturn(String reason) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await IncidentService.returnToUser(
+        incidentId: widget.report.id,
+        reason: reason,
+      );
+
+      setState(() => _isLoading = false);
+
+      final l10n = AppLocalizations.of(context)!;
+      if (result['success'] == true || result['data'] != null) {
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to refresh list
+          ToastUtils.showWarning(l10n.returnedToUser);
+        }
+      } else {
+        if (mounted) {
+          ToastUtils.showError(result['message'] ?? l10n.cannotReturnReport);
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ToastUtils.showError('${l10n.error}: $e');
+      }
+    }
+  }
+
   void _showCancelDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Hủy báo cáo'),
-        content: Text(
-          'Bạn có chắc muốn hủy báo cáo này? Hành động này không thể hoàn tác.',
-        ),
+        title: Text(l10n.cancelReport),
+        content: Text(l10n.confirmCancelMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Không'),
+            child: Text(l10n.no),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Back to list
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Đã hủy báo cáo'),
-                  backgroundColor: AppColors.error500,
-                ),
-              );
+              await _performCancel();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error500,
             ),
-            child: Text('Xác nhận hủy'),
+            child: Text(l10n.confirmCancel),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _performCancel() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final l10n = AppLocalizations.of(context)!;
+      final result = await IncidentService.cancelIncident(
+        incidentId: widget.report.id,
+        reason: l10n.cancelledByLeader,
+      );
+
+      setState(() => _isLoading = false);
+
+      if (result['success'] == true || result['data'] != null) {
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to refresh list
+          ToastUtils.showError(l10n.reportCancelled);
+        }
+      } else {
+        if (mounted) {
+          ToastUtils.showError(result['message'] ?? l10n.cannotCancelReport);
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ToastUtils.showError('${l10n.error}: $e');
+      }
+    }
   }
 }
