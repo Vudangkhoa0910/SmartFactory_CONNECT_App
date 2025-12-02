@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import '../../config/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/report_model.dart';
@@ -124,16 +125,13 @@ class _LeaderReportManagementScreenState
               Expanded(
                 child: _isLoading
                     ? const LoadingInfinity()
-                    : RefreshIndicator(
-                        onRefresh: _fetchReports,
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildReportList(),
-                            _buildReportList(),
-                            _buildReportList(),
-                          ],
-                        ),
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildReportList(),
+                          _buildReportList(),
+                          _buildReportList(),
+                        ],
                       ),
               ),
             ],
@@ -184,11 +182,6 @@ class _LeaderReportManagementScreenState
               color: AppColors.gray900,
             ),
           ),
-          const Spacer(),
-          IconButton(
-            onPressed: _fetchReports,
-            icon: Icon(Icons.refresh, color: AppColors.gray600),
-          ),
         ],
       ),
     );
@@ -225,30 +218,38 @@ class _LeaderReportManagementScreenState
         labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
         tabs: [
           Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('MỚI'),
-                if (pendingCount > 0) ...[
-                  const SizedBox(width: 3),
-                  _buildBadge(pendingCount, 0),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('MỚI'),
+                  if (pendingCount > 0) ...[
+                    const SizedBox(width: 3),
+                    _buildBadge(pendingCount, 0),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(AppLocalizations.of(context)!.tabProcessing),
-                if (processingCount > 0) ...[
-                  const SizedBox(width: 3),
-                  _buildBadge(processingCount, 1),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('XỬ LÝ'),
+                  if (processingCount > 0) ...[
+                    const SizedBox(width: 3),
+                    _buildBadge(processingCount, 1),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-          Tab(child: Text(AppLocalizations.of(context)!.tabCompleted)),
+          Tab(
+            child: FittedBox(fit: BoxFit.scaleDown, child: Text('XONG')),
+          ),
         ],
       ),
     );
@@ -366,10 +367,34 @@ class _LeaderReportManagementScreenState
         ),
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: reports.length,
-      itemBuilder: (context, index) => _buildReportCard(reports[index]),
+    return CustomRefreshIndicator(
+      onRefresh: _fetchReports,
+      builder:
+          (BuildContext context, Widget child, IndicatorController controller) {
+            return Stack(
+              alignment: Alignment.topCenter,
+              children: <Widget>[
+                if (!controller.isIdle)
+                  Positioned(
+                    top: 10.0 * controller.value,
+                    child: const SizedBox(
+                      height: 80,
+                      width: 80,
+                      child: LoadingInfinity(size: 80),
+                    ),
+                  ),
+                Transform.translate(
+                  offset: Offset(0, 100.0 * controller.value),
+                  child: child,
+                ),
+              ],
+            );
+          },
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: reports.length,
+        itemBuilder: (context, index) => _buildReportCard(reports[index]),
+      ),
     );
   }
 

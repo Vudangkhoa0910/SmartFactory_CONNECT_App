@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import '../../config/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/news_model.dart';
@@ -338,23 +339,51 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
                 style: TextStyle(color: AppColors.gray600),
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _filteredNews.length,
-              itemBuilder: (context, index) {
-                final news = _filteredNews[index];
-                return _NewsCard(
-                  news: news,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NewsDetailScreen(news: news),
-                      ),
+          : CustomRefreshIndicator(
+              onRefresh: _fetchNews,
+              builder:
+                  (
+                    BuildContext context,
+                    Widget child,
+                    IndicatorController controller,
+                  ) {
+                    return Stack(
+                      alignment: Alignment.topCenter,
+                      children: <Widget>[
+                        if (!controller.isIdle)
+                          Positioned(
+                            top: 10.0 * controller.value,
+                            child: const SizedBox(
+                              height: 80,
+                              width: 80,
+                              child: LoadingInfinity(size: 80),
+                            ),
+                          ),
+                        Transform.translate(
+                          offset: Offset(0, 100.0 * controller.value),
+                          child: child,
+                        ),
+                      ],
                     );
                   },
-                );
-              },
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _filteredNews.length,
+                itemBuilder: (context, index) {
+                  final news = _filteredNews[index];
+                  return _NewsCard(
+                    news: news,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NewsDetailScreen(news: news),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
     );
   }
