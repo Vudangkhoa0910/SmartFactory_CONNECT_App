@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/idea_box_model.dart';
 import '../../services/idea_service.dart';
 import 'create_idea_screen.dart';
 import 'idea_detail_screen.dart';
+import '../../components/loading_infinity.dart';
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 
 /// Màn hình danh sách Hòm thư góp ý (Idea Box)
 /// Bao gồm tab Hòm thư trắng (công khai) và Hòm thư hồng (ẩn danh)
@@ -19,7 +22,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   late TabController _tabController;
   Set<String> _selectedFilters = {};
   final IdeaService _ideaService = IdeaService();
-  
+
   List<IdeaBoxItem> _whiteBoxIdeas = [];
   List<IdeaBoxItem> _pinkBoxIdeas = [];
   bool _isLoadingWhite = true;
@@ -112,6 +115,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   }
 
   Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -130,7 +134,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
           ),
           const SizedBox(width: 12),
           Text(
-            'Hòm thư góp ý',
+            l10n.ideaBox,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -157,7 +161,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                         width: double.infinity,
                         color: Colors.transparent,
                         child: Text(
-                          'Tất cả',
+                          l10n.ideaStatusAll,
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w600,
@@ -194,7 +198,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                               color: Colors.transparent,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'An toàn',
+                                l10n.ideaCategorySafety,
                                 style: TextStyle(
                                   color: _selectedFilters.contains('safety')
                                       ? AppColors.brand500
@@ -224,7 +228,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                               color: Colors.transparent,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'Đang xem xét',
+                                l10n.ideaStatusUnderReview,
                                 style: TextStyle(
                                   color:
                                       _selectedFilters.contains('underReview')
@@ -266,7 +270,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                               color: Colors.transparent,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'Chất lượng',
+                                l10n.ideaCategoryQuality,
                                 style: TextStyle(
                                   color: _selectedFilters.contains('quality')
                                       ? AppColors.brand500
@@ -296,7 +300,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                               color: Colors.transparent,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'Đã phê duyệt',
+                                l10n.ideaStatusApproved,
                                 style: TextStyle(
                                   color: _selectedFilters.contains('approved')
                                       ? AppColors.brand500
@@ -337,7 +341,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                               color: Colors.transparent,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'Quy trình',
+                                l10n.ideaCategoryProductivity,
                                 style: TextStyle(
                                   color: _selectedFilters.contains('process')
                                       ? AppColors.brand500
@@ -367,7 +371,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                               color: Colors.transparent,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'Hoàn thành',
+                                l10n.ideaStatusImplemented,
                                 style: TextStyle(
                                   color: _selectedFilters.contains('completed')
                                       ? AppColors.brand500
@@ -435,12 +439,15 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   }
 
   Widget _buildIdeaList(IdeaBoxType type) {
-    final isLoading = type == IdeaBoxType.white ? _isLoadingWhite : _isLoadingPink;
+    final l10n = AppLocalizations.of(context)!;
+    final isLoading = type == IdeaBoxType.white
+        ? _isLoadingWhite
+        : _isLoadingPink;
     final error = type == IdeaBoxType.white ? _errorWhite : _errorPink;
     final ideas = type == IdeaBoxType.white ? _whiteBoxIdeas : _pinkBoxIdeas;
 
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: LoadingInfinity());
     }
 
     if (error != null) {
@@ -448,11 +455,14 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Lỗi: $error', style: TextStyle(color: AppColors.error500)),
+            Text(
+              '${l10n.error}: $error',
+              style: TextStyle(color: AppColors.error500),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _fetchIdeas(type),
-              child: const Text('Thử lại'),
+              child: Text(l10n.refresh),
             ),
           ],
         ),
@@ -496,8 +506,29 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
       return _buildEmptyState(type);
     }
 
-    return RefreshIndicator(
+    return CustomRefreshIndicator(
       onRefresh: () => _fetchIdeas(type),
+      builder:
+          (BuildContext context, Widget child, IndicatorController controller) {
+            return Stack(
+              alignment: Alignment.topCenter,
+              children: <Widget>[
+                if (!controller.isIdle)
+                  Positioned(
+                    top: 10.0 * controller.value,
+                    child: const SizedBox(
+                      height: 80,
+                      width: 80,
+                      child: LoadingInfinity(size: 80),
+                    ),
+                  ),
+                Transform.translate(
+                  offset: Offset(0, 100.0 * controller.value),
+                  child: child,
+                ),
+              ],
+            );
+          },
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(
           20,
@@ -514,6 +545,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   }
 
   Widget _buildEmptyState(IdeaBoxType type) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -538,9 +570,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
           ),
           const SizedBox(height: 24),
           Text(
-            type == IdeaBoxType.white
-                ? 'Chưa có góp ý trong hòm trắng'
-                : 'Bạn chưa gửi góp ý ẩn danh nào',
+            type == IdeaBoxType.white ? l10n.noIdeasYet : l10n.noIdeasYet,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -550,8 +580,8 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
           const SizedBox(height: 8),
           Text(
             type == IdeaBoxType.white
-                ? 'Hãy là người đầu tiên chia sẻ ý kiến!'
-                : 'Gửi góp ý ẩn danh để bảo vệ thông tin của bạn',
+                ? l10n.createFirstIdea
+                : l10n.createFirstIdea,
             style: TextStyle(fontSize: 14, color: AppColors.gray500),
             textAlign: TextAlign.center,
           ),
@@ -561,6 +591,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   }
 
   Widget _buildIdeaCard(IdeaBoxItem idea) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -670,7 +701,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Ẩn danh',
+                          l10n.ideaStatusDraft,
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.gray500,
@@ -780,6 +811,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   }
 
   Widget _buildFloatingActionButton() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 80), // Đẩy lên khỏi bottom nav
       child: FloatingActionButton.extended(
@@ -803,8 +835,8 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
         backgroundColor: AppColors.brand500,
         elevation: 4,
         icon: const Icon(Icons.add, color: AppColors.white, size: 22),
-        label: const Text(
-          'Gửi góp ý',
+        label: Text(
+          l10n.submitIdea,
           style: TextStyle(
             color: AppColors.white,
             fontWeight: FontWeight.w600,

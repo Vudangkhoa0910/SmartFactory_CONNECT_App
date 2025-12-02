@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import 'report_form_screen.dart';
 import 'report_detail_view_screen.dart';
 import '../../models/report_model.dart';
 import '../../services/incident_service.dart';
+import '../../components/loading_infinity.dart';
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 
 class ReportListScreen extends StatefulWidget {
   const ReportListScreen({super.key});
@@ -97,6 +100,8 @@ class _ReportListScreenState extends State<ReportListScreen> {
 
   Color _getStatusColor(ReportStatus status) {
     switch (status) {
+      case ReportStatus.pending:
+        return AppColors.error500;
       case ReportStatus.processing:
         return AppColors.orange500;
       case ReportStatus.completed:
@@ -181,7 +186,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
           elevation: 4,
           icon: Icon(Icons.add, color: AppColors.white, size: 22),
           label: Text(
-            'Gửi báo cáo',
+            AppLocalizations.of(context)!.sendReport,
             style: TextStyle(
               color: AppColors.white,
               fontSize: 15,
@@ -231,7 +236,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Báo cáo sự cố',
+                        AppLocalizations.of(context)!.report,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -262,7 +267,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                     width: double.infinity,
                                     color: Colors.transparent,
                                     child: Text(
-                                      'Tất cả',
+                                      AppLocalizations.of(context)!.all,
                                       style: TextStyle(
                                         color: Colors.black,
                                         fontWeight: FontWeight.w600,
@@ -307,7 +312,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                             vertical: 8,
                                           ),
                                           child: Text(
-                                            'Khẩn cấp',
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.priorityUrgent,
                                             style: TextStyle(
                                               color:
                                                   _selectedFilters.contains(
@@ -352,7 +359,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                             vertical: 8,
                                           ),
                                           child: Text(
-                                            'Đang xử lý',
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.statusProcessing,
                                             style: TextStyle(
                                               color:
                                                   _selectedFilters.contains(
@@ -403,7 +412,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                             vertical: 8,
                                           ),
                                           child: Text(
-                                            'Cao',
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.priorityHigh,
                                             style: TextStyle(
                                               color:
                                                   _selectedFilters.contains(
@@ -446,7 +457,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                             vertical: 8,
                                           ),
                                           child: Text(
-                                            'Đã hoàn thành',
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.statusCompleted,
                                             style: TextStyle(
                                               color:
                                                   _selectedFilters.contains(
@@ -497,7 +510,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                             vertical: 8,
                                           ),
                                           child: Text(
-                                            'Trung bình',
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.priorityMedium,
                                             style: TextStyle(
                                               color:
                                                   _selectedFilters.contains(
@@ -538,7 +553,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                             vertical: 8,
                                           ),
                                           child: Text(
-                                            'Đã đóng',
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.statusClosed,
                                             style: TextStyle(
                                               color:
                                                   _selectedFilters.contains(
@@ -589,7 +606,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                             vertical: 8,
                                           ),
                                           child: Text(
-                                            'Thấp',
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.priorityLow,
                                             style: TextStyle(
                                               color:
                                                   _selectedFilters.contains(
@@ -633,7 +652,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                       setState(() => _searchQuery = value);
                     },
                     decoration: InputDecoration(
-                      hintText: 'Tìm kiếm theo mã, tiêu đề, vị trí...',
+                      hintText: AppLocalizations.of(
+                        context,
+                      )!.searchByCodeTitleLocation,
                       hintStyle: TextStyle(
                         color: AppColors.gray400,
                         fontSize: 14,
@@ -678,11 +699,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
                 // Main content - Report history list
                 Expanded(
                   child: _isLoading
-                      ? Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.brand500,
-                          ),
-                        )
+                      ? const Center(child: LoadingInfinity())
                       : Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: _filteredReports.isEmpty
@@ -699,8 +716,12 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                       Text(
                                         _searchQuery.isNotEmpty ||
                                                 _selectedFilters.isNotEmpty
-                                            ? 'Không tìm thấy kết quả phù hợp.'
-                                            : 'Chưa có báo cáo sự cố nào.',
+                                            ? AppLocalizations.of(
+                                                context,
+                                              )!.noMatchingResults
+                                            : AppLocalizations.of(
+                                                context,
+                                              )!.noIncidentReports,
                                         style: TextStyle(
                                           color: AppColors.gray500,
                                           fontSize: 16,
@@ -709,32 +730,67 @@ class _ReportListScreenState extends State<ReportListScreen> {
                                     ],
                                   ),
                                 )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.only(bottom: 80),
-                                  itemCount: _filteredReports.length,
-                                  itemBuilder: (context, index) {
-                                    final report = _filteredReports[index];
-                                    return _ReportCard(
-                                      report: report,
-                                      statusColor: _getStatusColor(
-                                        report.status,
-                                      ),
-                                      priorityColor: _getPriorityColor(
-                                        report.priority,
-                                      ),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                ReportDetailScreen(
-                                                  report: report,
+                              : CustomRefreshIndicator(
+                                  onRefresh: () async {
+                                    await _fetchReports();
+                                  },
+                                  builder:
+                                      (
+                                        BuildContext context,
+                                        Widget child,
+                                        IndicatorController controller,
+                                      ) {
+                                        return Stack(
+                                          alignment: Alignment.topCenter,
+                                          children: <Widget>[
+                                            if (!controller.isIdle)
+                                              Positioned(
+                                                top: 10.0 * controller.value,
+                                                child: const SizedBox(
+                                                  height: 80,
+                                                  width: 80,
+                                                  child: LoadingInfinity(
+                                                    size: 80,
+                                                  ),
                                                 ),
-                                          ),
+                                              ),
+                                            Transform.translate(
+                                              offset: Offset(
+                                                0,
+                                                100.0 * controller.value,
+                                              ),
+                                              child: child,
+                                            ),
+                                          ],
                                         );
                                       },
-                                    );
-                                  },
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.only(bottom: 80),
+                                    itemCount: _filteredReports.length,
+                                    itemBuilder: (context, index) {
+                                      final report = _filteredReports[index];
+                                      return _ReportCard(
+                                        report: report,
+                                        statusColor: _getStatusColor(
+                                          report.status,
+                                        ),
+                                        priorityColor: _getPriorityColor(
+                                          report.priority,
+                                        ),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ReportDetailScreen(
+                                                    report: report,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
                                 ),
                         ),
                 ),

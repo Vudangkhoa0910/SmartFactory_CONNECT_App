@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/idea_box_model.dart';
 import '../../services/idea_service.dart';
 import '../../widgets/text_field_with_mic.dart';
+import '../../components/loading_infinity.dart';
+import '../../utils/toast_utils.dart';
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 
 /// Màn hình chi tiết góp ý
 /// Hiển thị timeline xử lý và cho phép vote mức độ hài lòng
 class IdeaDetailScreen extends StatefulWidget {
   final IdeaBoxItem idea;
 
-  const IdeaDetailScreen({
-    super.key,
-    required this.idea,
-  });
+  const IdeaDetailScreen({super.key, required this.idea});
 
   @override
   State<IdeaDetailScreen> createState() => _IdeaDetailScreenState();
@@ -61,16 +62,39 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.appBackgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: AppColors.appBackgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
               _buildHeader(),
               Expanded(
-                child: RefreshIndicator(
+                child: CustomRefreshIndicator(
                   onRefresh: _fetchDetail,
+                  builder:
+                      (
+                        BuildContext context,
+                        Widget child,
+                        IndicatorController controller,
+                      ) {
+                        return Stack(
+                          alignment: Alignment.topCenter,
+                          children: <Widget>[
+                            if (!controller.isIdle)
+                              Positioned(
+                                top: 10.0 * controller.value,
+                                child: const SizedBox(
+                                  height: 80,
+                                  width: 80,
+                                  child: LoadingInfinity(size: 80),
+                                ),
+                              ),
+                            Transform.translate(
+                              offset: Offset(0, 100.0 * controller.value),
+                              child: child,
+                            ),
+                          ],
+                        );
+                      },
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                     child: Column(
@@ -104,6 +128,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   }
 
   Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -145,8 +170,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Chi tiết góp ý',
+                Text(
+                  l10n.ideaDetail,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -160,7 +185,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: LoadingInfinity(size: 20),
             )
           else
             IconButton(
@@ -180,10 +205,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.brand500,
-            AppColors.brand400,
-          ],
+          colors: [AppColors.brand500, AppColors.brand400],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -202,7 +224,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
@@ -218,7 +243,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(8),
@@ -247,33 +275,19 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(
-                Icons.access_time,
-                size: 16,
-                color: AppColors.white,
-              ),
+              const Icon(Icons.access_time, size: 16, color: AppColors.white),
               const SizedBox(width: 6),
               Text(
                 _formatDate(_idea.createdAt),
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.white,
-                ),
+                style: const TextStyle(fontSize: 13, color: AppColors.white),
               ),
               if (_idea.difficultyLevel != null) ...[
                 const SizedBox(width: 16),
-                const Icon(
-                  Icons.speed,
-                  size: 16,
-                  color: AppColors.white,
-                ),
+                const Icon(Icons.speed, size: 16, color: AppColors.white),
                 const SizedBox(width: 6),
                 Text(
                   _idea.difficultyLevel!.label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.white,
-                  ),
+                  style: const TextStyle(fontSize: 13, color: AppColors.white),
                 ),
               ],
             ],
@@ -284,6 +298,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   }
 
   Widget _buildIdeaDetails() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -308,8 +323,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                 color: AppColors.brand500,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Nội dung chi tiết',
+              Text(
+                l10n.ideaInfo,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -327,18 +342,15 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               height: 1.6,
             ),
           ),
-          if (_idea.expectedBenefit != null && _idea.expectedBenefit!.isNotEmpty) ...[
+          if (_idea.expectedBenefit != null &&
+              _idea.expectedBenefit!.isNotEmpty) ...[
             const SizedBox(height: 20),
             Row(
               children: [
-                Icon(
-                  Icons.trending_up,
-                  size: 20,
-                  color: AppColors.brand500,
-                ),
+                Icon(Icons.trending_up, size: 20, color: AppColors.brand500),
                 const SizedBox(width: 8),
-                const Text(
-                  'Lợi ích dự kiến',
+                Text(
+                  l10n.ideaBenefit,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -368,11 +380,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
       children: [
         Row(
           children: [
-            Icon(
-              Icons.attach_file,
-              size: 20,
-              color: AppColors.brand500,
-            ),
+            Icon(Icons.attach_file, size: 20, color: AppColors.brand500),
             const SizedBox(width: 8),
             const Text(
               'Tài liệu đính kèm',
@@ -440,7 +448,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                             ),
                           ),
                           child: Text(
-                            'Ảnh ${index + 1}',
+                            AppLocalizations.of(context)!.imageLabel(index + 1),
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.white,
@@ -461,6 +469,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   }
 
   Widget _buildSenderInfo() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -489,8 +498,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                     : AppColors.themePink500,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Người gửi',
+              Text(
+                l10n.ideaSubmittedBy,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -557,10 +566,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.lock,
-                    color: AppColors.themePink500,
-                  ),
+                  Icon(Icons.lock, color: AppColors.themePink500),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -588,9 +594,9 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   color: AppColors.blueLight500,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Đang xử lý bởi',
-                  style: TextStyle(
+                Text(
+                  AppLocalizations.of(context)!.processingBy,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.gray900,
@@ -602,7 +608,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.blueLight100,
                     borderRadius: BorderRadius.circular(8),
@@ -634,6 +643,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   }
 
   Widget _buildProcessTimeline() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -652,14 +662,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.timeline,
-                size: 20,
-                color: AppColors.brand500,
-              ),
+              Icon(Icons.timeline, size: 20, color: AppColors.brand500),
               const SizedBox(width: 8),
-              const Text(
-                'Tiến trình xử lý',
+              Text(
+                l10n.ideaStatus,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -682,11 +688,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Chưa có cập nhật',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.gray500,
-                      ),
+                      l10n.noIdeaComments,
+                      style: TextStyle(fontSize: 14, color: AppColors.gray500),
                     ),
                   ],
                 ),
@@ -733,11 +736,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               ),
             ),
             if (!isLast)
-              Container(
-                width: 2,
-                height: 60,
-                color: AppColors.gray200,
-              ),
+              Container(width: 2, height: 60, color: AppColors.gray200),
           ],
         ),
         const SizedBox(width: 16),
@@ -761,20 +760,14 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                     ),
                     Text(
                       _formatDateTime(log.timestamp),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.gray500,
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppColors.gray500),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${log.handlerRole} - ${log.handlerName}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.gray600,
-                  ),
+                  style: TextStyle(fontSize: 13, color: AppColors.gray600),
                 ),
                 if (log.comment.isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -797,7 +790,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                 if (log.escalatedTo != null) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.orange100,
                       borderRadius: BorderRadius.circular(6),
@@ -832,6 +828,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   }
 
   Widget _buildSatisfactionRating() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -850,14 +847,10 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.star_outline,
-                size: 24,
-                color: AppColors.warning500,
-              ),
+              Icon(Icons.star_outline, size: 24, color: AppColors.warning500),
               const SizedBox(width: 8),
-              const Text(
-                'Đánh giá mức độ hài lòng',
+              Text(
+                l10n.reviewIdea,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -868,11 +861,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Bạn có hài lòng với cách xử lý góp ý này?',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.gray600,
-            ),
+            l10n.addIdeaComment,
+            style: TextStyle(fontSize: 14, color: AppColors.gray600),
           ),
           const SizedBox(height: 20),
           Row(
@@ -915,12 +905,9 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Gửi đánh giá',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Text(
+                l10n.sendIdeaComment,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -977,17 +964,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
 
   void _submitRating() {
     // TODO: Gọi API để lưu đánh giá
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Cảm ơn bạn đã đánh giá!'),
-        backgroundColor: AppColors.success500,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
+    final l10n = AppLocalizations.of(context)!;
+    ToastUtils.showSuccess(l10n.success);
 
     setState(() {
       // Update local state
