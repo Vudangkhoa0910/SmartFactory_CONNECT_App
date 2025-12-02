@@ -105,7 +105,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
           children: [
             PageView(
               controller: _pageController,
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               onPageChanged: (index) {
                 setState(() {
                   _isUserSwiping = true;
