@@ -1,5 +1,3 @@
-import 'package:intl/intl.dart';
-
 class NewsModel {
   final String id;
   final String title;
@@ -24,12 +22,13 @@ class NewsModel {
   });
 
   factory NewsModel.fromJson(Map<String, dynamic> json) {
-    // Format date
+    // Format date - use ISO format, let UI handle locale-specific formatting
     String formattedDate = '';
     if (json['created_at'] != null) {
       try {
         final DateTime dt = DateTime.parse(json['created_at']);
-        formattedDate = DateFormat('dd Tháng MM, yyyy').format(dt);
+        // Store as ISO string, UI will format with locale
+        formattedDate = dt.toIso8601String();
       } catch (e) {
         formattedDate = json['created_at'].toString();
       }

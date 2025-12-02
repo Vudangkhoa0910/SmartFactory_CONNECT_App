@@ -1,19 +1,59 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 import '../../../providers/user_provider.dart';
+import '../../../services/auth_service.dart';
+import '../../../l10n/app_localizations.dart';
 
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends StatefulWidget {
   final double height;
 
   const HomeHeader({super.key, required this.height});
 
   @override
+  State<HomeHeader> createState() => _HomeHeaderState();
+}
+
+class _HomeHeaderState extends State<HomeHeader> {
+  String _userName = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final userInfo = await AuthService().getUserInfo();
+      if (mounted) {
+        setState(() {
+          _userName = userInfo['fullName'] ?? '';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final userProvider = UserProvider();
     final bool isLeader = userProvider.isLeader;
+    final l10n = AppLocalizations.of(context)!;
+
+    // Display user name or fallback to greeting
+    final displayName = _userName.isNotEmpty
+        ? _userName
+        : l10n.homeGreeting('');
 
     return Container(
-      height: height,
+      height: widget.height,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -38,7 +78,7 @@ class HomeHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Nguyễn Văn A',
+                _isLoading ? '...' : displayName,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -46,7 +86,7 @@ class HomeHeader extends StatelessWidget {
                 ),
               ),
               Text(
-                isLeader ? 'Leader' : 'Worker',
+                isLeader ? l10n.roleLeader : l10n.roleWorker,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,

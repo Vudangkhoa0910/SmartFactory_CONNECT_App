@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
-import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
+import '../../../providers/language_provider.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../utils/toast_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -11,20 +13,17 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final TextEditingController _ipController = TextEditingController();
-  final TextEditingController _portController = TextEditingController();
   final AuthService _authService = AuthService();
-  
+  final LanguageProvider _languageProvider = LanguageProvider();
+
   bool _isLoading = false;
-  bool _isTesting = false;
   bool _biometricEnabled = false;
   bool _canUseBiometric = false;
-  String _biometricType = 'Sinh trắc học';
+  String _biometricType = '';
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
     _loadBiometricSettings();
   }
 
@@ -32,7 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final canUse = await _authService.canUseBiometric();
     final enabled = await _authService.isBiometricEnabled();
     final typeName = await _authService.getBiometricTypeName();
-    
+
     setState(() {
       _canUseBiometric = canUse;
       _biometricEnabled = enabled;
@@ -41,115 +40,205 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _toggleBiometric(bool value) async {
+    final l10n = AppLocalizations.of(context)!;
     if (value) {
-      // Yêu cầu xác thực trước khi bật
+      // 1. Check if we have credentials
+      final credentials = await _authService.getSavedCredentials();
+      final savedUsername = credentials['username'];
+      final savedPassword = credentials['password'];
+
+      if (savedUsername == null || savedPassword == null) {
+        // Credentials missing (Remember Me was off)
+        // We need to ask for password to enable Biometrics
+        if (mounted) {
+          _showPasswordPromptDialog();
+        }
+        return;
+      }
+
+      // 2. Authenticate with Biometric to confirm
       final authenticated = await _authService.authenticateWithBiometric(
-        reason: 'Xác thực để bật $_biometricType cho đăng nhập',
+        reason: l10n.pleaseAuthenticate,
       );
-      
+
       if (authenticated) {
         await _authService.setBiometricEnabled(true);
         setState(() {
           _biometricEnabled = true;
         });
-        _showMessage('Đã bật $_biometricType cho đăng nhập');
+        _showMessage(l10n.success);
       } else {
-        _showMessage('Xác thực thất bại', isError: true);
+        _showMessage(l10n.biometricAuthFailed, isError: true);
       }
     } else {
       await _authService.setBiometricEnabled(false);
       setState(() {
         _biometricEnabled = false;
       });
-      _showMessage('Đã tắt $_biometricType');
+      _showMessage(l10n.success);
     }
   }
 
-  Future<void> _loadSettings() async {
-    final ip = await ApiService.getServerIp();
-    final port = await ApiService.getServerPort();
-    setState(() {
-      _ipController.text = ip;
-      _portController.text = port;
-    });
-  }
+  Future<void> _showPasswordPromptDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final userInfo = await _authService.getUserInfo();
+    final username = userInfo['username'] ?? '';
 
-  Future<void> _saveSettings() async {
-    final ip = _ipController.text.trim();
-    final port = _portController.text.trim();
-
-    if (ip.isEmpty || port.isEmpty) {
-      _showMessage('Vui lòng nhập đầy đủ IP và Port', isError: true);
+    if (username.isEmpty) {
+      _showMessage(l10n.errorUnauthorized, isError: true);
       return;
     }
 
+    final passwordController = TextEditingController();
+    bool isObscure = true;
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(l10n.confirmPassword),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.pleaseAuthenticate,
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: isObscure,
+                decoration: InputDecoration(
+                  labelText: l10n.password,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isObscure ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() => isObscure = !isObscure);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final password = passwordController.text;
+                if (password.isEmpty) return;
+                Navigator.pop(context);
+                _verifyAndEnableBiometric(username, password);
+              },
+              child: Text(l10n.confirm),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _verifyAndEnableBiometric(
+    String username,
+    String password,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoading = true);
 
     try {
-      await ApiService.setServerIp(ip);
-      await ApiService.setServerPort(port);
+      final result = await _authService.authenticateUser(
+        username: username,
+        password: password,
+      );
 
-      if (mounted) {
-        _showMessage('Đã lưu cấu hình: $ip:$port');
+      if (result['success'] == true) {
+        final authenticated = await _authService.authenticateWithBiometric(
+          reason: l10n.pleaseAuthenticate,
+        );
+
+        if (authenticated) {
+          await _authService.setBiometricEnabled(true);
+
+          // Save credentials (rememberMe = false)
+          await _authService.saveCredentials(
+            username: username,
+            password: password,
+            rememberMe: false,
+          );
+
+          setState(() {
+            _biometricEnabled = true;
+          });
+          _showMessage(l10n.success);
+        } else {
+          _showMessage(l10n.biometricAuthFailed, isError: true);
+        }
+      } else {
+        _showMessage(l10n.invalidCredentials, isError: true);
       }
     } catch (e) {
-      if (mounted) {
-        _showMessage('Lỗi lưu cấu hình: $e', isError: true);
-      }
+      _showMessage('${l10n.error}: $e', isError: true);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _testConnection() async {
-    final ip = _ipController.text.trim();
-    final port = _portController.text.trim();
-
-    if (ip.isEmpty || port.isEmpty) {
-      _showMessage('Vui lòng nhập IP và Port trước', isError: true);
-      return;
-    }
-
-    setState(() => _isTesting = true);
-
-    try {
-      // Save temporarily for test
-      await ApiService.setServerIp(ip);
-      await ApiService.setServerPort(port);
-
-      // Test connection
-      final result = await ApiService.pingHealth();
-
-      if (mounted) {
-        _showMessage(result['message'], isError: !result['success']);
-      }
-    } catch (e) {
-      if (mounted) {
-        _showMessage('Lỗi kiểm tra: $e', isError: true);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isTesting = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _showMessage(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.error500 : AppColors.success500,
-        duration: const Duration(seconds: 3),
+    if (isError) {
+      ToastUtils.showError(message);
+    } else {
+      ToastUtils.showSuccess(message);
+    }
+  }
+
+  Widget _buildLanguageOption({
+    required String flag,
+    required String name,
+    required Locale locale,
+    required bool isSelected,
+  }) {
+    return InkWell(
+      onTap: () async {
+        await _languageProvider.setLanguage(locale);
+        setState(() {});
+        _showMessage(AppLocalizations.of(context)!.success);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Text(flag, style: const TextStyle(fontSize: 24)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected ? AppColors.brand500 : AppColors.gray900,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle, color: AppColors.brand500, size: 22)
+            else
+              Icon(Icons.circle_outlined, color: AppColors.gray300, size: 22),
+          ],
+        ),
       ),
     );
   }
 
   @override
   void dispose() {
-    _ipController.dispose();
-    _portController.dispose();
     super.dispose();
   }
 
@@ -167,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            'Cài đặt',
+            AppLocalizations.of(context)!.settings,
             style: TextStyle(
               color: AppColors.gray900,
               fontSize: 20,
@@ -197,7 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // ========== SECURITY SETTINGS ==========
                   if (_canUseBiometric) ...[
                     Text(
-                      'Bảo mật',
+                      AppLocalizations.of(context)!.privacy,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -230,8 +319,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
-                              _biometricType == 'Face ID' 
-                                  ? Icons.face 
+                              _biometricType == 'Face ID'
+                                  ? Icons.face
                                   : Icons.fingerprint,
                               color: AppColors.brand500,
                               size: 24,
@@ -243,7 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Đăng nhập bằng $_biometricType',
+                                  AppLocalizations.of(context)!.biometricLogin,
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -252,7 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Đăng nhập nhanh và bảo mật hơn',
+                                  AppLocalizations.of(context)!.useBiometric,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.gray600,
@@ -261,10 +350,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ],
                             ),
                           ),
-                          Switch(
-                            value: _biometricEnabled,
-                            onChanged: _toggleBiometric,
-                            activeColor: AppColors.brand500,
+                          GestureDetector(
+                            onTap: () => _toggleBiometric(!_biometricEnabled),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 50,
+                              height: 30,
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: _biometricEnabled
+                                    ? AppColors.brand500
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(
+                                  color: _biometricEnabled
+                                      ? AppColors.brand500
+                                      : AppColors.gray300,
+                                  width: 2,
+                                ),
+                              ),
+                              child: AnimatedAlign(
+                                duration: const Duration(milliseconds: 200),
+                                alignment: _biometricEnabled
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: _biometricEnabled
+                                        ? Colors.white
+                                        : AppColors.gray400,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -272,231 +400,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  // ========== SERVER SETTINGS ==========
+                  // ========== LANGUAGE SETTINGS ==========
                   Text(
-                    'Cài đặt Server',
+                    AppLocalizations.of(context)!.language,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.gray900,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // IP:Port input in one line
-                  Row(
-                    children: [
-                      // IP Address input
-                      Expanded(
-                        flex: 3,
-                        child: SizedBox(
-                          height: 40,
-                          child: TextField(
-                            controller: _ipController,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              labelText: 'IP',
-                              labelStyle: TextStyle(
-                                color: AppColors.gray600,
-                                fontSize: 12,
-                              ),
-                              hintText: '192.168.1.100',
-                              hintStyle: TextStyle(
-                                color: AppColors.gray400,
-                                fontSize: 12,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide(
-                                  color: AppColors.gray300,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide(
-                                  color: AppColors.gray300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide(
-                                  color: AppColors.brand500,
-                                  width: 1.5,
-                                ),
-                              ),
-                            ),
-                            keyboardType: TextInputType.text,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.black,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
-                          ':',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.gray600,
-                          ),
-                        ),
-                      ),
-                      // Port input
-                      Expanded(
-                        flex: 1,
-                        child: SizedBox(
-                          height: 40,
-                          child: TextField(
-                            controller: _portController,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              labelText: 'Port',
-                              labelStyle: TextStyle(
-                                color: AppColors.gray600,
-                                fontSize: 12,
-                              ),
-                              hintText: '8080',
-                              hintStyle: TextStyle(
-                                color: AppColors.gray400,
-                                fontSize: 12,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide(
-                                  color: AppColors.gray300,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide(
-                                  color: AppColors.gray300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide(
-                                  color: AppColors.brand500,
-                                  width: 1.5,
-                                ),
-                              ),
-                            ),
-                            keyboardType: TextInputType.number,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.black,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Test connection button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _isTesting ? null : _testConnection,
-                      icon: _isTesting
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(Icons.wifi_find, color: AppColors.brand500),
-                      label: Text(
-                        _isTesting ? 'Đang kiểm tra...' : 'Kiểm tra kết nối',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.brand500,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: BorderSide(color: AppColors.brand500),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 12),
-                  // Save button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: (_isLoading || _isTesting)
-                          ? null
-                          : _saveSettings,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brand500,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              'Lưu cấu hình',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.white,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Info box
                   Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.gray100,
-                      borderRadius: BorderRadius.circular(12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: AppColors.gray600,
-                          size: 20,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Endpoint kiểm tra: /health\nVí dụ: http://192.168.1.10:8080/health',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.gray600,
-                              height: 1.4,
-                            ),
-                          ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Vietnamese
+                        _buildLanguageOption(
+                          flag: '🇻🇳',
+                          name: 'Tiếng Việt',
+                          locale: LanguageProvider.vietnamese,
+                          isSelected: _languageProvider.isVietnamese,
+                        ),
+                        Divider(height: 1, color: AppColors.gray100),
+                        // Japanese
+                        _buildLanguageOption(
+                          flag: '🇯🇵',
+                          name: '日本語 (Japanese)',
+                          locale: LanguageProvider.japanese,
+                          isSelected: _languageProvider.isJapanese,
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

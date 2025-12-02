@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
+import '../../components/loading_infinity.dart';
+import '../../utils/toast_utils.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final NewsModel news;
@@ -47,6 +50,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.white,
       body: CustomScrollView(
@@ -211,7 +215,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
                   // Content
                   if (_isLoading && _news.content.isEmpty)
-                    const Center(child: CircularProgressIndicator())
+                    const Center(child: LoadingInfinity())
                   else
                     Text(
                       _news.content,
@@ -239,24 +243,21 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Bài viết hữu ích?',
-                          style: TextStyle(
-                            color: AppColors.gray600,
-                            fontSize: 14,
+                        Expanded(
+                          child: Text(
+                            l10n.helpfulArticle,
+                            style: TextStyle(
+                              color: AppColors.gray600,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                        const Spacer(),
                         TextButton(
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Cảm ơn phản hồi của bạn!'),
-                              ),
-                            );
+                            ToastUtils.showInfo(l10n.thankYouForFeedback);
                           },
                           child: Text(
-                            'Phản hồi',
+                            l10n.feedback,
                             style: TextStyle(
                               color: AppColors.brand500,
                               fontWeight: FontWeight.w600,

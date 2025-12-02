@@ -6,9 +6,12 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../config/app_colors.dart';
+import '../../utils/toast_utils.dart';
 import '../../widgets/text_field_with_mic.dart';
 import '../../widgets/expanded_text_dialog.dart';
 import '../../services/incident_service.dart';
+import '../../l10n/app_localizations.dart';
+import '../../components/loading_infinity.dart';
 
 class ReportFormScreen extends StatefulWidget {
   const ReportFormScreen({super.key});
@@ -28,43 +31,35 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   String? _selectedCategory;
   bool _showCustomCategory = false;
 
-  final List<String> _priorities = ['Thấp', 'Trung bình', 'Cao', 'Khẩn cấp'];
-
-  final List<String> _categories = [
-    'Kỹ thuật',
-    'An toàn',
-    'Chất lượng',
-    'Quy trình',
-    'Nhân sự',
-    'Khác',
+  // Priority and category lists will be built in build method with l10n
+  List<String> _getPriorities(AppLocalizations l10n) => [
+    l10n.priorityLow,
+    l10n.priorityMedium,
+    l10n.priorityHigh,
+    l10n.priorityUrgent,
   ];
 
-  String _mapCategoryToBackend(String category) {
-    switch (category) {
-      case 'An toàn':
-        return 'safety';
-      case 'Chất lượng':
-        return 'quality';
-      case 'Kỹ thuật':
-        return 'equipment';
-      default:
-        return 'other';
-    }
+  List<String> _getCategories(AppLocalizations l10n) => [
+    l10n.categoryEquipment,
+    l10n.categorySafety,
+    l10n.categoryQuality,
+    l10n.categoryProcess,
+    l10n.categoryOther,
+  ];
+
+  String _mapCategoryToBackend(String category, AppLocalizations l10n) {
+    if (category == l10n.categorySafety) return 'safety';
+    if (category == l10n.categoryQuality) return 'quality';
+    if (category == l10n.categoryEquipment) return 'equipment';
+    return 'other';
   }
 
-  String _mapPriorityToBackend(String priority) {
-    switch (priority) {
-      case 'Thấp':
-        return 'low';
-      case 'Trung bình':
-        return 'medium';
-      case 'Cao':
-        return 'high';
-      case 'Khẩn cấp':
-        return 'critical';
-      default:
-        return 'medium';
-    }
+  String _mapPriorityToBackend(String priority, AppLocalizations l10n) {
+    if (priority == l10n.priorityLow) return 'low';
+    if (priority == l10n.priorityMedium) return 'medium';
+    if (priority == l10n.priorityHigh) return 'high';
+    if (priority == l10n.priorityUrgent) return 'critical';
+    return 'medium';
   }
 
   // Media attachments
@@ -94,6 +89,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   }
 
   void _openExpandedTextDialog() async {
+    final l10n = AppLocalizations.of(context)!;
     await showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -101,8 +97,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         insetPadding: const EdgeInsets.all(20),
         child: ExpandedTextDialog(
           controller: _descriptionController,
-          title: 'Mô tả chi tiết',
-          hintText: 'Mô tả chi tiết về sự cố...',
+          title: l10n.reportDescription,
+          hintText: l10n.enterReportDescription,
         ),
       ),
     );
@@ -127,11 +123,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         if (status.isPermanentlyDenied) {
           _showPermissionDialog('camera');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi khi mở camera: ${e.toString()}'),
-              backgroundColor: AppColors.error500,
-            ),
+          ToastUtils.showError(
+            '${AppLocalizations.of(context)!.error}: ${e.toString()}',
           );
         }
       }
@@ -142,23 +135,24 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   Future<void> _pickMedia() async {
     try {
       final picker = ImagePicker();
+      final l10n = AppLocalizations.of(context)!;
 
       // Show dialog to choose between image or video
       final choice = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Chọn loại file'),
+          title: Text(l10n.addMedia),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 leading: Icon(Icons.image, color: AppColors.brand500),
-                title: const Text('Ảnh'),
+                title: Text(l10n.photo),
                 onTap: () => Navigator.pop(context, 'image'),
               ),
               ListTile(
                 leading: Icon(Icons.video_library, color: AppColors.brand500),
-                title: const Text('Video'),
+                title: Text(l10n.video),
                 onTap: () => Navigator.pop(context, 'video'),
               ),
             ],
@@ -187,16 +181,15 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
+        // Check if permission is permanently denied
         final status = await Permission.photos.status;
         if (status.isPermanentlyDenied) {
-          _showPermissionDialog('thư viện ảnh');
+          _showPermissionDialog(
+            AppLocalizations.of(context)!.galleryPermission,
+          );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi khi mở thư viện: ${e.toString()}'),
-              backgroundColor: AppColors.error500,
-            ),
+          ToastUtils.showError(
+            '${AppLocalizations.of(context)!.error}: ${e.toString()}',
           );
         }
       }
@@ -217,11 +210,8 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi khi dừng ghi âm: ${e.toString()}'),
-              backgroundColor: AppColors.error500,
-            ),
+          ToastUtils.showError(
+            '${AppLocalizations.of(context)!.error}: ${e.toString()}',
           );
         }
       }
@@ -241,16 +231,15 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         });
       } catch (e) {
         if (mounted) {
-          // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
+          // Check if permission is permanently denied
           final status = await Permission.microphone.status;
           if (status.isPermanentlyDenied) {
-            _showPermissionDialog('microphone');
+            _showPermissionDialog(
+              AppLocalizations.of(context)!.microphonePermission,
+            );
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Lỗi khi bắt đầu ghi âm: ${e.toString()}'),
-                backgroundColor: AppColors.error500,
-              ),
+            ToastUtils.showError(
+              '${AppLocalizations.of(context)!.error}: ${e.toString()}',
             );
           }
         }
@@ -259,24 +248,23 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   }
 
   void _showPermissionDialog(String permissionType) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Quyền truy cập bị từ chối'),
-        content: Text(
-          'Ứng dụng cần quyền truy cập $permissionType để sử dụng chức năng này. Vui lòng cấp quyền trong Cài đặt.',
-        ),
+        title: Text(l10n.permissionDenied),
+        content: Text(permissionType),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Mở Cài đặt'),
+            child: Text(l10n.goToSettings),
           ),
         ],
       ),
@@ -297,7 +285,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            'Báo cáo sự cố / Yêu cầu hỗ trợ',
+            AppLocalizations.of(context)!.incidentReport,
             style: TextStyle(
               color: AppColors.gray800,
               fontSize: 18,
@@ -311,14 +299,17 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               // Tiêu đề sự cố
-              _buildSectionTitle('Tiêu đề sự cố', isRequired: true),
+              _buildSectionTitle(
+                AppLocalizations.of(context)!.incidentTitle,
+                isRequired: true,
+              ),
               const SizedBox(height: 8),
               TextFieldWithMic(
                 controller: _titleController,
-                hintText: 'Nhập tiêu đề sự cố',
+                hintText: AppLocalizations.of(context)!.enterIncidentTitle,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập tiêu đề sự cố';
+                    return AppLocalizations.of(context)!.pleaseEnterTitle;
                   }
                   return null;
                 },
@@ -326,14 +317,17 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               const SizedBox(height: 20),
 
               // Vị trí / Thiết bị
-              _buildSectionTitle('Vị trí / Thiết bị', isRequired: true),
+              _buildSectionTitle(
+                AppLocalizations.of(context)!.location,
+                isRequired: true,
+              ),
               const SizedBox(height: 8),
               TextFieldWithMic(
                 controller: _locationController,
-                hintText: 'Nhập vị trí hoặc tên thiết bị',
+                hintText: AppLocalizations.of(context)!.enterLocation,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập vị trí hoặc thiết bị';
+                    return AppLocalizations.of(context)!.pleaseEnterLocation;
                   }
                   return null;
                 },
@@ -341,12 +335,17 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               const SizedBox(height: 20),
 
               // Mức độ ưu tiên
-              _buildSectionTitle('Mức độ ưu tiên', isRequired: true),
+              _buildSectionTitle(
+                AppLocalizations.of(context)!.priority,
+                isRequired: true,
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _priorities.map((priority) {
+                children: _getPriorities(AppLocalizations.of(context)!).map((
+                  priority,
+                ) {
                   final isSelected = _selectedPriority == priority;
                   return FilterChip(
                     label: Text(priority),
@@ -380,12 +379,17 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               const SizedBox(height: 20),
 
               // Phân loại vấn đề
-              _buildSectionTitle('Phân loại vấn đề', isRequired: true),
+              _buildSectionTitle(
+                AppLocalizations.of(context)!.category,
+                isRequired: true,
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _categories.map((category) {
+                children: _getCategories(AppLocalizations.of(context)!).map((
+                  category,
+                ) {
                   final isSelected = _selectedCategory == category;
                   return ChoiceChip(
                     label: Text(category),
@@ -408,9 +412,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     onSelected: (selected) {
+                      final l10n = AppLocalizations.of(context)!;
                       setState(() {
                         _selectedCategory = selected ? category : null;
-                        if (category == 'Khác') {
+                        if (category == l10n.categoryOther) {
                           _showCustomCategory = selected;
                           if (!selected) _customCategoryController.clear();
                         } else {
@@ -423,18 +428,18 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                 }).toList(),
               ),
 
-              // Custom category input (only show when "Khác" is selected)
+              // Custom category input (only show when "Other" is selected)
               if (_showCustomCategory) ...[
                 const SizedBox(height: 12),
                 TextFieldWithMic(
                   controller: _customCategoryController,
-                  hintText: 'Nhập loại vấn đề khác...',
+                  hintText: AppLocalizations.of(context)!.categoryOther,
                 ),
               ],
               const SizedBox(height: 20),
 
               // Mô tả chi tiết
-              _buildSectionTitle('Mô tả chi tiết'),
+              _buildSectionTitle(AppLocalizations.of(context)!.description),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: _openExpandedTextDialog,
@@ -451,7 +456,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                       Expanded(
                         child: Text(
                           _descriptionController.text.isEmpty
-                              ? 'Nhấn để nhập mô tả chi tiết...'
+                              ? AppLocalizations.of(context)!.enterDescription
                               : _descriptionController.text,
                           style: TextStyle(
                             color: _descriptionController.text.isEmpty
@@ -476,14 +481,14 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               const SizedBox(height: 20),
 
               // Đính kèm bằng chứng
-              _buildSectionTitle('Đính kèm bằng chứng'),
+              _buildSectionTitle(AppLocalizations.of(context)!.attachEvidence),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     child: _buildAttachmentButton(
                       icon: Icons.camera_alt,
-                      label: 'Chụp ảnh',
+                      label: AppLocalizations.of(context)!.takePhoto,
                       onTap: _takePicture,
                     ),
                   ),
@@ -491,7 +496,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                   Expanded(
                     child: _buildAttachmentButton(
                       icon: Icons.photo_library,
-                      label: 'Tải ảnh/Video',
+                      label: AppLocalizations.of(context)!.uploadMedia,
                       onTap: _pickMedia,
                     ),
                   ),
@@ -500,7 +505,9 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               const SizedBox(height: 12),
               _buildAttachmentButton(
                 icon: _isRecording ? Icons.stop : Icons.mic,
-                label: _isRecording ? 'Dừng ghi âm' : 'Ghi âm',
+                label: _isRecording
+                    ? AppLocalizations.of(context)!.stopRecording
+                    : AppLocalizations.of(context)!.record,
                 onTap: _toggleRecording,
                 isRecording: _isRecording,
               ),
@@ -508,11 +515,19 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               // Display attached media
               if (_images.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                _buildMediaPreview('Ảnh đã chọn', _images, Icons.image),
+                _buildMediaPreview(
+                  AppLocalizations.of(context)!.selectedImages,
+                  _images,
+                  Icons.image,
+                ),
               ],
               if (_videos.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                _buildMediaPreview('Video đã chọn', _videos, Icons.videocam),
+                _buildMediaPreview(
+                  AppLocalizations.of(context)!.selectedVideos,
+                  _videos,
+                  Icons.videocam,
+                ),
               ],
               if (_audioPath != null) ...[
                 const SizedBox(height: 16),
@@ -527,21 +542,19 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     : () async {
                         if (_formKey.currentState!.validate()) {
                           if (_selectedPriority == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Vui lòng chọn mức độ ưu tiên'),
-                                backgroundColor: AppColors.error500,
-                              ),
+                            ToastUtils.showError(
+                              AppLocalizations.of(
+                                context,
+                              )!.pleaseSelectPriority,
                             );
                             return;
                           }
 
                           if (_selectedCategory == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Vui lòng chọn loại vấn đề'),
-                                backgroundColor: AppColors.error500,
-                              ),
+                            ToastUtils.showError(
+                              AppLocalizations.of(
+                                context,
+                              )!.pleaseSelectCategory,
                             );
                             return;
                           }
@@ -550,29 +563,31 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                             _isSubmitting = true;
                           });
 
+                          final l10n = AppLocalizations.of(context)!;
                           // Map category
                           String incidentType = _mapCategoryToBackend(
                             _selectedCategory!,
+                            l10n,
                           );
                           String priority = _mapPriorityToBackend(
                             _selectedPriority!,
+                            l10n,
                           );
 
                           // Append category info to description if needed
                           String description = _descriptionController.text;
-                          if (_selectedCategory == 'Khác' &&
+                          if (_selectedCategory == l10n.categoryOther &&
                               _customCategoryController.text.isNotEmpty) {
                             description =
-                                'Loại sự cố: ${_customCategoryController.text}\n\n$description';
+                                '${l10n.category}: ${_customCategoryController.text}\n\n$description';
                           } else if (![
-                            'An toàn',
-                            'Chất lượng',
-                            'Kỹ thuật',
+                            l10n.categorySafety,
+                            l10n.categoryQuality,
+                            l10n.categoryEquipment,
                           ].contains(_selectedCategory)) {
                             description =
-                                'Loại sự cố: $_selectedCategory\n\n$description';
+                                '${l10n.category}: $_selectedCategory\n\n$description';
                           }
-
                           final result = await IncidentService.createIncident(
                             title: _titleController.text,
                             description: description,
@@ -590,23 +605,20 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
 
                           if (result['success'] == true) {
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Đã gửi báo cáo thành công!'),
-                                  backgroundColor: AppColors.success500,
-                                ),
+                              ToastUtils.showSuccess(
+                                AppLocalizations.of(
+                                  context,
+                                )!.reportSubmitSuccess,
                               );
                               Navigator.pop(context);
                             }
                           } else {
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    result['message'] ?? 'Gửi báo cáo thất bại',
-                                  ),
-                                  backgroundColor: AppColors.error500,
-                                ),
+                              ToastUtils.showError(
+                                result['message'] ??
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.reportSubmitFailed,
                               );
                             }
                           }
@@ -621,16 +633,13 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                   elevation: 0,
                 ),
                 child: _isSubmitting
-                    ? SizedBox(
+                    ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(
-                          color: AppColors.white,
-                          strokeWidth: 2,
-                        ),
+                        child: LoadingInfinity(size: 20),
                       )
                     : Text(
-                        'GỬI BÁO CÁO NGAY',
+                        AppLocalizations.of(context)!.submitReport,
                         style: TextStyle(
                           color: AppColors.white,
                           fontSize: 16,
@@ -808,7 +817,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ghi âm đã lưu',
+                  AppLocalizations.of(context)!.recordedAudio,
                   style: TextStyle(
                     color: AppColors.brand500,
                     fontWeight: FontWeight.w600,
@@ -817,7 +826,9 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _isPlaying ? 'Đang phát...' : 'Nhấn để nghe',
+                  _isPlaying
+                      ? AppLocalizations.of(context)!.processing
+                      : AppLocalizations.of(context)!.tapToSpeak,
                   style: TextStyle(
                     color: AppColors.brand500.withOpacity(0.7),
                     fontSize: 12,

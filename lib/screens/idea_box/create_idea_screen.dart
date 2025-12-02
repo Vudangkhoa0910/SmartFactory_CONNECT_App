@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/idea_box_model.dart';
 import '../../services/idea_service.dart';
 import '../../widgets/text_field_with_mic.dart';
 import '../../widgets/expanded_text_dialog.dart';
+import '../../components/loading_infinity.dart';
+import '../../utils/toast_utils.dart';
 
 /// Màn hình tạo góp ý mới
 /// Hỗ trợ cả Hòm thư trắng (công khai) và Hòm thư hồng (ẩn danh)
@@ -62,8 +65,8 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         insetPadding: const EdgeInsets.all(20),
         child: ExpandedTextDialog(
           controller: _contentController,
-          title: 'Ý kiến / Nội dung góp ý',
-          hintText: 'Nhập ý kiến hoặc nội dung góp ý của bạn...',
+          title: AppLocalizations.of(context)!.ideaContentTitle,
+          hintText: AppLocalizations.of(context)!.ideaContentHint,
         ),
       ),
     );
@@ -131,9 +134,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
               if (_isSubmitting)
                 Container(
                   color: Colors.black.withOpacity(0.3),
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: const LoadingInfinity(),
                 ),
             ],
           ),
@@ -143,6 +144,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -157,8 +159,8 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Gửi góp ý mới',
+                Text(
+                  l10n.createNewIdea,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -166,7 +168,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                   ),
                 ),
                 Text(
-                  'Chia sẻ ý tưởng của bạn',
+                  l10n.enterIdeaDescription,
                   style: TextStyle(fontSize: 14, color: AppColors.gray500),
                 ),
               ],
@@ -178,11 +180,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildBoxTypeSelector() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Loại hòm thư',
+        Text(
+          l10n.ideaCategory,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -288,6 +291,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildIssueTypeSelector() {
+    final l10n = AppLocalizations.of(context)!;
     // Lọc loại vấn đề theo loại hòm thư
     final issueTypes = _selectedBoxType == IdeaBoxType.white
         ? [
@@ -310,8 +314,8 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Loại vấn đề *',
+        Text(
+          l10n.selectIdeaCategory,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -516,11 +520,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildContentField() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Ý kiến / Nội dung góp ý *',
+        Text(
+          l10n.ideaDescription,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -558,11 +563,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Icon(
-                  Icons.edit_note,
-                  color: AppColors.brand500,
-                  size: 24,
-                ),
+                Icon(Icons.edit_note, color: AppColors.brand500, size: 24),
               ],
             ),
           ),
@@ -572,10 +573,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               'Nội dung góp ý phải có ít nhất 10 ký tự',
-              style: TextStyle(
-                color: AppColors.gray500,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppColors.gray500, fontSize: 12),
             ),
           ),
       ],
@@ -583,11 +581,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildExpectedBenefitField() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Lợi ích dự kiến (tùy chọn)',
+        Text(
+          l10n.ideaBenefit,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -660,11 +659,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildAttachmentSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Đính kèm ảnh/video (tùy chọn)',
+        Text(
+          l10n.addIdeaAttachment,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -811,6 +811,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildSubmitButton() {
+    final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -824,8 +825,8 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           ),
           elevation: 2,
         ),
-        child: const Text(
-          'Gửi góp ý',
+        child: Text(
+          l10n.submitIdea,
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
@@ -848,69 +849,50 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Đã thêm ảnh thành công'),
-              backgroundColor: AppColors.success500,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+          ToastUtils.showSuccess(
+            AppLocalizations.of(context)!.imageAddedSuccess,
           );
         }
       }
     } on Exception catch (e) {
       if (mounted) {
         // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
-        Permission permission = source == ImageSource.camera 
-            ? Permission.camera 
+        Permission permission = source == ImageSource.camera
+            ? Permission.camera
             : Permission.photos;
-        String permissionName = source == ImageSource.camera 
-            ? 'camera' 
+        String permissionName = source == ImageSource.camera
+            ? 'camera'
             : 'thư viện ảnh';
-        
+
         final status = await permission.status;
         if (status.isPermanentlyDenied) {
           _showPermissionDialog(permissionName);
         } else {
           String errorMessage = 'Lỗi khi chọn ảnh';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: AppColors.error500,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 3),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
+          ToastUtils.showError(errorMessage);
         }
       }
     }
   }
 
   void _showPermissionDialog(String permissionType) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Quyền truy cập bị từ chối'),
-        content: Text(
-          'Ứng dụng cần quyền truy cập $permissionType để sử dụng chức năng này. Vui lòng cấp quyền trong Cài đặt.',
-        ),
+        title: Text(l10n.permissionDeniedTitle),
+        content: Text(l10n.permissionDeniedMessage(permissionType)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Mở Cài đặt'),
+            child: Text(l10n.openSettings),
           ),
         ],
       ),
@@ -919,13 +901,9 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
 
   Future<void> _submitIdea() async {
     if (_formKey.currentState!.validate()) {
+      final l10n = AppLocalizations.of(context)!;
       if (_selectedIssueType == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Vui lòng chọn loại vấn đề'),
-            backgroundColor: AppColors.warning500,
-          ),
-        );
+        ToastUtils.showWarning(l10n.pleaseSelectIdeaCategory);
         return;
       }
 
@@ -937,10 +915,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         await _ideaService.createIdea(
           type: _selectedBoxType,
           issueType: _selectedIssueType!,
-          title: _contentController.text.split('\n').first, // Use first line as title
+          title: _contentController.text
+              .split('\n')
+              .first, // Use first line as title
           content: _contentController.text,
-          expectedBenefit: _expectedBenefitController.text.isNotEmpty 
-              ? _expectedBenefitController.text 
+          expectedBenefit: _expectedBenefitController.text.isNotEmpty
+              ? _expectedBenefitController.text
               : null,
           attachments: _attachments,
           // Note: Backend doesn't seem to support difficulty level directly in create?
@@ -951,32 +931,16 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
 
         if (mounted) {
           final successMessage = _selectedBoxType == IdeaBoxType.white
-              ? 'Đã ghi nhận ý kiến của bạn'
-              : 'Góp ý của bạn đã được gửi ẩn danh';
+              ? l10n.ideaSubmitted
+              : l10n.ideaSubmitted;
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(successMessage),
-              backgroundColor: AppColors.success500,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 3),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
+          ToastUtils.showSuccess(successMessage);
 
           Navigator.pop(context, true); // Return true to refresh list
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi: $e'),
-              backgroundColor: AppColors.error500,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          ToastUtils.showError('Lỗi: $e');
         }
       } finally {
         if (mounted) {

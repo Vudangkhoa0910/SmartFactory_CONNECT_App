@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../config/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/news_model.dart';
 import '../../../services/news_service.dart';
 import '../all_news_screen.dart';
 import '../news_detail_screen.dart';
+import '../../../components/loading_infinity.dart';
 
 class NewsAndEvents extends StatefulWidget {
   const NewsAndEvents({super.key});
@@ -44,6 +46,7 @@ class _NewsAndEventsState extends State<NewsAndEvents> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -63,7 +66,7 @@ class _NewsAndEventsState extends State<NewsAndEvents> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Tin tức & Sự kiện',
+                  l10n.newsAndEvents,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -80,7 +83,7 @@ class _NewsAndEventsState extends State<NewsAndEvents> {
                     );
                   },
                   child: Text(
-                    'Xem tất cả',
+                    l10n.seeAll,
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.brand500,
@@ -97,7 +100,7 @@ class _NewsAndEventsState extends State<NewsAndEvents> {
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(20.0),
-                child: CircularProgressIndicator(),
+                child: LoadingInfinity(),
               ),
             )
           else if (_newsList.isEmpty)
@@ -105,7 +108,7 @@ class _NewsAndEventsState extends State<NewsAndEvents> {
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Text(
-                  'Không có tin tức nào',
+                  l10n.noNewsAvailable,
                   style: TextStyle(color: AppColors.gray600),
                 ),
               ),
@@ -143,20 +146,20 @@ class _NewsCard extends StatelessWidget {
 
   const _NewsCard({required this.news, required this.onTap});
 
-  String _getCategoryName(String code) {
+  String _getCategoryName(String code, AppLocalizations l10n) {
     switch (code) {
       case 'company_announcement':
-        return 'Thông báo';
+        return l10n.announcement;
       case 'safety_alert':
-        return 'An toàn';
+        return l10n.categorySafety;
       case 'event':
-        return 'Sự kiện';
+        return l10n.event;
       case 'production_update':
-        return 'Sản xuất';
+        return l10n.categoryProcess;
       case 'maintenance':
-        return 'Bảo trì';
+        return l10n.categoryMaintenance;
       default:
-        return 'Tin tức';
+        return l10n.newsTitle;
     }
   }
 
@@ -177,6 +180,7 @@ class _NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -255,9 +259,9 @@ class _NewsCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(color: Colors.red),
                             ),
-                            child: const Text(
-                              'QUAN TRỌNG',
-                              style: TextStyle(
+                            child: Text(
+                              l10n.priorityUrgent.toUpperCase(),
+                              style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.red,
@@ -276,7 +280,7 @@ class _NewsCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            _getCategoryName(news.category),
+                            _getCategoryName(news.category, l10n),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,

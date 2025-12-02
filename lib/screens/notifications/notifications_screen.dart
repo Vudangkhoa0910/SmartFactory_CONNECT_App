@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -23,7 +25,7 @@ class NotificationsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Thông báo',
+                  l10n.notifications,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -32,7 +34,7 @@ class NotificationsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Trang thông báo đang được phát triển',
+                  l10n.pageDeveloping,
                   style: TextStyle(fontSize: 16, color: AppColors.gray600),
                 ),
               ],

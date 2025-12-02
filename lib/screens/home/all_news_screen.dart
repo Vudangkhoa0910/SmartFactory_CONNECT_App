@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
+import '../../components/loading_infinity.dart';
 import 'news_detail_screen.dart';
 
 class AllNewsScreen extends StatefulWidget {
@@ -25,9 +27,7 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
 
   Future<void> _fetchNews() async {
     try {
-      final newsData = await NewsService.getNews(
-        limit: 50,
-      ); // Fetch more for all news
+      final newsData = await NewsService.getNews(limit: 50);
       if (mounted) {
         setState(() {
           _newsList = newsData.map((json) => NewsModel.fromJson(json)).toList();
@@ -44,52 +44,18 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
     }
   }
 
-  // Map backend category to display category
-  String _getDisplayCategory(String backendCategory) {
-    // Note: backendCategory is not directly available in NewsModel unless we add it.
-    // But NewsModel.fromJson maps backend data.
-    // Wait, NewsModel doesn't have a 'category' field in the class definition I saw earlier.
-    // It has id, title, description, content, imageUrl, date, author.
-    // I should probably add 'category' to NewsModel if I want to filter by it.
-    // For now, I'll assume 'Khác' or try to infer, or just skip category display if missing.
-    // Actually, let's check NewsModel again. It does NOT have category.
-    // I should update NewsModel to include category.
-    return 'Tin tức';
-  }
-
-  // Map category display names to filter keys
-  String _getCategoryKey(String category) {
-    switch (category) {
-      case 'Nhân sự':
-        return 'hr';
-      case 'Sản xuất':
-        return 'production';
-      case 'An toàn':
-        return 'safety';
-      case 'Chất lượng':
-        return 'quality';
-      case 'Sự kiện':
-        return 'event';
-      case 'Đào tạo':
-        return 'training';
-      default:
-        return '';
-    }
-  }
-
   List<NewsModel> get _filteredNews {
     if (_selectedFilters.isEmpty) {
       return _newsList;
     }
-
-    // Since we don't have category in NewsModel yet, filtering won't work properly.
-    // I'll skip filtering logic for now or implement it after updating NewsModel.
-    // For this task, I'll just return all news if no filters, or empty if filtered (as a placeholder).
-    return _newsList;
+    return _newsList
+        .where((news) => _selectedFilters.contains(news.category))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
@@ -100,7 +66,7 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Tin tức & Sự kiện',
+          l10n.newsAndEvents,
           style: TextStyle(
             color: AppColors.gray800,
             fontSize: 18,
@@ -108,13 +74,14 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
           ),
         ),
         actions: [
-          // Filter button
+          // Filter button - Copy exact từ report_list_screen
           PopupMenuButton<String>(
             icon: Icon(Icons.filter_list, color: AppColors.gray600, size: 22),
             color: Colors.white,
             offset: const Offset(0, 40),
-            onSelected: (_) {}, // Empty handler
+            onSelected: (_) {},
             itemBuilder: (context) => [
+              // Tất cả
               PopupMenuItem(
                 enabled: false,
                 child: StatefulBuilder(
@@ -128,7 +95,7 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
                         width: double.infinity,
                         color: Colors.transparent,
                         child: Text(
-                          'Tất cả',
+                          l10n.all,
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w600,
@@ -139,19 +106,235 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
                   },
                 ),
               ),
-              // ... (Existing filter items) ...
-              // I'll keep the UI but the logic won't do much until Category is added to Model
+              // Divider
+              PopupMenuItem(
+                enabled: false,
+                height: 1,
+                child: Divider(height: 1, color: AppColors.brand500),
+              ),
+              // Row 1: Thông báo | An toàn
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_selectedFilters.contains(
+                                  'company_announcement',
+                                )) {
+                                  _selectedFilters.remove(
+                                    'company_announcement',
+                                  );
+                                } else {
+                                  _selectedFilters.add('company_announcement');
+                                }
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                l10n.announcement,
+                                style: TextStyle(
+                                  color:
+                                      _selectedFilters.contains(
+                                        'company_announcement',
+                                      )
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains(
+                                        'company_announcement',
+                                      )
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_selectedFilters.contains('safety_alert')) {
+                                  _selectedFilters.remove('safety_alert');
+                                } else {
+                                  _selectedFilters.add('safety_alert');
+                                }
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                l10n.categorySafety,
+                                style: TextStyle(
+                                  color:
+                                      _selectedFilters.contains('safety_alert')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('safety_alert')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              // Row 2: Sự kiện | Sản xuất
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_selectedFilters.contains('event')) {
+                                  _selectedFilters.remove('event');
+                                } else {
+                                  _selectedFilters.add('event');
+                                }
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                l10n.event,
+                                style: TextStyle(
+                                  color: _selectedFilters.contains('event')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight: _selectedFilters.contains('event')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_selectedFilters.contains(
+                                  'production_update',
+                                )) {
+                                  _selectedFilters.remove('production_update');
+                                } else {
+                                  _selectedFilters.add('production_update');
+                                }
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                l10n.categoryProcess,
+                                style: TextStyle(
+                                  color:
+                                      _selectedFilters.contains(
+                                        'production_update',
+                                      )
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains(
+                                        'production_update',
+                                      )
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              // Row 3: Bảo trì | (empty)
+              PopupMenuItem(
+                enabled: false,
+                child: StatefulBuilder(
+                  builder: (context, setMenuState) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_selectedFilters.contains('maintenance')) {
+                                  _selectedFilters.remove('maintenance');
+                                } else {
+                                  _selectedFilters.add('maintenance');
+                                }
+                              });
+                              setMenuState(() {});
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                l10n.categoryMaintenance,
+                                style: TextStyle(
+                                  color:
+                                      _selectedFilters.contains('maintenance')
+                                      ? AppColors.brand500
+                                      : Colors.black,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      _selectedFilters.contains('maintenance')
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(child: SizedBox()),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ],
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoadingInfinity()
           : _filteredNews.isEmpty
           ? Center(
               child: Text(
-                'Không có tin tức nào',
+                l10n.noNewsAvailable,
                 style: TextStyle(color: AppColors.gray600),
               ),
             )
@@ -183,20 +366,21 @@ class _NewsCard extends StatelessWidget {
 
   const _NewsCard({required this.news, this.onTap});
 
-  String _getCategoryName(String code) {
+  String _getCategoryName(BuildContext context, String code) {
+    final l10n = AppLocalizations.of(context)!;
     switch (code) {
       case 'company_announcement':
-        return 'Thông báo';
+        return l10n.announcement;
       case 'safety_alert':
-        return 'An toàn';
+        return l10n.categorySafety;
       case 'event':
-        return 'Sự kiện';
+        return l10n.event;
       case 'production_update':
-        return 'Sản xuất';
+        return l10n.categoryProcess;
       case 'maintenance':
-        return 'Bảo trì';
+        return l10n.categoryMaintenance;
       default:
-        return 'Tin tức';
+        return l10n.newsTitle;
     }
   }
 
@@ -217,6 +401,7 @@ class _NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -296,8 +481,8 @@ class _NewsCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(color: Colors.red),
                             ),
-                            child: const Text(
-                              'QUAN TRỌNG',
+                            child: Text(
+                              l10n.priorityUrgent.toUpperCase(),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -317,7 +502,7 @@ class _NewsCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            _getCategoryName(news.category),
+                            _getCategoryName(context, news.category),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,

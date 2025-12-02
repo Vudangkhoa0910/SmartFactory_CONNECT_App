@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../components/loading_infinity.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
+import '../../utils/toast_utils.dart';
 import 'dart:io'; // For File when displaying captured image
 
 /// Màn hình Camera với 2 chế độ: Chụp ảnh và Quét QR Code
@@ -100,13 +103,8 @@ class _CameraScreenState extends State<CameraScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi chụp ảnh: $e'),
-            backgroundColor: AppColors.error500,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        final l10n = AppLocalizations.of(context)!;
+        ToastUtils.showError('${l10n.captureFailed}: $e');
       }
     }
   }
@@ -128,6 +126,7 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   void _showQRDataDialog(String qrData) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -148,9 +147,9 @@ class _CameraScreenState extends State<CameraScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Đã quét QR Code',
-              style: TextStyle(color: AppColors.black),
+            Text(
+              l10n.qrCodeDetected,
+              style: const TextStyle(color: AppColors.black),
             ),
           ],
         ),
@@ -158,9 +157,9 @@ class _CameraScreenState extends State<CameraScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Nội dung:',
-              style: TextStyle(
+            Text(
+              l10n.description,
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.gray700,
               ),
@@ -186,7 +185,7 @@ class _CameraScreenState extends State<CameraScreen> {
               // Resume scanner
               _qrController?.start();
             },
-            child: const Text('Quét lại'),
+            child: Text(AppLocalizations.of(context)!.scanAgain),
           ),
           ElevatedButton(
             onPressed: () {
@@ -201,7 +200,7 @@ class _CameraScreenState extends State<CameraScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text('Xác nhận'),
+            child: Text(AppLocalizations.of(context)!.success),
           ),
         ],
       ),
@@ -210,6 +209,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -227,7 +227,7 @@ class _CameraScreenState extends State<CameraScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          _isPhotoMode ? 'Chụp ảnh' : 'Quét QR Code',
+          _isPhotoMode ? l10n.camera : l10n.scanQRCode,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -267,16 +267,17 @@ class _CameraScreenState extends State<CameraScreen> {
     }
 
     if (!_isCameraInitialized || _cameraController == null) {
+      final l10n = AppLocalizations.of(context)!;
       return Container(
         color: Colors.black,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(color: AppColors.brand500),
+              const LoadingInfinity(size: 60),
               const SizedBox(height: 16),
               Text(
-                'Đang khởi động camera...',
+                l10n.loading,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.7),
                   fontSize: 14,
@@ -323,9 +324,9 @@ class _CameraScreenState extends State<CameraScreen> {
                     color: Colors.black.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Đặt mã QR vào khung để quét',
-                    style: TextStyle(
+                  child: Text(
+                    AppLocalizations.of(context)!.scanQRCode,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -351,7 +352,7 @@ class _CameraScreenState extends State<CameraScreen> {
         children: [
           _buildModeButton(
             icon: Icons.camera_alt,
-            label: 'Chụp',
+            label: AppLocalizations.of(context)!.photo,
             isActive: _isPhotoMode,
             onTap: () {
               if (!_isPhotoMode) _toggleCameraMode();
@@ -429,7 +430,7 @@ class _CameraScreenState extends State<CameraScreen> {
             // Retake button
             _buildControlButton(
               icon: Icons.refresh,
-              label: 'Chụp lại',
+              label: AppLocalizations.of(context)!.retry,
               onPressed: () {
                 setState(() => _capturedImage = null);
               },
@@ -438,7 +439,7 @@ class _CameraScreenState extends State<CameraScreen> {
             // Confirm button
             _buildControlButton(
               icon: Icons.check,
-              label: 'Xác nhận',
+              label: AppLocalizations.of(context)!.success,
               isPrimary: true,
               onPressed: () {
                 Navigator.pop(context, File(_capturedImage!.path));
@@ -477,9 +478,9 @@ class _CameraScreenState extends State<CameraScreen> {
                 children: [
                   Icon(Icons.lightbulb_outline, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Đưa camera vào mã QR để quét',
-                    style: TextStyle(color: Colors.white, fontSize: 14),
+                  Text(
+                    AppLocalizations.of(context)!.scanQRCode,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ],
               ),

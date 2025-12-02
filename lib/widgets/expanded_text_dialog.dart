@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:permission_handler/permission_handler.dart';
 import '../config/app_colors.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/toast_utils.dart';
 
 /// Full-screen dialog for expanded text input with microphone support
 class ExpandedTextDialog extends StatefulWidget {
@@ -49,41 +50,24 @@ class _ExpandedTextDialogState extends State<ExpandedTextDialog> {
       onError: (error) {
         if (mounted) {
           setState(() => _isListening = false);
-          
-          String errorMessage = 'Lỗi nhận dạng giọng nói';
-          if (error.errorMsg.toLowerCase().contains('not_allowed') || 
+
+          String errorMessage = AppLocalizations.of(
+            context,
+          )!.voiceRecognitionError;
+          if (error.errorMsg.toLowerCase().contains('not_allowed') ||
               error.errorMsg.toLowerCase().contains('permission')) {
-            errorMessage = 'Vui lòng cấp quyền Speech Recognition trong Settings';
+            errorMessage = AppLocalizations.of(context)!.microphonePermission;
           }
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: AppColors.error500,
-              duration: const Duration(seconds: 3),
-              action: SnackBarAction(
-                label: 'Settings',
-                textColor: AppColors.white,
-                onPressed: () => openAppSettings(),
-              ),
-            ),
-          );
+
+          ToastUtils.showError(errorMessage);
         }
       },
     );
 
     if (!available) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Không thể khởi tạo nhận dạng giọng nói'),
-            backgroundColor: AppColors.error500,
-            action: SnackBarAction(
-              label: 'Settings',
-              textColor: AppColors.white,
-              onPressed: () => openAppSettings(),
-            ),
-          ),
+        ToastUtils.showError(
+          AppLocalizations.of(context)!.speechRecognitionNotAvailable,
         );
       }
       return;
@@ -169,7 +153,7 @@ class _ExpandedTextDialogState extends State<ExpandedTextDialog> {
                     Navigator.pop(context);
                   },
                   child: Text(
-                    'Xong',
+                    AppLocalizations.of(context)!.done,
                     style: TextStyle(
                       color: AppColors.brand500,
                       fontSize: 16,
@@ -180,7 +164,7 @@ class _ExpandedTextDialogState extends State<ExpandedTextDialog> {
               ],
             ),
           ),
-          
+
           // Content
           Expanded(
             child: Stack(
@@ -192,7 +176,10 @@ class _ExpandedTextDialogState extends State<ExpandedTextDialog> {
                       if (_isListening)
                         Container(
                           margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.error500,
                             borderRadius: BorderRadius.circular(8),
@@ -203,7 +190,7 @@ class _ExpandedTextDialogState extends State<ExpandedTextDialog> {
                               Icon(Icons.mic, size: 20, color: AppColors.white),
                               const SizedBox(width: 8),
                               Text(
-                                'Đang nghe... Thả ra để dừng',
+                                AppLocalizations.of(context)!.listeningRelease,
                                 style: TextStyle(
                                   color: AppColors.white,
                                   fontSize: 14,
@@ -237,7 +224,10 @@ class _ExpandedTextDialogState extends State<ExpandedTextDialog> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.brand500, width: 2),
+                              borderSide: BorderSide(
+                                color: AppColors.brand500,
+                                width: 2,
+                              ),
                             ),
                             contentPadding: const EdgeInsets.all(16),
                           ),
@@ -246,7 +236,7 @@ class _ExpandedTextDialogState extends State<ExpandedTextDialog> {
                     ],
                   ),
                 ),
-                
+
                 // Mic button at bottom center
                 Positioned(
                   bottom: 16,
@@ -260,12 +250,17 @@ class _ExpandedTextDialogState extends State<ExpandedTextDialog> {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: _isListening ? AppColors.error500 : AppColors.error500,
+                          color: _isListening
+                              ? AppColors.error500
+                              : AppColors.error500,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: (_isListening ? AppColors.error500 : AppColors.error500)
-                                  .withOpacity(0.3),
+                              color:
+                                  (_isListening
+                                          ? AppColors.error500
+                                          : AppColors.error500)
+                                      .withOpacity(0.3),
                               blurRadius: 12,
                               spreadRadius: _isListening ? 4 : 2,
                             ),

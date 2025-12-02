@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../utils/toast_utils.dart';
 
 class PersonalInfoEditFieldScreen extends StatefulWidget {
   final String title;
@@ -41,13 +43,9 @@ class _PersonalInfoEditFieldScreenState
   }
 
   void _saveChanges() {
+    final l10n = AppLocalizations.of(context)!;
     widget.onSave(_controller.text);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Đã lưu thông tin'),
-        backgroundColor: AppColors.success500,
-      ),
-    );
+    ToastUtils.showSuccess(l10n.success);
     Navigator.pop(context);
   }
 
@@ -131,7 +129,7 @@ class _PersonalInfoEditFieldScreenState
                   ),
                 ),
                 child: Text(
-                  'LƯU THAY ĐỔI',
+                  AppLocalizations.of(context)!.save.toUpperCase(),
                   style: TextStyle(
                     color: AppColors.white,
                     fontSize: 16,

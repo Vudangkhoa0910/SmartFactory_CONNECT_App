@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 import '../../../models/user_profile_model.dart';
-import '../../../providers/user_provider.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../utils/toast_utils.dart';
 import 'personal_info_edit_field_screen.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
@@ -38,15 +39,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   }
 
   void _saveChanges() {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isEditing = false;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Đã lưu thông tin'),
-        backgroundColor: AppColors.success500,
-      ),
-    );
+    ToastUtils.showSuccess(l10n.success);
   }
 
   @override
@@ -61,7 +58,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Thông tin cá nhân',
+          AppLocalizations.of(context)!.personalInfo,
           style: TextStyle(
             color: AppColors.gray900,
             fontSize: 20,
@@ -86,7 +83,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Ảnh hồ sơ',
+                    AppLocalizations.of(context)!.profilePhoto,
                     style: TextStyle(fontSize: 14, color: AppColors.gray600),
                   ),
                   CircleAvatar(
@@ -107,49 +104,77 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildSection('Thông tin cá nhân', [
-              _buildInfoField('Họ và tên', widget.user.fullName, true),
-              _buildInfoField('Mã nhân viên', widget.user.employeeId, false),
-              _buildGenderDropdown(),
+            _buildSection(AppLocalizations.of(context)!.personalInfo, [
               _buildInfoField(
-                'Ngày sinh',
+                AppLocalizations.of(context)!.fullName,
+                widget.user.fullName,
+                false,
+              ),
+              _buildInfoField(
+                AppLocalizations.of(context)!.employeeCode,
+                widget.user.employeeId,
+                false,
+              ),
+              _buildInfoField(
+                AppLocalizations.of(context)!.gender,
+                widget.user.gender.displayName,
+                false,
+              ),
+              _buildInfoField(
+                AppLocalizations.of(context)!.dateOfBirth,
                 '${widget.user.dateOfBirth.day}/${widget.user.dateOfBirth.month}/${widget.user.dateOfBirth.year}',
                 false,
               ),
               _isEditing
-                  ? _buildEditField('Số điện thoại', _phoneController)
+                  ? _buildEditField(
+                      AppLocalizations.of(context)!.phone,
+                      _phoneController,
+                    )
                   : _buildInfoField(
-                      'Số điện thoại',
+                      AppLocalizations.of(context)!.phone,
                       widget.user.phoneNumber,
                       true,
                     ),
               _isEditing
-                  ? _buildEditField('Email', _emailController)
-                  : _buildInfoField('Email', widget.user.email, true),
-              _isEditing
-                  ? _buildEditField('Địa chỉ', _addressController, maxLines: 3)
+                  ? _buildEditField(
+                      AppLocalizations.of(context)!.email,
+                      _emailController,
+                    )
                   : _buildInfoField(
-                      'Địa chỉ',
-                      widget.user.address ?? 'Chưa cập nhật',
+                      AppLocalizations.of(context)!.email,
+                      widget.user.email,
                       true,
                     ),
+              _buildInfoField(
+                AppLocalizations.of(context)!.address,
+                widget.user.address ?? AppLocalizations.of(context)!.notUpdated,
+                false,
+              ),
             ]),
             const SizedBox(height: 16),
-            _buildSection('Thông tin công việc', [
-              _buildRoleDropdown(),
-              _buildInfoField('Bộ phận', widget.user.department, false),
+            _buildSection(AppLocalizations.of(context)!.workInfo, [
               _buildInfoField(
-                'Ngày vào công ty',
+                AppLocalizations.of(context)!.position,
+                _currentRole.displayName,
+                false,
+              ),
+              _buildInfoField(
+                AppLocalizations.of(context)!.department,
+                widget.user.department,
+                false,
+              ),
+              _buildInfoField(
+                AppLocalizations.of(context)!.joinDate,
                 '${widget.user.joinDate.day}/${widget.user.joinDate.month}/${widget.user.joinDate.year}',
                 false,
               ),
               _buildInfoField(
-                'Ca làm việc',
+                AppLocalizations.of(context)!.workShift,
                 widget.user.shift.displayName,
                 false,
               ),
               _buildInfoField(
-                'Tình trạng',
+                AppLocalizations.of(context)!.workStatus,
                 widget.user.workStatus.displayName,
                 false,
                 valueColor: _getWorkStatusColor(widget.user.workStatus),
@@ -169,7 +194,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     ),
                   ),
                   child: Text(
-                    'LƯU THAY ĐỔI',
+                    AppLocalizations.of(context)!.save.toUpperCase(),
                     style: TextStyle(
                       color: AppColors.white,
                       fontSize: 16,
@@ -217,36 +242,37 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     bool canEdit, {
     Color? valueColor,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     // Determine edit parameters based on label
     String getEditTitle() {
-      if (label == 'Họ và tên') return 'Chỉnh sửa họ tên';
-      if (label == 'Số điện thoại') return 'Chỉnh sửa số điện thoại';
-      if (label == 'Email') return 'Chỉnh sửa email';
-      if (label == 'Địa chỉ') return 'Chỉnh sửa địa chỉ';
-      return 'Chỉnh sửa';
+      if (label == l10n.fullName) return '${l10n.edit} ${l10n.fullName}';
+      if (label == l10n.phone) return '${l10n.edit} ${l10n.phone}';
+      if (label == l10n.email) return '${l10n.edit} ${l10n.email}';
+      if (label == l10n.address) return '${l10n.edit} ${l10n.address}';
+      return l10n.edit;
     }
 
     IconData getIcon() {
-      if (label == 'Họ và tên') return Icons.person_outline;
-      if (label == 'Số điện thoại') return Icons.phone_outlined;
-      if (label == 'Email') return Icons.email_outlined;
-      if (label == 'Địa chỉ') return Icons.location_on_outlined;
+      if (label == l10n.fullName) return Icons.person_outline;
+      if (label == l10n.phone) return Icons.phone_outlined;
+      if (label == l10n.email) return Icons.email_outlined;
+      if (label == l10n.address) return Icons.location_on_outlined;
       return Icons.edit_outlined;
     }
 
     int getMaxLines() {
-      if (label == 'Địa chỉ') return 3;
+      if (label == l10n.address) return 3;
       return 1;
     }
 
     void updateValue(String newValue) {
-      if (label == 'Họ và tên') {
+      if (label == l10n.fullName) {
         // TODO: Update fullName in user model
-      } else if (label == 'Số điện thoại') {
+      } else if (label == l10n.phone) {
         _phoneController.text = newValue;
-      } else if (label == 'Email') {
+      } else if (label == l10n.email) {
         _emailController.text = newValue;
-      } else if (label == 'Địa chỉ') {
+      } else if (label == l10n.address) {
         _addressController.text = newValue;
       }
     }
@@ -314,184 +340,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildGenderDropdown() {
-    final GlobalKey _genderKey = GlobalKey();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              'Giới tính',
-              style: TextStyle(fontSize: 14, color: AppColors.gray600),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: GestureDetector(
-              key: _genderKey,
-              onTap: () {
-                final RenderBox renderBox =
-                    _genderKey.currentContext!.findRenderObject() as RenderBox;
-                final position = renderBox.localToGlobal(Offset.zero);
-                final size = renderBox.size;
-
-                final RenderBox overlay =
-                    Overlay.of(context).context.findRenderObject() as RenderBox;
-
-                showMenu<Gender>(
-                  context: context,
-                  position: RelativeRect.fromLTRB(
-                    position.dx + size.width - 100,
-                    position.dy + size.height,
-                    overlay.size.width - (position.dx + size.width),
-                    overlay.size.height - (position.dy + size.height),
-                  ),
-                  items: [Gender.male, Gender.female].map((Gender gender) {
-                    return PopupMenuItem<Gender>(
-                      value: gender,
-                      height: 36,
-                      child: Text(
-                        gender.displayName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.gray900,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ).then((Gender? selectedGender) {
-                  if (selectedGender != null) {
-                    setState(() {
-                      // TODO: Update gender in user model
-                    });
-                  }
-                });
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    widget.user.gender.displayName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.gray900,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    size: 18,
-                    color: AppColors.gray400,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRoleDropdown() {
-    final GlobalKey _roleKey = GlobalKey();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              'Chức vụ',
-              style: TextStyle(fontSize: 14, color: AppColors.gray600),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: GestureDetector(
-              key: _roleKey,
-              onTap: () {
-                final RenderBox renderBox =
-                    _roleKey.currentContext!.findRenderObject() as RenderBox;
-                final position = renderBox.localToGlobal(Offset.zero);
-                final size = renderBox.size;
-
-                final RenderBox overlay =
-                    Overlay.of(context).context.findRenderObject() as RenderBox;
-
-                showMenu<UserRole>(
-                  context: context,
-                  position: RelativeRect.fromLTRB(
-                    position.dx + size.width - 100,
-                    position.dy + size.height,
-                    overlay.size.width - (position.dx + size.width),
-                    overlay.size.height - (position.dy + size.height),
-                  ),
-                  items: [UserRole.worker, UserRole.sv].map((UserRole role) {
-                    return PopupMenuItem<UserRole>(
-                      value: role,
-                      height: 36,
-                      child: Text(
-                        role.displayName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.gray900,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ).then((UserRole? selectedRole) {
-                  if (selectedRole != null && selectedRole != _currentRole) {
-                    setState(() {
-                      _currentRole = selectedRole;
-                    });
-                    // Update global role for testing
-                    UserProvider().setRole(selectedRole);
-                  }
-                });
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    _currentRole.displayName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.gray900,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    size: 18,
-                    color: AppColors.gray400,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

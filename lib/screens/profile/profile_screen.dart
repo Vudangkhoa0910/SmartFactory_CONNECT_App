@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
+import '../../utils/toast_utils.dart';
 import '../../models/user_profile_model.dart';
 import '../../providers/user_provider.dart';
 import '../../services/auth_service.dart';
@@ -17,11 +19,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late UserRole _currentRole;
+  UserProfile? _userProfile;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _currentRole = UserProvider().currentRole;
+    _loadUserProfile();
 
     // Listen to role changes
     UserProvider().addListener(_onRoleChanged);
@@ -33,29 +38,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _loadUserProfile() async {
+    try {
+      final userInfo = await AuthService().getUserInfo();
+      if (mounted) {
+        setState(() {
+          _userProfile = UserProfile(
+            id: userInfo['username'] ?? 'EMP001',
+            fullName: userInfo['fullName'] ?? '',
+            employeeId: userInfo['username'] ?? 'EMP001',
+            gender: Gender.male,
+            dateOfBirth: DateTime(1992, 8, 10),
+            phoneNumber: '',
+            email: '',
+            address: '',
+            role: _currentRole,
+            department: '',
+            joinDate: DateTime.now(),
+            shift: ShiftType.shift1,
+            workStatus: WorkStatus.active,
+          );
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   void _onRoleChanged() {
     if (mounted) {
       setState(() {
         _currentRole = UserProvider().currentRole;
       });
+      _loadUserProfile();
     }
   }
 
-  // User data based on current role
+  // User data based on current role (fallback if no user info)
   UserProfile get _currentUser {
+    if (_userProfile != null) {
+      return _userProfile!;
+    }
+
+    // Fallback to default profile
     if (_currentRole == UserRole.sv) {
       // Leader profile
       return UserProfile(
         id: 'MGR001',
-        fullName: 'Trần Thị Quản Lý',
+        fullName: 'Leader',
         employeeId: 'MGR001',
         gender: Gender.female,
         dateOfBirth: DateTime(1985, 3, 20),
-        phoneNumber: '0987654321',
-        email: 'manager@denso.com',
-        address: 'Quận 1, TP. Hồ Chí Minh',
+        phoneNumber: '',
+        email: '',
+        address: '',
         role: _currentRole,
-        department: 'Quản lý sản xuất',
+        department: '',
         joinDate: DateTime(2018, 6, 15),
         shift: ShiftType.shift1,
         workStatus: WorkStatus.active,
@@ -64,15 +107,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Worker profile
       return UserProfile(
         id: 'EMP001',
-        fullName: 'Nguyễn Văn Công Nhân',
+        fullName: 'Worker',
         employeeId: 'EMP001',
         gender: Gender.male,
         dateOfBirth: DateTime(1992, 8, 10),
-        phoneNumber: '0123456789',
-        email: 'worker@denso.com',
-        address: 'Quận 7, TP. Hồ Chí Minh',
+        phoneNumber: '',
+        email: '',
+        address: '',
         role: _currentRole,
-        department: 'Dây chuyền sản xuất A',
+        department: '',
         joinDate: DateTime(2020, 1, 10),
         shift: ShiftType.shift1,
         workStatus: WorkStatus.active,
@@ -82,6 +125,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -142,8 +187,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         ProfileMenuCard(
                           icon: Icons.settings_outlined,
-                          title: 'Cài đặt',
-                          subtitle: 'Cài đặt hệ thống',
+                          title: l10n.settings,
+                          subtitle: l10n.general,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -156,27 +201,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         ProfileMenuCard(
                           icon: Icons.info_outline,
-                          title: 'Thông tin ứng dụng',
-                          subtitle: 'Phiên bản và giấy phép',
+                          title: l10n.about,
+                          subtitle: l10n.version,
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tính năng đang phát triển'),
-                              ),
-                            );
+                            ToastUtils.showInfo(l10n.loading);
                           },
                         ),
 
                         ProfileMenuCard(
                           icon: Icons.help_outline,
-                          title: 'Trợ giúp',
-                          subtitle: 'Hướng dẫn và hỗ trợ',
+                          title: l10n.helpSupport,
+                          subtitle: l10n.feedback,
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tính năng đang phát triển'),
-                              ),
-                            );
+                            ToastUtils.showInfo(l10n.loading);
                           },
                         ),
                       ],
@@ -202,27 +239,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         ProfileMenuCard(
                           icon: Icons.history,
-                          title: 'Lịch sử hoạt động',
-                          subtitle: 'Xem lại các hoạt động đã thực hiện',
+                          title: l10n.reportHistory,
+                          subtitle: l10n.seeAll,
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tính năng đang phát triển'),
-                              ),
-                            );
+                            ToastUtils.showInfo(l10n.loading);
                           },
                         ),
 
                         ProfileMenuCard(
                           icon: Icons.notifications_outlined,
-                          title: 'Thông báo',
-                          subtitle: 'Cài đặt thông báo',
+                          title: l10n.notifications,
+                          subtitle: l10n.notificationSettings,
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tính năng đang phát triển'),
-                              ),
-                            );
+                            ToastUtils.showInfo(l10n.loading);
                           },
                         ),
                       ],
@@ -237,14 +266,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onPressed: () {
                         showDialog(
                           context: context,
-                          builder: (context) => AlertDialog(
+                          builder: (ctx) => AlertDialog(
                             backgroundColor: AppColors.white,
                             title: Text(
-                              'Xác nhận đăng xuất',
+                              l10n.logoutConfirmTitle,
                               style: TextStyle(color: AppColors.black),
                             ),
                             content: Text(
-                              'Bạn có chắc muốn đăng xuất?',
+                              l10n.logoutConfirmMessage,
                               style: TextStyle(color: AppColors.gray700),
                             ),
                             shape: RoundedRectangleBorder(
@@ -252,15 +281,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             actions: [
                               TextButton(
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: () => Navigator.pop(ctx),
                                 child: Text(
-                                  'Hủy',
+                                  l10n.cancel,
                                   style: TextStyle(color: AppColors.gray600),
                                 ),
                               ),
                               ElevatedButton(
                                 onPressed: () async {
-                                  Navigator.pop(context); // Close dialog
+                                  Navigator.pop(ctx); // Close dialog
 
                                   // Clear user session using AuthService
                                   await AuthService().logout();
@@ -274,14 +303,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       (route) => false, // Remove all routes
                                     );
 
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text(
-                                          'Đã đăng xuất thành công',
-                                        ),
-                                        backgroundColor: AppColors.success500,
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
+                                    ToastUtils.showSuccess(
+                                      l10n.successSubmitted,
                                     );
                                   }
                                 },
@@ -289,16 +312,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   backgroundColor: AppColors.brand500,
                                   foregroundColor: AppColors.white,
                                 ),
-                                child: const Text('Đăng xuất'),
+                                child: Text(l10n.logout),
                               ),
                             ],
                           ),
                         );
                       },
                       icon: const Icon(Icons.logout),
-                      label: const Text(
-                        'Đăng xuất',
-                        style: TextStyle(
+                      label: Text(
+                        l10n.logout,
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),

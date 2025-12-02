@@ -1,4 +1,5 @@
 enum ReportStatus {
+  pending, // Chờ duyệt
   processing, // Đang xử lý
   completed, // Hoàn thành
   closed, // Đã đóng
@@ -51,7 +52,12 @@ class ReportModel {
     this.attachments,
   });
 
-  // Helper methods
+  // Helper methods - get enum key names for translation in UI
+  String get priorityKey => priority.name;
+  String get statusKey => status.name;
+  String get categoryKey => category?.name ?? '';
+
+  // Backward compatibility - return Vietnamese labels (to be deprecated)
   String get priorityLabel {
     switch (priority) {
       case ReportPriority.low:
@@ -67,6 +73,8 @@ class ReportModel {
 
   String get statusLabel {
     switch (status) {
+      case ReportStatus.pending:
+        return 'Chờ duyệt';
       case ReportStatus.processing:
         return 'Đang xử lý';
       case ReportStatus.completed:
@@ -77,7 +85,7 @@ class ReportModel {
   }
 
   String get categoryLabel {
-    if (category == null) return '';
+    if (category == null) return 'Khác';
     switch (category!) {
       case ReportCategory.technical:
         return 'Kỹ thuật';
@@ -146,13 +154,18 @@ class ReportModel {
 
   static ReportStatus _parseStatus(String? status) {
     switch (status) {
+      case 'pending':
+        return ReportStatus.pending;
+      case 'assigned':
+      case 'in_progress':
+        return ReportStatus.processing;
       case 'resolved':
         return ReportStatus.completed;
       case 'closed':
       case 'cancelled':
         return ReportStatus.closed;
       default:
-        return ReportStatus.processing;
+        return ReportStatus.pending;
     }
   }
 }

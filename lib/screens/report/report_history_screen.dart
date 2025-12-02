@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../utils/toast_utils.dart';
 import '../../models/report_model.dart';
+import '../../services/incident_service.dart';
+import '../../l10n/app_localizations.dart';
 import 'report_detail_view_screen.dart';
+import '../../components/loading_infinity.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
   const ReportHistoryScreen({super.key});
@@ -15,42 +19,33 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   ReportStatus? _filterStatus;
   ReportCategory? _filterCategory;
 
-  // Sample data
-  final List<ReportModel> _reports = [
-    ReportModel(
-      id: 'SC-1024',
-      title: 'Máy dập Line 3 bị kẹt',
-      location: 'Line 3 - Khu vực sản xuất',
-      priority: ReportPriority.high,
-      category: ReportCategory.technical,
-      status: ReportStatus.processing,
-      department: 'Bộ phận bảo trì',
-      createdDate: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    ReportModel(
-      id: 'SC-1021',
-      title: 'Rò rỉ khí nén',
-      location: 'Line 5 - Máy hàn tự động',
-      priority: ReportPriority.urgent,
-      category: ReportCategory.safety,
-      status: ReportStatus.completed,
-      department: 'Bộ phận kỹ thuật',
-      createdDate: DateTime.now().subtract(const Duration(days: 5)),
-      completedDate: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    ReportModel(
-      id: 'SC-1015',
-      title: 'Hỏng cảm biến nhiệt',
-      location: 'Line 2 - Máy sơn',
-      priority: ReportPriority.medium,
-      category: ReportCategory.technical,
-      status: ReportStatus.closed,
-      department: 'Bộ phận điện tử',
-      createdDate: DateTime.now().subtract(const Duration(days: 10)),
-      completedDate: DateTime.now().subtract(const Duration(days: 7)),
-      rating: 4.5,
-    ),
-  ];
+  // Data from API
+  List<ReportModel> _reports = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReports();
+  }
+
+  Future<void> _fetchReports() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final data = await IncidentService.getIncidents();
+      setState(() {
+        _reports = data.map((json) => ReportModel.fromJson(json)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching reports: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   List<ReportModel> get _filteredReports {
     return _reports.where((report) {
@@ -80,6 +75,8 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
   Color _getStatusColor(ReportStatus status) {
     switch (status) {
+      case ReportStatus.pending:
+        return AppColors.error500;
       case ReportStatus.processing:
         return AppColors.orange500;
       case ReportStatus.completed:
@@ -104,6 +101,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final filteredReports = _filteredReports;
 
     return Scaffold(
@@ -116,7 +114,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Lịch sử Báo cáo sự cố',
+          AppLocalizations.of(context)!.reportHistory,
           style: TextStyle(
             color: AppColors.gray800,
             fontSize: 18,
@@ -137,7 +135,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                   controller: _searchController,
                   onChanged: (value) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Tìm kiếm theo ID hoặc tiêu đề...',
+                    hintText: AppLocalizations.of(context)!.searchByIdOrTitle,
                     hintStyle: TextStyle(
                       color: AppColors.gray400,
                       fontSize: 14,
@@ -160,16 +158,18 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                     Expanded(
                       child: _buildFilterDropdown<ReportStatus>(
                         value: _filterStatus,
-                        hint: 'Trạng thái',
+                        hint: l10n.reportStatus,
                         items: ReportStatus.values,
                         itemLabel: (status) {
                           switch (status) {
+                            case ReportStatus.pending:
+                              return l10n.statusPending;
                             case ReportStatus.processing:
-                              return 'Đang xử lý';
+                              return l10n.statusProcessing;
                             case ReportStatus.completed:
-                              return 'Hoàn thành';
+                              return l10n.statusCompleted;
                             case ReportStatus.closed:
-                              return 'Đã đóng';
+                              return l10n.statusClosed;
                           }
                         },
                         onChanged: (value) {
@@ -216,54 +216,69 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
           // Report list
           Expanded(
-            child: filteredReports.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.assignment_outlined,
-                          size: 64,
-                          color: AppColors.gray300,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Bạn chưa gửi báo cáo sự cố nào.',
-                          style: TextStyle(
-                            color: AppColors.gray500,
-                            fontSize: 16,
+            child: _isLoading
+                ? const Center(child: LoadingInfinity())
+                : RefreshIndicator(
+                    onRefresh: _fetchReports,
+                    child: filteredReports.isEmpty
+                        ? ListView(
+                            children: [
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.2,
+                              ),
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.assignment_outlined,
+                                      size: 64,
+                                      color: AppColors.gray300,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      AppLocalizations.of(context)!.noReports,
+                                      style: TextStyle(
+                                        color: AppColors.gray500,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: filteredReports.length,
+                            itemBuilder: (context, index) {
+                              final report = filteredReports[index];
+                              return _ReportCard(
+                                report: report,
+                                statusColor: _getStatusColor(report.status),
+                                priorityColor: _getPriorityColor(
+                                  report.priority,
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ReportDetailScreen(report: report),
+                                    ),
+                                  );
+                                },
+                                onRate:
+                                    report.status == ReportStatus.completed &&
+                                        report.rating == null
+                                    ? () {
+                                        _showRatingDialog(report);
+                                      }
+                                    : null,
+                              );
+                            },
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredReports.length,
-                    itemBuilder: (context, index) {
-                      final report = filteredReports[index];
-                      return _ReportCard(
-                        report: report,
-                        statusColor: _getStatusColor(report.status),
-                        priorityColor: _getPriorityColor(report.priority),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ReportDetailScreen(report: report),
-                            ),
-                          );
-                        },
-                        onRate:
-                            report.status == ReportStatus.completed &&
-                                report.rating == null
-                            ? () {
-                                _showRatingDialog(report);
-                              }
-                            : null,
-                      );
-                    },
                   ),
           ),
         ],
@@ -296,7 +311,10 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
         items: [
           DropdownMenuItem<T>(
             value: null,
-            child: Text('Tất cả', style: TextStyle(fontSize: 14)),
+            child: Text(
+              AppLocalizations.of(context)!.all,
+              style: TextStyle(fontSize: 14),
+            ),
           ),
           ...items.map(
             (item) => DropdownMenuItem<T>(
@@ -318,7 +336,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Đánh giá chất lượng xử lý',
+          AppLocalizations.of(context)!.rateQuality,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -359,7 +377,8 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
               controller: commentController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Nhận xét (không bắt buộc)',
+                hintText:
+                    '${AppLocalizations.of(context)!.yourComment} (${AppLocalizations.of(context)!.optional})',
                 hintStyle: TextStyle(color: AppColors.gray400),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -372,17 +391,17 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Hủy', style: TextStyle(color: AppColors.gray600)),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: TextStyle(color: AppColors.gray600),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               // TODO: Submit rating
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Cảm ơn bạn đã đánh giá!'),
-                  backgroundColor: AppColors.success500,
-                ),
+              ToastUtils.showSuccess(
+                AppLocalizations.of(context)!.thankYouForRating,
               );
             },
             style: ElevatedButton.styleFrom(
@@ -391,7 +410,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text('Gửi đánh giá'),
+            child: Text(AppLocalizations.of(context)!.send),
           ),
         ],
       ),
@@ -416,6 +435,7 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -567,7 +587,7 @@ class _ReportCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onRate,
                       icon: Icon(Icons.star_border, size: 18),
-                      label: Text('Đánh giá chất lượng xử lý'),
+                      label: Text(l10n.rateQuality),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.brand500,
                         side: BorderSide(color: AppColors.brand500),

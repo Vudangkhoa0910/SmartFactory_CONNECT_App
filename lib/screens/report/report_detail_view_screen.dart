@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../utils/toast_utils.dart';
 import '../../models/report_model.dart';
+import '../../l10n/app_localizations.dart';
 
 class ReportDetailScreen extends StatelessWidget {
   final ReportModel report;
@@ -9,6 +11,8 @@ class ReportDetailScreen extends StatelessWidget {
 
   Color _getStatusColor(ReportStatus status) {
     switch (status) {
+      case ReportStatus.pending:
+        return AppColors.error500;
       case ReportStatus.processing:
         return AppColors.orange500;
       case ReportStatus.completed:
@@ -33,6 +37,7 @@ class ReportDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
@@ -43,7 +48,7 @@ class ReportDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Chi tiết báo cáo',
+          l10n.reportDetail,
           style: TextStyle(
             color: AppColors.gray800,
             fontSize: 18,
@@ -163,35 +168,35 @@ class ReportDetailScreen extends StatelessWidget {
 
             // Details Card
             _buildDetailCard(
-              title: 'Thông tin chi tiết',
+              title: l10n.detailInfo,
               children: [
                 _buildDetailRow(
                   icon: Icons.location_on,
-                  label: 'Vị trí / Thiết bị',
+                  label: l10n.locationDevice,
                   value: report.location,
                 ),
                 if (report.category != null)
                   _buildDetailRow(
                     icon: Icons.category,
-                    label: 'Phân loại',
+                    label: l10n.category,
                     value: report.categoryLabel,
                   ),
                 if (report.department != null)
                   _buildDetailRow(
                     icon: Icons.business,
-                    label: 'Phòng ban phụ trách',
+                    label: l10n.responsibleDepartment,
                     value: report.department!,
                   ),
                 _buildDetailRow(
                   icon: Icons.calendar_today,
-                  label: 'Ngày gửi',
+                  label: l10n.createdAt,
                   value:
                       '${report.createdDate.day}/${report.createdDate.month}/${report.createdDate.year}',
                 ),
                 if (report.completedDate != null)
                   _buildDetailRow(
                     icon: Icons.check_circle,
-                    label: 'Ngày hoàn thành',
+                    label: l10n.completedDate,
                     value:
                         '${report.completedDate!.day}/${report.completedDate!.month}/${report.completedDate!.year}',
                   ),
@@ -202,7 +207,7 @@ class ReportDetailScreen extends StatelessWidget {
             // Description Card
             if (report.description != null) ...[
               _buildDetailCard(
-                title: 'Mô tả chi tiết',
+                title: l10n.description,
                 children: [
                   Text(
                     report.description!,
@@ -221,7 +226,7 @@ class ReportDetailScreen extends StatelessWidget {
             if (report.attachments != null &&
                 report.attachments!.isNotEmpty) ...[
               _buildDetailCard(
-                title: 'Tệp đính kèm',
+                title: l10n.attachments,
                 children: [
                   ...report.attachments!.map(
                     (attachment) => Padding(
@@ -255,7 +260,7 @@ class ReportDetailScreen extends StatelessWidget {
             // Rating Card (if rated)
             if (report.rating != null) ...[
               _buildDetailCard(
-                title: 'Đánh giá chất lượng xử lý',
+                title: l10n.ratingQuality,
                 children: [
                   Row(
                     children: [
@@ -291,11 +296,11 @@ class ReportDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    _showRatingDialog(context);
+                    _showRatingDialog(context, l10n);
                   },
                   icon: Icon(Icons.star_border, size: 20),
                   label: Text(
-                    'Đánh giá chất lượng xử lý',
+                    l10n.ratingQuality,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -389,7 +394,7 @@ class ReportDetailScreen extends StatelessWidget {
     );
   }
 
-  void _showRatingDialog(BuildContext context) {
+  void _showRatingDialog(BuildContext context, AppLocalizations l10n) {
     double rating = 0;
     final commentController = TextEditingController();
 
@@ -397,7 +402,7 @@ class ReportDetailScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Đánh giá chất lượng xử lý',
+          l10n.ratingQuality,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -438,7 +443,7 @@ class ReportDetailScreen extends StatelessWidget {
               controller: commentController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Nhận xét (không bắt buộc)',
+                hintText: l10n.commentOptional,
                 hintStyle: TextStyle(color: AppColors.gray400),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -451,18 +456,16 @@ class ReportDetailScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Hủy', style: TextStyle(color: AppColors.gray600)),
+            child: Text(
+              l10n.cancel,
+              style: TextStyle(color: AppColors.gray600),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               // TODO: Submit rating
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Cảm ơn bạn đã đánh giá!'),
-                  backgroundColor: AppColors.success500,
-                ),
-              );
+              ToastUtils.showSuccess(l10n.thankYouForRating);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.brand500,
@@ -470,7 +473,7 @@ class ReportDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text('Gửi đánh giá'),
+            child: Text(l10n.submitRating),
           ),
         ],
       ),

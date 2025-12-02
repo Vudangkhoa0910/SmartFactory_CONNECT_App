@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:permission_handler/permission_handler.dart';
 import '../config/app_colors.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/toast_utils.dart';
 
 /// Reusable text field widget with integrated microphone button
 class TextFieldWithMic extends StatefulWidget {
@@ -49,41 +50,24 @@ class _TextFieldWithMicState extends State<TextFieldWithMic> {
       onError: (error) {
         if (mounted) {
           setState(() => _isListening = false);
-          
-          String errorMessage = 'Lỗi nhận dạng giọng nói';
-          if (error.errorMsg.toLowerCase().contains('not_allowed') || 
+
+          String errorMessage = AppLocalizations.of(
+            context,
+          )!.voiceRecognitionError;
+          if (error.errorMsg.toLowerCase().contains('not_allowed') ||
               error.errorMsg.toLowerCase().contains('permission')) {
-            errorMessage = 'Vui lòng cấp quyền Speech Recognition trong Settings';
+            errorMessage = AppLocalizations.of(context)!.microphonePermission;
           }
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: AppColors.error500,
-              duration: const Duration(seconds: 3),
-              action: SnackBarAction(
-                label: 'Settings',
-                textColor: AppColors.white,
-                onPressed: () => openAppSettings(),
-              ),
-            ),
-          );
+
+          ToastUtils.showError(errorMessage);
         }
       },
     );
 
     if (!available) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Không thể khởi tạo nhận dạng giọng nói'),
-            backgroundColor: AppColors.error500,
-            action: SnackBarAction(
-              label: 'Settings',
-              textColor: AppColors.white,
-              onPressed: () => openAppSettings(),
-            ),
-          ),
+        ToastUtils.showError(
+          AppLocalizations.of(context)!.speechRecognitionNotAvailable,
         );
       }
       return;
@@ -185,7 +169,9 @@ class _TextFieldWithMicState extends State<TextFieldWithMic> {
                             boxShadow: _isListening
                                 ? [
                                     BoxShadow(
-                                      color: AppColors.error500.withOpacity(0.4),
+                                      color: AppColors.error500.withOpacity(
+                                        0.4,
+                                      ),
                                       blurRadius: 8,
                                       spreadRadius: 2,
                                     ),
@@ -213,7 +199,7 @@ class _TextFieldWithMicState extends State<TextFieldWithMic> {
                 Icon(Icons.mic, size: 16, color: AppColors.error500),
                 const SizedBox(width: 4),
                 Text(
-                  'Đang nghe... Thả ra để dừng',
+                  AppLocalizations.of(context)!.listeningRelease,
                   style: TextStyle(
                     color: AppColors.error500,
                     fontSize: 12,
