@@ -294,6 +294,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   // Clear user session using AuthService
                                   await AuthService().logout();
 
+                                  // Show toast BEFORE navigation
+                                  ToastUtils.showSuccess(l10n.logout);
+
                                   // Navigate to Login screen and clear navigation stack
                                   if (context.mounted) {
                                     Navigator.of(
@@ -301,10 +304,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ).pushNamedAndRemoveUntil(
                                       '/login',
                                       (route) => false, // Remove all routes
-                                    );
-
-                                    ToastUtils.showSuccess(
-                                      l10n.successSubmitted,
                                     );
                                   }
                                 },

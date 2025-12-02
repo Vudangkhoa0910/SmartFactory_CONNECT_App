@@ -16,33 +16,42 @@ class ToastUtils {
   static void showSuccess(
     String message, {
     String? title,
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(milliseconds: 1500),
   }) {
     if (_context == null) return;
     toastification.show(
       context: _context!,
       type: ToastificationType.success,
-      style: ToastificationStyle.fillColored,
-      title: title != null ? Text(title) : null,
-      description: Text(message),
+      style: ToastificationStyle.flat,
+      title: title != null
+          ? Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : null,
+      description: Text(message, style: const TextStyle(color: Colors.white)),
       alignment: Alignment.topCenter,
       autoCloseDuration: duration,
-      primaryColor: AppColors.success500,
+      primaryColor: Colors.white,
       backgroundColor: AppColors.success500,
-      foregroundColor: AppColors.white,
+      foregroundColor: Colors.white,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color: AppColors.success500.withOpacity(0.3),
+          color: AppColors.success500.withValues(alpha: 0.3),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
       ],
-      showProgressBar: true,
-      closeButtonShowType: CloseButtonShowType.onHover,
+      showProgressBar: false,
+      closeButtonShowType: CloseButtonShowType.none,
       closeOnClick: true,
-      pauseOnHover: true,
+      pauseOnHover: false,
       dragToClose: true,
+      icon: const Icon(Icons.check_circle, color: Colors.white),
     );
   }
 
@@ -50,33 +59,42 @@ class ToastUtils {
   static void showError(
     String message, {
     String? title,
-    Duration duration = const Duration(seconds: 4),
+    Duration duration = const Duration(milliseconds: 2000),
   }) {
     if (_context == null) return;
     toastification.show(
       context: _context!,
       type: ToastificationType.error,
-      style: ToastificationStyle.fillColored,
-      title: title != null ? Text(title) : null,
-      description: Text(message),
+      style: ToastificationStyle.flat,
+      title: title != null
+          ? Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : null,
+      description: Text(message, style: const TextStyle(color: Colors.white)),
       alignment: Alignment.topCenter,
       autoCloseDuration: duration,
-      primaryColor: AppColors.error500,
+      primaryColor: Colors.white,
       backgroundColor: AppColors.error500,
-      foregroundColor: AppColors.white,
+      foregroundColor: Colors.white,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color: AppColors.error500.withOpacity(0.3),
+          color: AppColors.error500.withValues(alpha: 0.3),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
       ],
-      showProgressBar: true,
-      closeButtonShowType: CloseButtonShowType.always,
+      showProgressBar: false,
+      closeButtonShowType: CloseButtonShowType.none,
       closeOnClick: true,
-      pauseOnHover: true,
+      pauseOnHover: false,
       dragToClose: true,
+      icon: const Icon(Icons.error, color: Colors.white),
     );
   }
 
@@ -84,33 +102,42 @@ class ToastUtils {
   static void showWarning(
     String message, {
     String? title,
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(milliseconds: 1500),
   }) {
     if (_context == null) return;
     toastification.show(
       context: _context!,
       type: ToastificationType.warning,
-      style: ToastificationStyle.fillColored,
-      title: title != null ? Text(title) : null,
-      description: Text(message),
+      style: ToastificationStyle.flat,
+      title: title != null
+          ? Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : null,
+      description: Text(message, style: const TextStyle(color: Colors.white)),
       alignment: Alignment.topCenter,
       autoCloseDuration: duration,
-      primaryColor: AppColors.orange500,
+      primaryColor: Colors.white,
       backgroundColor: AppColors.orange500,
-      foregroundColor: AppColors.white,
+      foregroundColor: Colors.white,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color: AppColors.orange500.withOpacity(0.3),
+          color: AppColors.orange500.withValues(alpha: 0.3),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
       ],
-      showProgressBar: true,
-      closeButtonShowType: CloseButtonShowType.onHover,
+      showProgressBar: false,
+      closeButtonShowType: CloseButtonShowType.none,
       closeOnClick: true,
-      pauseOnHover: true,
+      pauseOnHover: false,
       dragToClose: true,
+      icon: const Icon(Icons.warning, color: Colors.white),
     );
   }
 
@@ -118,33 +145,42 @@ class ToastUtils {
   static void showInfo(
     String message, {
     String? title,
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(milliseconds: 1500),
   }) {
     if (_context == null) return;
     toastification.show(
       context: _context!,
       type: ToastificationType.info,
-      style: ToastificationStyle.fillColored,
-      title: title != null ? Text(title) : null,
-      description: Text(message),
+      style: ToastificationStyle.flat,
+      title: title != null
+          ? Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : null,
+      description: Text(message, style: const TextStyle(color: Colors.white)),
       alignment: Alignment.topCenter,
       autoCloseDuration: duration,
-      primaryColor: AppColors.blueLight500,
+      primaryColor: Colors.white,
       backgroundColor: AppColors.blueLight500,
-      foregroundColor: AppColors.white,
+      foregroundColor: Colors.white,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color: AppColors.blueLight500.withOpacity(0.3),
+          color: AppColors.blueLight500.withValues(alpha: 0.3),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
       ],
-      showProgressBar: true,
-      closeButtonShowType: CloseButtonShowType.onHover,
+      showProgressBar: false,
+      closeButtonShowType: CloseButtonShowType.none,
       closeOnClick: true,
-      pauseOnHover: true,
+      pauseOnHover: false,
       dragToClose: true,
+      icon: const Icon(Icons.info, color: Colors.white),
     );
   }
 
@@ -154,22 +190,27 @@ class ToastUtils {
     return toastification.show(
       context: _context!,
       type: ToastificationType.info,
-      style: ToastificationStyle.fillColored,
-      title: title != null ? Text(title) : null,
-      description: Text(message),
+      style: ToastificationStyle.flat,
+      title: title != null
+          ? Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : null,
+      description: Text(message, style: const TextStyle(color: Colors.white)),
       alignment: Alignment.topCenter,
       autoCloseDuration: null, // Don't auto close
-      primaryColor: AppColors.brand500,
+      primaryColor: Colors.white,
       backgroundColor: AppColors.brand500,
-      foregroundColor: AppColors.white,
+      foregroundColor: Colors.white,
       borderRadius: BorderRadius.circular(12),
       icon: const SizedBox(
         width: 24,
         height: 24,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: AppColors.white,
-        ),
+        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
       ),
       showProgressBar: false,
       closeButtonShowType: CloseButtonShowType.none,
