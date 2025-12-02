@@ -73,7 +73,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          '${l10n.incidentDetail} ${widget.report.id}',
+          l10n.incidentDetail,
           style: TextStyle(
             color: AppColors.gray800,
             fontSize: 18,
@@ -82,6 +82,8 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
         ),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: AppColors.appBackgroundGradient,
         ),
