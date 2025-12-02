@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_profile_model.dart';
+import '../services/auth_service.dart';
 
 /// Simple user state provider for testing role switching
 /// Uses SharedPreferences to persist role across app restarts
@@ -15,8 +16,62 @@ class UserProvider extends ChangeNotifier {
   UserRole _currentRole = UserRole.worker;
   bool _isLoaded = false;
 
+  // Cached user profile data
+  Map<String, dynamic>? _cachedProfileData;
+  bool _isProfileLoading = false;
+  DateTime? _lastProfileFetch;
+
   UserRole get currentRole => _currentRole;
   bool get isLoaded => _isLoaded;
+  Map<String, dynamic>? get cachedProfileData => _cachedProfileData;
+  bool get isProfileLoading => _isProfileLoading;
+
+  /// Get cached profile or fetch from API (caches for 5 minutes)
+  Future<Map<String, dynamic>?> getProfileData({
+    bool forceRefresh = false,
+  }) async {
+    // Return cached data if available and not expired (5 min cache)
+    if (!forceRefresh &&
+        _cachedProfileData != null &&
+        _lastProfileFetch != null &&
+        DateTime.now().difference(_lastProfileFetch!).inMinutes < 5) {
+      return _cachedProfileData;
+    }
+
+    // Prevent multiple simultaneous fetches
+    if (_isProfileLoading) {
+      // Wait for current fetch to complete
+      while (_isProfileLoading) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return _cachedProfileData;
+    }
+
+    _isProfileLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await AuthService().getProfile();
+      if (result['success'] == true && result['data'] != null) {
+        _cachedProfileData = result['data'];
+        _lastProfileFetch = DateTime.now();
+      }
+    } catch (e) {
+      // Keep existing cache on error
+    } finally {
+      _isProfileLoading = false;
+      notifyListeners();
+    }
+
+    return _cachedProfileData;
+  }
+
+  /// Clear cached profile (call on logout)
+  void clearProfileCache() {
+    _cachedProfileData = null;
+    _lastProfileFetch = null;
+    notifyListeners();
+  }
 
   Future<void> _loadRole() async {
     try {

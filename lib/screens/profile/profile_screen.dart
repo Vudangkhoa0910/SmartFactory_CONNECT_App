@@ -42,36 +42,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Try to get profile from API first
-      final profileResult = await AuthService().getProfile();
+      // Use cached profile data from UserProvider
+      final data = await UserProvider().getProfileData();
 
-      if (profileResult['success'] == true && profileResult['data'] != null) {
-        final data = profileResult['data'];
-
-        if (mounted) {
-          setState(() {
-            _userProfile = UserProfile(
-              id: data['id']?.toString() ?? '',
-              fullName: data['full_name'] ?? '',
-              employeeId: data['employee_code'] ?? '',
-              gender: Gender.male, // API doesn't return this yet
-              dateOfBirth: DateTime(1990, 1, 1), // API doesn't return this yet
-              phoneNumber: data['phone'] ?? '',
-              email: data['email'] ?? '',
-              address: '', // API doesn't return this yet
-              role: _currentRole,
-              department: data['department_name'] ?? '',
-              joinDate: data['created_at'] != null
-                  ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
-                  : DateTime.now(),
-              shift: ShiftType.shift1, // API doesn't return this yet
-              workStatus: data['is_active'] == true
-                  ? WorkStatus.active
-                  : WorkStatus.resigned,
-            );
-            _isLoading = false;
-          });
-        }
+      if (data != null && mounted) {
+        setState(() {
+          _userProfile = UserProfile(
+            id: data['id']?.toString() ?? '',
+            fullName: data['full_name'] ?? '',
+            employeeId: data['employee_code'] ?? '',
+            gender: Gender.male, // API doesn't return this yet
+            dateOfBirth: DateTime(1990, 1, 1), // API doesn't return this yet
+            phoneNumber: data['phone'] ?? '',
+            email: data['email'] ?? '',
+            address: '', // API doesn't return this yet
+            role: _currentRole,
+            department: data['department_name'] ?? '',
+            joinDate: data['created_at'] != null
+                ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
+                : DateTime.now(),
+            shift: ShiftType.shift1, // API doesn't return this yet
+            workStatus: data['is_active'] == true
+                ? WorkStatus.active
+                : WorkStatus.resigned,
+          );
+          _isLoading = false;
+        });
       } else {
         // Fallback to locally saved user info
         final userInfo = await AuthService().getUserInfo();
@@ -303,6 +299,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ElevatedButton(
                                 onPressed: () async {
                                   Navigator.pop(ctx); // Close dialog
+
+                                  // Clear cached profile data
+                                  UserProvider().clearProfileCache();
 
                                   // Clear user session using AuthService
                                   await AuthService().logout();

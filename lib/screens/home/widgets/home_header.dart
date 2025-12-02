@@ -25,7 +25,19 @@ class _HomeHeaderState extends State<HomeHeader> {
 
   Future<void> _loadUserName() async {
     try {
-      // First try to get from local storage (fast)
+      // First try cached data from UserProvider (fastest)
+      final cachedData = UserProvider().cachedProfileData;
+      if (cachedData != null && cachedData['full_name'] != null) {
+        if (mounted) {
+          setState(() {
+            _userName = cachedData['full_name'];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // Then try local storage
       final userInfo = await AuthService().getUserInfo();
       if (mounted &&
           userInfo['fullName'] != null &&
@@ -37,12 +49,12 @@ class _HomeHeaderState extends State<HomeHeader> {
         return;
       }
 
-      // If not found locally, try API
-      final profileResult = await AuthService().getProfile();
+      // Finally try API with caching
+      final profileData = await UserProvider().getProfileData();
       if (mounted) {
-        if (profileResult['success'] == true && profileResult['data'] != null) {
+        if (profileData != null && profileData['full_name'] != null) {
           setState(() {
-            _userName = profileResult['data']['full_name'] ?? '';
+            _userName = profileData['full_name'];
             _isLoading = false;
           });
         } else {
