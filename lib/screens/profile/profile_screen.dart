@@ -39,33 +39,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
+    setState(() => _isLoading = true);
+
     try {
-      final userInfo = await AuthService().getUserInfo();
-      if (mounted) {
-        setState(() {
-          _userProfile = UserProfile(
-            id: userInfo['username'] ?? 'EMP001',
-            fullName: userInfo['fullName'] ?? '',
-            employeeId: userInfo['username'] ?? 'EMP001',
-            gender: Gender.male,
-            dateOfBirth: DateTime(1992, 8, 10),
-            phoneNumber: '',
-            email: '',
-            address: '',
-            role: _currentRole,
-            department: '',
-            joinDate: DateTime.now(),
-            shift: ShiftType.shift1,
-            workStatus: WorkStatus.active,
-          );
-          _isLoading = false;
-        });
+      // Try to get profile from API first
+      final profileResult = await AuthService().getProfile();
+
+      if (profileResult['success'] == true && profileResult['data'] != null) {
+        final data = profileResult['data'];
+
+        if (mounted) {
+          setState(() {
+            _userProfile = UserProfile(
+              id: data['id']?.toString() ?? '',
+              fullName: data['full_name'] ?? '',
+              employeeId: data['employee_code'] ?? '',
+              gender: Gender.male, // API doesn't return this yet
+              dateOfBirth: DateTime(1990, 1, 1), // API doesn't return this yet
+              phoneNumber: data['phone'] ?? '',
+              email: data['email'] ?? '',
+              address: '', // API doesn't return this yet
+              role: _currentRole,
+              department: data['department_name'] ?? '',
+              joinDate: data['created_at'] != null
+                  ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
+                  : DateTime.now(),
+              shift: ShiftType.shift1, // API doesn't return this yet
+              workStatus: data['is_active'] == true
+                  ? WorkStatus.active
+                  : WorkStatus.resigned,
+            );
+            _isLoading = false;
+          });
+        }
+      } else {
+        // Fallback to locally saved user info
+        final userInfo = await AuthService().getUserInfo();
+        if (mounted) {
+          setState(() {
+            _userProfile = UserProfile(
+              id: userInfo['username'] ?? '',
+              fullName: userInfo['fullName'] ?? '',
+              employeeId: userInfo['username'] ?? '',
+              gender: Gender.male,
+              dateOfBirth: DateTime(1990, 1, 1),
+              phoneNumber: '',
+              email: '',
+              address: '',
+              role: _currentRole,
+              department: '',
+              joinDate: DateTime.now(),
+              shift: ShiftType.shift1,
+              workStatus: WorkStatus.active,
+            );
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -85,42 +118,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return _userProfile!;
     }
 
-    // Fallback to default profile
-    if (_currentRole == UserRole.sv) {
-      // Leader profile
-      return UserProfile(
-        id: 'MGR001',
-        fullName: 'Leader',
-        employeeId: 'MGR001',
-        gender: Gender.female,
-        dateOfBirth: DateTime(1985, 3, 20),
-        phoneNumber: '',
-        email: '',
-        address: '',
-        role: _currentRole,
-        department: '',
-        joinDate: DateTime(2018, 6, 15),
-        shift: ShiftType.shift1,
-        workStatus: WorkStatus.active,
-      );
-    } else {
-      // Worker profile
-      return UserProfile(
-        id: 'EMP001',
-        fullName: 'Worker',
-        employeeId: 'EMP001',
-        gender: Gender.male,
-        dateOfBirth: DateTime(1992, 8, 10),
-        phoneNumber: '',
-        email: '',
-        address: '',
-        role: _currentRole,
-        department: '',
-        joinDate: DateTime(2020, 1, 10),
-        shift: ShiftType.shift1,
-        workStatus: WorkStatus.active,
-      );
-    }
+    // Fallback to empty profile while loading
+    return UserProfile(
+      id: '',
+      fullName: '',
+      employeeId: '',
+      gender: Gender.male,
+      dateOfBirth: DateTime(1990, 1, 1),
+      phoneNumber: '',
+      email: '',
+      address: '',
+      role: _currentRole,
+      department: '',
+      joinDate: DateTime.now(),
+      shift: ShiftType.shift1,
+      workStatus: WorkStatus.active,
+    );
   }
 
   @override

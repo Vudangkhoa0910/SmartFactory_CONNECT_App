@@ -25,12 +25,31 @@ class _HomeHeaderState extends State<HomeHeader> {
 
   Future<void> _loadUserName() async {
     try {
+      // First try to get from local storage (fast)
       final userInfo = await AuthService().getUserInfo();
-      if (mounted) {
+      if (mounted &&
+          userInfo['fullName'] != null &&
+          userInfo['fullName']!.isNotEmpty) {
         setState(() {
-          _userName = userInfo['fullName'] ?? '';
+          _userName = userInfo['fullName']!;
           _isLoading = false;
         });
+        return;
+      }
+
+      // If not found locally, try API
+      final profileResult = await AuthService().getProfile();
+      if (mounted) {
+        if (profileResult['success'] == true && profileResult['data'] != null) {
+          setState(() {
+            _userName = profileResult['data']['full_name'] ?? '';
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {

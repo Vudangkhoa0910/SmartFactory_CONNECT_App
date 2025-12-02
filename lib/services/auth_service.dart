@@ -150,6 +150,25 @@ class AuthService {
     };
   }
 
+  /// Lấy profile user từ API backend
+  Future<Map<String, dynamic>> getProfile() async {
+    try {
+      final response = await ApiService.get(ApiConstants.profile);
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return {'success': true, 'data': responseData['data']};
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to get profile',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   // ==================== BIOMETRIC AUTHENTICATION ====================
 
   /// Kiểm tra thiết bị có hỗ trợ sinh trắc học không
