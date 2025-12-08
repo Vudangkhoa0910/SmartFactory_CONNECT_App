@@ -10,6 +10,7 @@ import '../../widgets/text_field_with_mic.dart';
 import '../../widgets/expanded_text_dialog.dart';
 import '../../components/loading_infinity.dart';
 import '../../utils/toast_utils.dart';
+import '../../services/auth_service.dart';
 
 /// Màn hình tạo góp ý mới
 /// Hỗ trợ cả Hòm thư trắng (công khai) và Hòm thư hồng (ẩn danh)
@@ -34,7 +35,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   late IdeaBoxType _selectedBoxType;
   IssueType? _selectedIssueType;
   DifficultyLevel? _selectedDifficulty;
-  bool _isAnonymous = false;
   bool _isSubmitting = false;
   List<File> _attachments = [];
   final ImagePicker _picker = ImagePicker();
@@ -44,7 +44,11 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   void initState() {
     super.initState();
     _selectedBoxType = widget.initialBoxType;
-    _isAnonymous = _selectedBoxType == IdeaBoxType.pink;
+    if (_selectedBoxType == IdeaBoxType.white) {
+      _prefillPersonalInfo();
+    } else {
+      _clearPersonalInfo();
+    }
   }
 
   @override
@@ -71,6 +75,50 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
       ),
     );
     setState(() {});
+  }
+
+  void _clearPersonalInfo() {
+    _nameController.clear();
+    _employeeIdController.clear();
+    _positionController.clear();
+  }
+
+  Future<void> _prefillPersonalInfo() async {
+    try {
+      // Ưu tiên lấy profile từ backend để có thông tin mới nhất
+      final profileResult = await AuthService().getProfile();
+      if (mounted && profileResult['success'] == true) {
+        final data = profileResult['data'] as Map<String, dynamic>;
+        setState(() {
+          _nameController.text =
+              data['full_name'] ?? data['fullName'] ?? _nameController.text;
+          _employeeIdController.text =
+              data['employee_code'] ??
+              data['employeeCode'] ??
+              _employeeIdController.text;
+          _positionController.text =
+              data['job_title'] ??
+              data['position'] ??
+              data['role'] ??
+              _positionController.text;
+        });
+        return;
+      }
+
+      // Fallback: lấy thông tin đã lưu cục bộ (sau login)
+      final localInfo = await AuthService().getUserInfo();
+      if (!mounted) return;
+      setState(() {
+        _nameController.text =
+            localInfo['fullName'] ??
+            localInfo['full_name'] ??
+            _nameController.text;
+        _employeeIdController.text =
+            localInfo['username'] ?? _employeeIdController.text;
+      });
+    } catch (_) {
+      // Giữ form trống nếu không lấy được
+    }
   }
 
   @override
@@ -233,8 +281,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
       onTap: () {
         setState(() {
           _selectedBoxType = type;
-          _isAnonymous = type == IdeaBoxType.pink;
         });
+        if (type == IdeaBoxType.white) {
+          _prefillPersonalInfo();
+        } else {
+          _clearPersonalInfo();
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -411,9 +463,15 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         const SizedBox(height: 12),
 
         // Họ và tên
-        TextFieldWithMic(
+        TextFormField(
           controller: _nameController,
-          hintText: 'Nhập họ và tên của bạn',
+          style: const TextStyle(color: AppColors.black),
+          decoration: const InputDecoration(
+            hintText: 'Nhập họ và tên của bạn',
+            hintStyle: TextStyle(color: AppColors.gray400),
+            filled: true,
+            fillColor: AppColors.white,
+          ),
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
               return 'Vui lòng nhập họ và tên';
@@ -424,9 +482,15 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         const SizedBox(height: 16),
 
         // Mã nhân viên
-        TextFieldWithMic(
+        TextFormField(
           controller: _employeeIdController,
-          hintText: 'VD: NV001',
+          style: const TextStyle(color: AppColors.black),
+          decoration: const InputDecoration(
+            hintText: 'VD: NV001',
+            hintStyle: TextStyle(color: AppColors.gray400),
+            filled: true,
+            fillColor: AppColors.white,
+          ),
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
               return 'Vui lòng nhập mã nhân viên';
@@ -437,9 +501,15 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         const SizedBox(height: 16),
 
         // Chức vụ
-        TextFieldWithMic(
+        TextFormField(
           controller: _positionController,
-          hintText: 'VD: Công nhân sản xuất',
+          style: const TextStyle(color: AppColors.black),
+          decoration: const InputDecoration(
+            hintText: 'VD: Công nhân sản xuất',
+            hintStyle: TextStyle(color: AppColors.gray400),
+            filled: true,
+            fillColor: AppColors.white,
+          ),
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
               return 'Vui lòng nhập chức vụ';
@@ -854,7 +924,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           );
         }
       }
-    } on Exception catch (e) {
+    } on Exception catch (_) {
       if (mounted) {
         // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
         Permission permission = source == ImageSource.camera
