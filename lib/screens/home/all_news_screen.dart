@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
 import '../../components/loading_infinity.dart';
+import '../../utils/date_utils.dart';
 import 'news_detail_screen.dart';
 
 class AllNewsScreen extends StatefulWidget {
@@ -569,7 +570,12 @@ class _NewsCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          news.date,
+                          AppDateUtils.formatDate(
+                            news.date,
+                            locale: AppDateUtils.getLocaleString(
+                              Localizations.localeOf(context).languageCode,
+                            ),
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.gray400,

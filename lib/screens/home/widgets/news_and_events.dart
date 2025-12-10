@@ -7,6 +7,7 @@ import '../../../services/news_service.dart';
 import '../all_news_screen.dart';
 import '../news_detail_screen.dart';
 import '../../../components/loading_infinity.dart';
+import '../../../utils/date_utils.dart';
 
 class NewsAndEvents extends StatefulWidget {
   const NewsAndEvents({super.key});
@@ -318,7 +319,12 @@ class _NewsCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          news.date,
+                          AppDateUtils.formatDate(
+                            news.date,
+                            locale: AppDateUtils.getLocaleString(
+                              Localizations.localeOf(context).languageCode,
+                            ),
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.gray400,

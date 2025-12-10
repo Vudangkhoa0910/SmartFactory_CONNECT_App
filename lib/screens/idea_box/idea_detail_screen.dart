@@ -3,7 +3,6 @@ import '../../config/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/idea_box_model.dart';
 import '../../services/idea_service.dart';
-import '../../widgets/text_field_with_mic.dart';
 import '../../components/loading_infinity.dart';
 import '../../utils/toast_utils.dart';
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
@@ -61,76 +60,71 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(gradient: AppColors.appBackgroundGradient),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: CustomRefreshIndicator(
-                  onRefresh: _fetchDetail,
-                  builder:
-                      (
-                        BuildContext context,
-                        Widget child,
-                        IndicatorController controller,
-                      ) {
-                        return Stack(
-                          alignment: Alignment.topCenter,
-                          children: <Widget>[
-                            if (!controller.isIdle)
-                              Positioned(
-                                top: 10.0 * controller.value,
-                                child: const SizedBox(
-                                  height: 80,
-                                  width: 80,
-                                  child: LoadingInfinity(size: 80),
-                                ),
+      backgroundColor: AppColors.gray50,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: CustomRefreshIndicator(
+                onRefresh: _fetchDetail,
+                builder:
+                    (
+                      BuildContext context,
+                      Widget child,
+                      IndicatorController controller,
+                    ) {
+                      return Stack(
+                        alignment: Alignment.topCenter,
+                        children: <Widget>[
+                          if (!controller.isIdle)
+                            Positioned(
+                              top: 10.0 * controller.value,
+                              child: const SizedBox(
+                                height: 80,
+                                width: 80,
+                                child: LoadingInfinity(size: 80),
                               ),
-                            Transform.translate(
-                              offset: Offset(0, 100.0 * controller.value),
-                              child: child,
                             ),
-                          ],
-                        );
-                      },
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildStatusCard(),
-                        const SizedBox(height: 20),
-                        _buildIdeaDetails(),
-                        const SizedBox(height: 20),
-                        if (_idea.attachments.isNotEmpty) ...[
-                          _buildAttachments(),
-                          const SizedBox(height: 20),
+                          Transform.translate(
+                            offset: Offset(0, 100.0 * controller.value),
+                            child: child,
+                          ),
                         ],
-                        _buildSenderInfo(),
+                      );
+                    },
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildStatusCard(),
+                      const SizedBox(height: 20),
+                      _buildIdeaDetails(),
+                      const SizedBox(height: 20),
+                      if (_idea.attachments.isNotEmpty) ...[
+                        _buildAttachments(),
                         const SizedBox(height: 20),
-                        _buildProcessTimeline(),
-                        const SizedBox(height: 20),
-                        if (_idea.status == IdeaStatus.completed &&
-                            _idea.satisfactionRating == null)
-                          _buildSatisfactionRating(),
                       ],
-                    ),
+                      _buildProcessTimeline(),
+                      const SizedBox(height: 20),
+                      if (_idea.status == IdeaStatus.completed &&
+                          _idea.satisfactionRating == null)
+                        _buildSatisfactionRating(),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildHeader() {
-    final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           IconButton(
@@ -138,44 +132,21 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             icon: const Icon(Icons.arrow_back),
             color: AppColors.gray900,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      _idea.boxType == IdeaBoxType.white
-                          ? Icons.inbox_outlined
-                          : Icons.favorite_border,
-                      size: 16,
-                      color: _idea.boxType == IdeaBoxType.white
-                          ? AppColors.brand500
-                          : AppColors.themePink500,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _idea.boxType == IdeaBoxType.white
-                          ? 'Hòm trắng'
-                          : 'Hòm hồng',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: _idea.boxType == IdeaBoxType.white
-                            ? AppColors.brand600
-                            : AppColors.themePink500,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 4),
                 Text(
-                  l10n.ideaDetail,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                  _idea.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.gray900,
+                    height: 1.2,
                   ),
                 ),
               ],
@@ -186,14 +157,6 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               width: 20,
               height: 20,
               child: LoadingInfinity(size: 20),
-            )
-          else
-            IconButton(
-              onPressed: () {
-                // TODO: Share functionality
-              },
-              icon: const Icon(Icons.share_outlined),
-              color: AppColors.gray600,
             ),
         ],
       ),
@@ -204,17 +167,13 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.brand500, AppColors.brand400],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brand500.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: AppColors.gray500.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -229,15 +188,15 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.white.withOpacity(0.2),
+                  color: AppColors.brand50,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   _idea.issueType.label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.white,
+                    color: AppColors.brand700,
                   ),
                 ),
               ),
@@ -248,7 +207,7 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: AppColors.brand500.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -268,30 +227,82 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.white,
+              color: AppColors.gray900,
               height: 1.4,
             ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.access_time, size: 16, color: AppColors.white),
+              const Icon(Icons.access_time, size: 16, color: AppColors.gray600),
               const SizedBox(width: 6),
               Text(
                 _formatDate(_idea.createdAt),
-                style: const TextStyle(fontSize: 13, color: AppColors.white),
+                style: const TextStyle(fontSize: 13, color: AppColors.gray700),
               ),
               if (_idea.difficultyLevel != null) ...[
                 const SizedBox(width: 16),
-                const Icon(Icons.speed, size: 16, color: AppColors.white),
+                const Icon(Icons.speed, size: 16, color: AppColors.gray600),
                 const SizedBox(width: 6),
                 Text(
                   _idea.difficultyLevel!.label,
-                  style: const TextStyle(fontSize: 13, color: AppColors.white),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.gray700,
+                  ),
                 ),
               ],
             ],
           ),
+          const SizedBox(height: 12),
+          if (_idea.boxType == IdeaBoxType.white) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.person_outline,
+                  size: 18,
+                  color: AppColors.gray600,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _buildReporterLine(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.gray800,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (_idea.currentHandlerName != null &&
+              _idea.currentHandlerName!.isNotEmpty) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.manage_accounts_outlined,
+                  size: 18,
+                  color: AppColors.gray600,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _buildHandlerLine(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.gray800,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -374,6 +385,28 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
     );
   }
 
+  String _buildReporterLine() {
+    final name = _idea.senderName ?? 'Không rõ người gửi';
+    final code = _idea.senderEmployeeId;
+    final dept = _idea.senderDepartment;
+
+    final parts = <String>[name];
+    if (code != null && code.isNotEmpty) parts.add('• $code');
+    if (dept != null && dept.isNotEmpty) parts.add('• $dept');
+    return parts.join(' ');
+  }
+
+  String _buildHandlerLine() {
+    final handler = _idea.currentHandlerName ?? '';
+    final role = _idea.currentHandlerRole;
+    if (role != null && role.isNotEmpty) {
+      return '$handler • $role';
+    }
+    return handler;
+  }
+
+  // _buildSenderInfo removed; reporter info đã đưa lên status card.
+
   Widget _buildAttachments() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,8 +473,8 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.7),
+                                AppColors.transparent,
+                                AppColors.black.withOpacity(0.7),
                               ],
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
@@ -465,180 +498,6 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSenderInfo() {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.brand500.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                _idea.senderName != null
-                    ? Icons.person_outline
-                    : Icons.privacy_tip_outlined,
-                size: 20,
-                color: _idea.senderName != null
-                    ? AppColors.brand500
-                    : AppColors.themePink500,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l10n.ideaSubmittedBy,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.gray900,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_idea.senderName != null) ...[
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.brand100,
-                  child: Text(
-                    _idea.senderName![0],
-                    style: const TextStyle(
-                      fontSize: 20,
-                      color: AppColors.brand600,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _idea.senderName!,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.gray900,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Mã NV: ${_idea.senderEmployeeId}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.gray600,
-                        ),
-                      ),
-                      Text(
-                        _idea.senderDepartment ?? '',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.gray500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.themePink500.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.lock, color: AppColors.themePink500),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Thông tin người gửi được bảo mật',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.gray700,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          if (_idea.currentHandlerName != null) ...[
-            const SizedBox(height: 16),
-            Divider(color: AppColors.gray100),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(
-                  Icons.support_agent,
-                  size: 20,
-                  color: AppColors.blueLight500,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)!.processingBy,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.gray900,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.blueLight100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _idea.currentHandlerRole ?? '',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.blueLight700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _idea.currentHandlerName ?? '',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.gray700,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
     );
   }
 
@@ -886,10 +745,16 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
             }),
           ),
           const SizedBox(height: 20),
-          TextFieldWithMic(
+          TextFormField(
             controller: _feedbackController,
-            hintText: 'Nhận xét của bạn (tùy chọn)',
             maxLines: 3,
+            style: const TextStyle(color: AppColors.black),
+            decoration: const InputDecoration(
+              hintText: 'Nhận xét của bạn (tùy chọn)',
+              hintStyle: TextStyle(color: AppColors.gray400),
+              filled: true,
+              fillColor: AppColors.white,
+            ),
           ),
           const SizedBox(height: 16),
           SizedBox(

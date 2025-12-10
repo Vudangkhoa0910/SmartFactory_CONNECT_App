@@ -6,6 +6,7 @@ import '../../models/news_model.dart';
 import '../../services/news_service.dart';
 import '../../components/loading_infinity.dart';
 import '../../utils/toast_utils.dart';
+import '../../utils/date_utils.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final NewsModel news;
@@ -143,7 +144,12 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                _news.date,
+                                AppDateUtils.formatDate(
+                                  _news.date,
+                                  locale: AppDateUtils.getLocaleString(
+                                    Localizations.localeOf(context).languageCode,
+                                  ),
+                                ),
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 14,
