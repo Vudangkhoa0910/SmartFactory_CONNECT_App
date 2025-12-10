@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:toastification/toastification.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:io';
+import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
 import 'splash_screen.dart';
 import 'bottom_nav_screen.dart';
@@ -11,18 +14,38 @@ import 'screens/report/report_form_screen.dart';
 import 'screens/report/leader_report_form_screen.dart';
 import 'config/app_colors.dart';
 import 'providers/language_provider.dart';
+import 'services/fcm_service.dart';
 
 /// Global navigator key for toast notifications
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+/// Background message handler - MUST be a top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint('FCM: Background message received - ${message.messageId}');
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Register background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Initialize FCM Service
+  await FCMService().initialize();
 
   // Load saved language preference
   await LanguageProvider().loadSavedLanguage();
 
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "797326129270",
+    "project_id": "denso-5113a",
+    "storage_bucket": "denso-5113a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797326129270:android:60032cae40d5224e134757",
+        "android_client_info": {
+          "package_name": "com.example.smartfactory_connect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5bJaDSA5J2cj59ytDNUh1LakdcMHdclk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
