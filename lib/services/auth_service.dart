@@ -27,9 +27,31 @@ class AuthService {
 
   /// Khởi tạo service (load token nếu có)
   Future<void> initialize() async {
-    final token = await _secureStorage.read(key: _keyAuthToken);
-    if (token != null) {
-      ApiService.setAuthToken(token);
+    try {
+      final token = await _secureStorage.read(key: _keyAuthToken);
+      if (token != null) {
+        ApiService.setAuthToken(token);
+      }
+    } catch (e) {
+      // Handle corrupted secure storage data (e.g. after backup restore or encryption key change)
+      // Clear all secure storage data and let user re-login
+      print('AuthService: Error reading secure storage, clearing corrupted data: $e');
+      await _clearCorruptedSecureStorage();
+    }
+  }
+
+  /// Clear all secure storage when data is corrupted
+  Future<void> _clearCorruptedSecureStorage() async {
+    try {
+      await _secureStorage.deleteAll();
+      ApiService.setAuthToken(null);
+      
+      // Also clear shared preferences login state
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyIsLoggedIn, false);
+      await prefs.remove(_keyRememberMe);
+    } catch (e) {
+      print('AuthService: Error clearing secure storage: $e');
     }
   }
 
@@ -64,10 +86,15 @@ class AuthService {
 
   /// Lấy thông tin đăng nhập đã lưu
   Future<Map<String, String?>> getSavedCredentials() async {
-    final username = await _secureStorage.read(key: _keyUsername);
-    final password = await _secureStorage.read(key: _keyPassword);
-
-    return {'username': username, 'password': password};
+    try {
+      final username = await _secureStorage.read(key: _keyUsername);
+      final password = await _secureStorage.read(key: _keyPassword);
+      return {'username': username, 'password': password};
+    } catch (e) {
+      print('AuthService: Error reading credentials, clearing corrupted data: $e');
+      await _clearCorruptedSecureStorage();
+      return {'username': null, 'password': null};
+    }
   }
 
   /// Kiểm tra có remember me không
@@ -84,9 +111,15 @@ class AuthService {
     final isLogged = prefs.getBool(_keyIsLoggedIn) ?? false;
     if (!isLogged) return false;
 
-    // 2. Check token
-    final token = await _secureStorage.read(key: _keyAuthToken);
-    if (token == null || token.isEmpty) return false;
+    // 2. Check token (with error handling for corrupted storage)
+    try {
+      final token = await _secureStorage.read(key: _keyAuthToken);
+      if (token == null || token.isEmpty) return false;
+    } catch (e) {
+      print('AuthService: Error checking login status, clearing corrupted data: $e');
+      await _clearCorruptedSecureStorage();
+      return false;
+    }
 
     // 3. Check Remember Me
     // If Remember Me is disabled, the session should not persist across restarts

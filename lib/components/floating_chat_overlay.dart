@@ -107,10 +107,24 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
   }
 
   // Handle scroll notification from child to collapse button
+  // Responds to both vertical and horizontal scrolling (including sliders/carousels)
+  // Only responds to user-initiated scrolling, not auto-play animations
   bool _handleScrollNotification(ScrollNotification notification) {
     if (_isChatOpen || _isDragging) return false;
 
     if (notification is ScrollUpdateNotification) {
+      // Only respond to user-initiated scrolling (dragDetails is non-null when user is actively dragging)
+      // This prevents auto-play slider from triggering collapse
+      if (notification.dragDetails == null) {
+        return false;
+      }
+
+      // Require a minimum scroll delta to avoid triggering on minor touch movements
+      final scrollDelta = notification.scrollDelta?.abs() ?? 0;
+      if (scrollDelta < 2.0) {
+        return false;
+      }
+
       if (!_isCollapsed) {
         _collapseButton();
       }
@@ -467,7 +481,12 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
                       );
                     },
                     child: Container(
-                      margin: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 16,
+                        bottom: 80,
+                      ),
                       constraints: BoxConstraints(
                         maxHeight: panelHeight,
                         maxWidth: panelWidth,
