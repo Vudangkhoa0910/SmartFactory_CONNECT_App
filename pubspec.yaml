@@ -74,7 +74,6 @@ dependencies:
   speech_to_text: ^7.3.0
   # Biometric authentication (Face ID, Touch ID, Fingerprint)
   local_auth: ^3.0.0
-  google_generative_ai: ^0.4.7
   flutter_displaymode: ^0.7.0
   custom_refresh_indicator: ^4.0.1
   flutter_dotenv: ^6.0.0

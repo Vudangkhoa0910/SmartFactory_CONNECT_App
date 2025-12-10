@@ -1,14 +1,15 @@
-import 'package:google_generative_ai/google_generative_ai.dart';
-import '../config/env_config.dart';
+import 'dart:convert';
+import 'api_service.dart';
 import '../models/chat_message.dart';
 
-/// Service class for Gemini AI API integration
+/// Service class for AI Chat via Backend API
+/// Replaces direct Gemini SDK calls with backend proxy for security and consistency
 class GeminiService {
   static GeminiService? _instance;
-  GenerativeModel? _model;
-  ChatSession? _chatSession;
   bool _isInitialized = false;
-  final EnvConfig _envConfig = EnvConfig();
+  
+  /// Chat history for conversation context
+  final List<Map<String, dynamic>> _chatHistory = [];
 
   GeminiService._();
 
@@ -21,110 +22,116 @@ class GeminiService {
   /// Check if service is initialized
   bool get isInitialized => _isInitialized;
 
-  /// Initialize Gemini service with API key
+  /// Initialize AI service (check backend connection)
   Future<bool> initialize() async {
     try {
-      // Load env config first
-      await _envConfig.load();
-
-      final apiKey = _envConfig.geminiApiKey;
-
-      if (apiKey.isEmpty) {
-        throw Exception('Gemini API key is not configured');
+      // Check if backend is reachable
+      final healthCheck = await ApiService.pingHealth();
+      
+      if (healthCheck['success'] == true) {
+        _isInitialized = true;
+        _chatHistory.clear();
+        return true;
+      } else {
+        throw Exception('Backend server is not reachable');
       }
-
-      final modelName = _envConfig.geminiModel;
-      final now = DateTime.now();
-      final formattedDate =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
-      _model = GenerativeModel(
-        model: modelName,
-        apiKey: apiKey,
-        generationConfig: GenerationConfig(
-          temperature: 0.5,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        ),
-        systemInstruction: Content.text('''$_systemPrompt
-
-Current Date and Time: $formattedDate
-'''),
-      );
-
-      _chatSession = _model!.startChat();
-      _isInitialized = true;
-
-      return true;
     } catch (e) {
       _isInitialized = false;
       rethrow;
     }
   }
 
-  /// Send message and get response
+  /// Send message and get response from backend AI
   Future<String> sendMessage(String message) async {
-    if (!_isInitialized || _chatSession == null) {
-      throw Exception('Gemini service is not initialized');
+    if (!_isInitialized) {
+      throw Exception('AI service is not initialized');
     }
 
     try {
-      final response = await _chatSession!.sendMessage(Content.text(message));
+      // Build chat history for context
+      final contents = _buildContents(message);
+      
+      // Call backend API
+      final response = await ApiService.post('/api/chat/message', {
+        'contents': contents,
+      });
 
-      final text = response.text;
-      if (text == null || text.isEmpty) {
-        throw Exception('Empty response from Gemini');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        if (data['success'] == true && data['text'] != null) {
+          final responseText = data['text'] as String;
+          
+          // Add to history
+          _chatHistory.add({
+            'role': 'user',
+            'parts': [{'text': message}]
+          });
+          _chatHistory.add({
+            'role': 'model',
+            'parts': [{'text': responseText}]
+          });
+          
+          return responseText;
+        } else {
+          throw Exception(data['message'] ?? 'Unknown error from AI service');
+        }
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to connect to AI service');
       }
-
-      return text;
     } catch (e) {
-      throw Exception('Gemini API error: $e');
+      throw Exception('AI API error: $e');
     }
   }
 
-  /// Stream response for real-time updates
+  /// Build contents array with system instruction and history
+  List<Map<String, dynamic>> _buildContents(String newMessage) {
+    final contents = <Map<String, dynamic>>[];
+    
+    // Add system instruction (same as web frontend)
+    contents.add({
+      'role': 'user',
+      'parts': [{'text': _systemPrompt}]
+    });
+    contents.add({
+      'role': 'model',
+      'parts': [{'text': 'Understood. I am ready to assist users with SmartFactory CONNECT.'}]
+    });
+    
+    // Add chat history
+    contents.addAll(_chatHistory);
+    
+    // Add new message
+    contents.add({
+      'role': 'user',
+      'parts': [{'text': newMessage}]
+    });
+    
+    return contents;
+  }
+
+  /// Stream response for real-time updates (falls back to regular call)
   Stream<String> streamMessage(String message) async* {
-    if (!_isInitialized || _model == null) {
-      throw Exception('Gemini service is not initialized');
-    }
-
-    try {
-      final response = _model!.generateContentStream([Content.text(message)]);
-
-      await for (final chunk in response) {
-        final text = chunk.text;
-        if (text != null && text.isNotEmpty) {
-          yield text;
-        }
-      }
-    } catch (e) {
-      throw Exception('Gemini API error: $e');
-    }
+    // Backend doesn't support streaming yet, use regular call
+    final response = await sendMessage(message);
+    yield response;
   }
 
   /// Reset chat session
   void resetChat() {
-    if (_model != null) {
-      _chatSession = _model!.startChat();
-    }
+    _chatHistory.clear();
   }
 
-  /// Get chat history
+  /// Get chat history as ChatMessage list
   List<ChatMessage> getChatHistory() {
-    if (_chatSession == null) return [];
-
     final history = <ChatMessage>[];
-    for (final content in _chatSession!.history) {
-      final isUser = content.role == 'user';
-      final textParts = <String>[];
-      for (final part in content.parts) {
-        if (part is TextPart) {
-          textParts.add(part.text);
-        }
-      }
-      final text = textParts.join();
-
+    
+    for (final content in _chatHistory) {
+      final isUser = content['role'] == 'user';
+      final parts = content['parts'] as List;
+      final text = parts.isNotEmpty ? parts[0]['text'] as String : '';
+      
       if (text.isNotEmpty) {
         history.add(
           ChatMessage(
@@ -136,20 +143,18 @@ Current Date and Time: $formattedDate
         );
       }
     }
-
+    
     return history;
   }
 
   /// Dispose resources
   void dispose() {
-    _chatSession = null;
-    _model = null;
+    _chatHistory.clear();
     _isInitialized = false;
   }
 
-  /// System prompt for the chatbot
-  static const String _systemPrompt = '''
-Bạn là trợ lý AI thông minh của ứng dụng SmartFactory CONNECT - một ứng dụng quản lý nhà máy thông minh.
+  /// System prompt for the chatbot (same as web frontend)
+  static const String _systemPrompt = '''Bạn là trợ lý AI thông minh của ứng dụng SmartFactory CONNECT - một ứng dụng quản lý nhà máy thông minh.
 
 Vai trò của bạn:
 - Hỗ trợ người dùng trong việc sử dụng ứng dụng
@@ -157,17 +162,19 @@ Vai trò của bạn:
 - Hướng dẫn báo cáo sự cố và đề xuất ý tưởng cải tiến
 - Cung cấp thông tin về các tính năng của ứng dụng
 
+Các tính năng chính của ứng dụng Mobile:
+1. Báo cáo sự cố (Incident Report) - Tab "Báo cáo"
+2. Đề xuất ý tưởng cải tiến (Ideas) - Tab "Hòm thư"
+3. Tin tức nhà máy (News) - Tab "Tin tức"
+4. Quản lý hồ sơ cá nhân (Profile) - Tab "Hồ sơ"
+5. Thông báo (Notifications)
+6. Trợ lý AI (Chat)
+
 Nguyên tắc:
 - Trả lời ngắn gọn, rõ ràng và chuyên nghiệp
-- Sử dụng ngôn ngữ phù hợp với ngữ cảnh (Tiếng Việt hoặc tiếng nước ngoài theo yêu cầu)
+- Sử dụng tiếng Việt làm ngôn ngữ chính
 - Luôn thân thiện và hữu ích
 - Nếu không biết câu trả lời, hãy thành thật và gợi ý cách tìm thông tin
 
-Các tính năng chính của ứng dụng:
-1. Báo cáo sự cố (Incident Report)
-2. Đề xuất ý tưởng cải tiến (Kaizen Ideas)
-3. Tin tức nhà máy (Factory News)
-4. Quản lý hồ sơ cá nhân (Profile)
-5. Thông báo (Notifications)
-''';
+Lưu ý: Đây là ứng dụng Mobile, một số tính năng như tìm kiếm sự cố nâng cao chỉ có trên Web.''';
 }

@@ -2,62 +2,52 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Environment configuration for the app
 /// Loads configuration from environment variables
+/// 
+/// NOTE: Gemini API key is no longer needed on mobile app.
+/// AI calls now go through backend API for security.
 class EnvConfig {
   static final EnvConfig _instance = EnvConfig._internal();
   factory EnvConfig() => _instance;
   EnvConfig._internal();
 
-  String? _geminiApiKey;
-  String? _geminiModel;
   bool _isLoaded = false;
 
-  /// Get Gemini API Key
-  String get geminiApiKey => _geminiApiKey ?? '';
-
-  /// Get Gemini Model name
-  String get geminiModel => _geminiModel ?? 'gemini-1.5-flash';
-
-  /// Check if API key is configured
-  bool get hasGeminiApiKey =>
-      _geminiApiKey != null &&
-      _geminiApiKey!.isNotEmpty &&
-      _geminiApiKey != 'YOUR_GEMINI_API_KEY_HERE';
-
   /// Load environment variables from .env file
+  /// Now only loads app-specific settings, not AI keys
   Future<void> load() async {
     if (_isLoaded) return;
 
     try {
-      // Load from .env file
+      // Load from .env file for any app-specific settings
       await dotenv.load(fileName: ".env");
-
-      _geminiApiKey = dotenv.env['GEMINI_API_KEY'];
-      _geminiModel = dotenv.env['GEMINI_MODEL'] ?? 'gemini-1.5-flash';
-
       _isLoaded = true;
     } catch (e) {
-      print('Error loading env config: $e');
-      // Fallback to compile-time constants if .env fails
-      _loadFromEnvFile();
+      print('Note: .env file not found or empty - using defaults');
       _isLoaded = true;
     }
   }
 
-  Future<void> _loadFromEnvFile() async {
-    // Default values - replace with your actual API key
-    // In production, use --dart-define or a secure method
-    _geminiApiKey = const String.fromEnvironment(
-      'GEMINI_API_KEY',
-      defaultValue: '',
-    );
-    _geminiModel = const String.fromEnvironment(
-      'GEMINI_MODEL',
-      defaultValue: 'gemini-1.5-flash',
-    );
-  }
+  /// Check if environment is loaded
+  bool get isLoaded => _isLoaded;
 
-  /// Set API key programmatically (useful for testing or runtime config)
+  // ========================================
+  // DEPRECATED: Gemini API configuration
+  // AI calls now go through backend API
+  // These are kept for backward compatibility
+  // but values are no longer used
+  // ========================================
+  
+  @Deprecated('AI calls now go through backend API')
+  String get geminiApiKey => '';
+  
+  @Deprecated('AI calls now go through backend API')
+  String get geminiModel => 'gemini-1.5-flash';
+  
+  @Deprecated('AI calls now go through backend API')
+  bool get hasGeminiApiKey => false;
+  
+  @Deprecated('AI calls now go through backend API')
   void setGeminiApiKey(String apiKey) {
-    _geminiApiKey = apiKey;
+    // No-op: API key is now managed by backend
   }
 }

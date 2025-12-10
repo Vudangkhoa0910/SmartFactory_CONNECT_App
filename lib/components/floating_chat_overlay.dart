@@ -51,12 +51,14 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
     _scrollController = ScrollController();
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 300),
+      reverseDuration: const Duration(milliseconds: 250),
       vsync: this,
     );
     _scaleAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeOutBack,
+      reverseCurve: Curves.easeInBack, // Smooth close animation
     );
 
     // Collapse animation controller
@@ -402,6 +404,26 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
   }
 
   Widget _buildChatOverlay() {
+    final size = MediaQuery.of(context).size;
+    final padding = MediaQuery.of(context).padding;
+
+    // Panel dimensions
+    final panelWidth = 400.0.clamp(0.0, size.width - 32);
+    final panelHeight = size.height * 0.6;
+
+    // Panel position (center-bottom)
+    final panelX = (size.width - panelWidth) / 2;
+    final panelY = size.height - panelHeight - padding.bottom - 100;
+
+    // Calculate transform origin based on button position
+    // This makes the panel "emerge" from where the button is
+    final buttonCenterX = _buttonPosition.dx + _buttonSize / 2;
+    final buttonCenterY = _buttonPosition.dy + _buttonSize / 2;
+
+    // Origin point relative to panel center
+    final originX = (buttonCenterX - (panelX + panelWidth / 2)) / panelWidth;
+    final originY = (buttonCenterY - (panelY + panelHeight / 2)) / panelHeight;
+
     return Positioned.fill(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -422,52 +444,55 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
                 },
               ),
             ),
-            // Chat Window
+            // Chat Window - Scale animation from button position
             Align(
               alignment: Alignment.bottomCenter,
               child: SafeArea(
                 child: GestureDetector(
                   onTap: () {},
-                  child: SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: const Offset(0, 0.3),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: _animationController,
-                            curve: Curves.easeOutCubic,
+                  child: AnimatedBuilder(
+                    animation: _scaleAnimation,
+                    builder: (context, child) {
+                      return Transform(
+                        alignment: FractionalOffset(
+                          0.5 + originX.clamp(-0.5, 0.5),
+                          0.5 + originY.clamp(-0.5, 0.5),
+                        ),
+                        transform: Matrix4.identity()
+                          ..scale(_scaleAnimation.value),
+                        child: Opacity(
+                          opacity: _scaleAnimation.value.clamp(0.0, 1.0),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.all(16),
+                      constraints: BoxConstraints(
+                        maxHeight: panelHeight,
+                        maxWidth: panelWidth,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.black.withOpacity(0.15),
+                            blurRadius: 24,
+                            spreadRadius: 4,
+                            offset: const Offset(0, 8),
                           ),
-                        ),
-                    child: FadeTransition(
-                      opacity: _scaleAnimation,
-                      child: Container(
-                        margin: const EdgeInsets.all(16),
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.6,
-                          maxWidth: 400,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildChatHeader(),
+                            Flexible(child: _buildMessageList()),
+                            _buildInputArea(),
                           ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildChatHeader(),
-                              Flexible(child: _buildMessageList()),
-                              _buildInputArea(),
-                            ],
-                          ),
                         ),
                       ),
                     ),
