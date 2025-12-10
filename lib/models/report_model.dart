@@ -112,10 +112,12 @@ class ReportModel {
       description: json['description'],
       status: _parseStatus(json['status']),
       department: json['department_name'],
-      reporterName: json['reporter_name'], // Add this
-      createdDate: DateTime.parse(json['created_at']),
+      reporterName: json['reporter_name'],
+      createdDate: json['created_at'] != null
+          ? (DateTime.tryParse(json['created_at']) ?? DateTime.now())
+          : DateTime.now(),
       completedDate: json['resolved_at'] != null
-          ? DateTime.parse(json['resolved_at'])
+          ? DateTime.tryParse(json['resolved_at'])
           : null,
       rating: json['rating'] != null
           ? (json['rating'] as num).toDouble()

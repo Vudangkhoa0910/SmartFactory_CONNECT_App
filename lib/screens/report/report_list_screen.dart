@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../../utils/set_utils.dart';
 import 'report_form_screen.dart';
 import 'report_detail_view_screen.dart';
 import '../../models/report_model.dart';
@@ -21,6 +22,11 @@ class _ReportListScreenState extends State<ReportListScreen> {
   String _searchQuery = '';
   List<ReportModel> _reports = [];
   bool _isLoading = true;
+  
+  // Cached filtered results for performance
+  List<ReportModel>? _cachedFilteredReports;
+  String? _lastSearchQuery;
+  Set<String>? _lastFilters;
 
   @override
   void initState() {
@@ -36,6 +42,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
       final data = await IncidentService.getIncidents();
       setState(() {
         _reports = data.map((json) => ReportModel.fromJson(json)).toList();
+        _cachedFilteredReports = null; // Invalidate cache
         _isLoading = false;
       });
     } catch (e) {
@@ -47,50 +54,67 @@ class _ReportListScreenState extends State<ReportListScreen> {
   }
 
   List<ReportModel> get _filteredReports {
+    // Return cached results if inputs haven't changed
+    if (_cachedFilteredReports != null &&
+        _lastSearchQuery == _searchQuery &&
+        _lastFilters != null &&
+        setEquals(_lastFilters!, _selectedFilters)) {
+      return _cachedFilteredReports!;
+    }
+    
     var reports = _reports;
 
     // Search filter
     if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
       reports = reports.where((r) {
-        return r.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            r.id.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            r.location.toLowerCase().contains(_searchQuery.toLowerCase());
+        return r.title.toLowerCase().contains(query) ||
+            r.id.toLowerCase().contains(query) ||
+            r.location.toLowerCase().contains(query);
       }).toList();
     }
 
     // Category filters
-    if (_selectedFilters.isEmpty) return reports;
+    if (_selectedFilters.isNotEmpty) {
+      reports = reports.where((report) {
+        // Check priority match
+        bool matchesPriority =
+            !_selectedFilters.any(
+              (f) => ['urgent', 'high', 'medium', 'low'].contains(f),
+            ) ||
+            (_selectedFilters.contains('urgent') &&
+                report.priority == ReportPriority.urgent) ||
+            (_selectedFilters.contains('high') &&
+                report.priority == ReportPriority.high) ||
+            (_selectedFilters.contains('medium') &&
+                report.priority == ReportPriority.medium) ||
+            (_selectedFilters.contains('low') &&
+                report.priority == ReportPriority.low);
 
-    return reports.where((report) {
-      // Check priority match
-      bool matchesPriority =
-          !_selectedFilters.any(
-            (f) => ['urgent', 'high', 'medium', 'low'].contains(f),
-          ) ||
-          (_selectedFilters.contains('urgent') &&
-              report.priority == ReportPriority.urgent) ||
-          (_selectedFilters.contains('high') &&
-              report.priority == ReportPriority.high) ||
-          (_selectedFilters.contains('medium') &&
-              report.priority == ReportPriority.medium) ||
-          (_selectedFilters.contains('low') &&
-              report.priority == ReportPriority.low);
+        // Check status match
+        bool matchesStatus =
+            !_selectedFilters.any(
+              (f) => ['processing', 'completed', 'closed'].contains(f),
+            ) ||
+            (_selectedFilters.contains('processing') &&
+                report.status == ReportStatus.processing) ||
+            (_selectedFilters.contains('completed') &&
+                report.status == ReportStatus.completed) ||
+            (_selectedFilters.contains('closed') &&
+                report.status == ReportStatus.closed);
 
-      // Check status match
-      bool matchesStatus =
-          !_selectedFilters.any(
-            (f) => ['processing', 'completed', 'closed'].contains(f),
-          ) ||
-          (_selectedFilters.contains('processing') &&
-              report.status == ReportStatus.processing) ||
-          (_selectedFilters.contains('completed') &&
-              report.status == ReportStatus.completed) ||
-          (_selectedFilters.contains('closed') &&
-              report.status == ReportStatus.closed);
-
-      return matchesPriority && matchesStatus;
-    }).toList();
+        return matchesPriority && matchesStatus;
+      }).toList();
+    }
+    
+    // Cache the results
+    _cachedFilteredReports = reports;
+    _lastSearchQuery = _searchQuery;
+    _lastFilters = Set.from(_selectedFilters);
+    
+    return reports;
   }
+
 
   @override
   void dispose() {
@@ -131,56 +155,15 @@ class _ReportListScreenState extends State<ReportListScreen> {
         padding: const EdgeInsets.only(bottom: 80),
         child: FloatingActionButton.extended(
           onPressed: () async {
-            await Navigator.push(
+            final result = await Navigator.push(
               context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    const ReportFormScreen(),
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) {
-                      const curve = Curves.easeInOutCubic;
-
-                      var scaleTween = Tween<double>(
-                        begin: 0.85,
-                        end: 1.0,
-                      ).chain(CurveTween(curve: curve));
-                      var scaleAnimation = animation.drive(scaleTween);
-
-                      var fadeTween = Tween<double>(
-                        begin: 0.0,
-                        end: 1.0,
-                      ).chain(CurveTween(curve: curve));
-                      var fadeAnimation = animation.drive(fadeTween);
-
-                      var radiusTween = Tween<double>(
-                        begin: 40.0,
-                        end: 0.0,
-                      ).chain(CurveTween(curve: curve));
-                      var radiusAnimation = animation.drive(radiusTween);
-
-                      return ScaleTransition(
-                        scale: scaleAnimation,
-                        child: FadeTransition(
-                          opacity: fadeAnimation,
-                          child: AnimatedBuilder(
-                            animation: radiusAnimation,
-                            builder: (context, child) {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(
-                                  radiusAnimation.value,
-                                ),
-                                child: child,
-                              );
-                            },
-                            child: child,
-                          ),
-                        ),
-                      );
-                    },
-                transitionDuration: const Duration(milliseconds: 500),
+              MaterialPageRoute(
+                builder: (context) => const ReportFormScreen(),
               ),
             );
-            _fetchReports();
+            if (result == true) {
+              _fetchReports();
+            }
           },
           backgroundColor: AppColors.brand500,
           elevation: 4,

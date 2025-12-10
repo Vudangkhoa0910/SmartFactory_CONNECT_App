@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_profile_model.dart';
@@ -26,6 +27,9 @@ class UserProvider extends ChangeNotifier {
   Map<String, dynamic>? get cachedProfileData => _cachedProfileData;
   bool get isProfileLoading => _isProfileLoading;
 
+  // Completer for handling concurrent profile requests
+  Completer<Map<String, dynamic>?>? _profileCompleter;
+  
   /// Get cached profile or fetch from API (caches for 5 minutes)
   Future<Map<String, dynamic>?> getProfileData({
     bool forceRefresh = false,
@@ -38,16 +42,13 @@ class UserProvider extends ChangeNotifier {
       return _cachedProfileData;
     }
 
-    // Prevent multiple simultaneous fetches
-    if (_isProfileLoading) {
-      // Wait for current fetch to complete
-      while (_isProfileLoading) {
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-      return _cachedProfileData;
+    // If already loading, wait for the existing request to complete
+    if (_isProfileLoading && _profileCompleter != null) {
+      return _profileCompleter!.future;
     }
 
     _isProfileLoading = true;
+    _profileCompleter = Completer<Map<String, dynamic>?>();
     notifyListeners();
 
     try {
@@ -60,6 +61,8 @@ class UserProvider extends ChangeNotifier {
       // Keep existing cache on error
     } finally {
       _isProfileLoading = false;
+      _profileCompleter?.complete(_cachedProfileData);
+      _profileCompleter = null;
       notifyListeners();
     }
 

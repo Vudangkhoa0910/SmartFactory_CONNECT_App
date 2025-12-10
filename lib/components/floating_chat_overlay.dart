@@ -51,14 +51,14 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
     _scrollController = ScrollController();
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      reverseDuration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 400), // Faster open
+      reverseDuration: const Duration(milliseconds: 400), // Faster close
       vsync: this,
     );
     _scaleAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutBack,
-      reverseCurve: Curves.easeInBack, // Smooth close animation
+      curve: Curves.easeOutCubic, // Same curve for open
+      reverseCurve: Curves.easeOutCubic, // Same curve for close - symmetric
     );
 
     // Collapse animation controller
@@ -239,12 +239,18 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
   }
 
   void _toggleChat() {
-    setState(() => _isChatOpen = !_isChatOpen);
-    if (_isChatOpen) {
+    if (!_isChatOpen) {
+      // Opening: set state first, then animate
+      setState(() => _isChatOpen = true);
       _animationController.forward();
     } else {
-      _animationController.reverse();
+      // Closing: animate first, then set state after animation completes
       FocusScope.of(context).unfocus();
+      _animationController.reverse().then((_) {
+        if (mounted) {
+          setState(() => _isChatOpen = false);
+        }
+      });
     }
   }
 
@@ -342,16 +348,24 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
             // Chat panel overlay (behind button)
             if (_isChatOpen) _buildChatOverlay(),
 
-            // Floating button - hide when chat is open
-            if (!_isChatOpen)
-              Positioned(
-                left: _isCollapsed
-                    ? (isOnLeft ? _collapsedEdgePadding : null)
-                    : _buttonPosition.dx,
-                right: _isCollapsed
-                    ? (isOnLeft ? null : _collapsedEdgePadding)
-                    : null,
-                top: _buttonPosition.dy,
+            // Floating button - with fade during close
+            Positioned(
+              left: _isCollapsed
+                  ? (isOnLeft ? _collapsedEdgePadding : null)
+                  : _buttonPosition.dx,
+              right: _isCollapsed
+                  ? (isOnLeft ? null : _collapsedEdgePadding)
+                  : null,
+              top: _buttonPosition.dy,
+              child: AnimatedBuilder(
+                animation: _scaleAnimation,
+                builder: (context, child) {
+                  // Hide when chat is fully open, show with fade during close
+                  final shouldShow = !_isChatOpen || _scaleAnimation.value < 1.0;
+                  if (!shouldShow) return const SizedBox.shrink();
+                  final fadeOpacity = _isChatOpen ? (1.0 - _scaleAnimation.value).clamp(0.0, 1.0) : 1.0;
+                  return Opacity(opacity: fadeOpacity, child: child);
+                },
                 child: GestureDetector(
                   onPanStart: _onPanStart,
                   onPanUpdate: _onPanUpdate,
@@ -411,6 +425,7 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
                   ),
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -467,10 +482,18 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
                   child: AnimatedBuilder(
                     animation: _scaleAnimation,
                     builder: (context, child) {
+                      // Calculate button position relative to screen center
+                      final screenCenterX = size.width / 2;
+                      final screenCenterY = size.height / 2;
+                      
+                      // Where the button is relative to center (-1 to 1 range)
+                      final normalizedX = (buttonCenterX - screenCenterX) / (size.width / 2);
+                      final normalizedY = (buttonCenterY - screenCenterY) / (size.height / 2);
+                      
                       return Transform(
                         alignment: FractionalOffset(
-                          0.5 + originX.clamp(-0.5, 0.5),
-                          0.5 + originY.clamp(-0.5, 0.5),
+                          (0.5 + normalizedX * 0.5).clamp(0.0, 1.0),
+                          (0.5 + normalizedY * 0.5).clamp(0.0, 1.0),
                         ),
                         transform: Matrix4.identity()
                           ..scale(_scaleAnimation.value),

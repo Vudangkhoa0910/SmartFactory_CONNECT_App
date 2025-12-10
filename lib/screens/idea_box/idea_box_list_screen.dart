@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../../utils/set_utils.dart';
 import '../../models/idea_box_model.dart';
 import '../../services/idea_service.dart';
 import 'create_idea_screen.dart';
@@ -29,6 +30,11 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   bool _isLoadingPink = true;
   String? _errorWhite;
   String? _errorPink;
+  
+  // Cached filtered results for performance
+  List<IdeaBoxItem>? _cachedWhiteFiltered;
+  List<IdeaBoxItem>? _cachedPinkFiltered;
+  Set<String>? _lastFilters;
 
   @override
   void initState() {
@@ -43,9 +49,11 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
       if (type == IdeaBoxType.white) {
         _isLoadingWhite = true;
         _errorWhite = null;
+        _cachedWhiteFiltered = null; // Invalidate cache
       } else {
         _isLoadingPink = true;
         _errorPink = null;
+        _cachedPinkFiltered = null; // Invalidate cache
       }
     });
 
@@ -76,6 +84,64 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
       }
     }
   }
+  
+  // Get cached or compute filtered ideas
+  List<IdeaBoxItem> _getFilteredIdeas(IdeaBoxType type, List<IdeaBoxItem> ideas) {
+    // Check cache validity
+    final isWhite = type == IdeaBoxType.white;
+    final cached = isWhite ? _cachedWhiteFiltered : _cachedPinkFiltered;
+    
+    if (cached != null && _lastFilters != null && setEquals(_lastFilters!, _selectedFilters)) {
+      return cached;
+    }
+    
+    // Compute filtered results
+    List<IdeaBoxItem> filtered;
+    if (_selectedFilters.isEmpty) {
+      filtered = ideas;
+    } else {
+      filtered = ideas.where((idea) {
+        // Kiểm tra loại (type)
+        final hasTypeFilter = _selectedFilters.any(
+          (f) => ['quality', 'safety', 'process'].contains(f),
+        );
+        final matchesType =
+            !hasTypeFilter ||
+            (_selectedFilters.contains('quality') &&
+                idea.issueType == IssueType.quality) ||
+            (_selectedFilters.contains('safety') &&
+                idea.issueType == IssueType.safety) ||
+            (_selectedFilters.contains('process') &&
+                idea.issueType == IssueType.process);
+
+        // Kiểm tra trạng thái (status)
+        final hasStatusFilter = _selectedFilters.any(
+          (f) => ['underReview', 'approved', 'completed'].contains(f),
+        );
+        final matchesStatus =
+            !hasStatusFilter ||
+            (_selectedFilters.contains('underReview') &&
+                idea.status == IdeaStatus.underReview) ||
+            (_selectedFilters.contains('approved') &&
+                idea.status == IdeaStatus.approved) ||
+            (_selectedFilters.contains('completed') &&
+                idea.status == IdeaStatus.completed);
+
+        return matchesType && matchesStatus;
+      }).toList();
+    }
+    
+    // Cache results
+    if (isWhite) {
+      _cachedWhiteFiltered = filtered;
+    } else {
+      _cachedPinkFiltered = filtered;
+    }
+    _lastFilters = Set.from(_selectedFilters);
+    
+    return filtered;
+  }
+
 
   @override
   void dispose() {
@@ -469,38 +535,8 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
       );
     }
 
-    // Áp dụng bộ lọc
-    final filteredIdeas = _selectedFilters.isEmpty
-        ? ideas
-        : ideas.where((idea) {
-            // Kiểm tra loại (type)
-            final hasTypeFilter = _selectedFilters.any(
-              (f) => ['quality', 'safety', 'process'].contains(f),
-            );
-            final matchesType =
-                !hasTypeFilter ||
-                (_selectedFilters.contains('quality') &&
-                    idea.issueType == IssueType.quality) ||
-                (_selectedFilters.contains('safety') &&
-                    idea.issueType == IssueType.safety) ||
-                (_selectedFilters.contains('process') &&
-                    idea.issueType == IssueType.process);
-
-            // Kiểm tra trạng thái (status)
-            final hasStatusFilter = _selectedFilters.any(
-              (f) => ['underReview', 'approved', 'completed'].contains(f),
-            );
-            final matchesStatus =
-                !hasStatusFilter ||
-                (_selectedFilters.contains('underReview') &&
-                    idea.status == IdeaStatus.underReview) ||
-                (_selectedFilters.contains('approved') &&
-                    idea.status == IdeaStatus.approved) ||
-                (_selectedFilters.contains('completed') &&
-                    idea.status == IdeaStatus.completed);
-
-            return matchesType && matchesStatus;
-          }).toList();
+    // Áp dụng bộ lọc với caching
+    final filteredIdeas = _getFilteredIdeas(type, ideas);
 
     if (filteredIdeas.isEmpty) {
       return _buildEmptyState(type);
@@ -656,7 +692,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    if (idea.senderName != null) ...[
+                    if (idea.senderName != null && idea.senderName!.isNotEmpty) ...[
                       CircleAvatar(
                         radius: 16,
                         backgroundColor: AppColors.brand100,

@@ -73,7 +73,10 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: SvgPicture.asset(
             iconPath,
-            color: isSelected ? AppColors.brand500 : AppColors.gray400,
+            colorFilter: ColorFilter.mode(
+              isSelected ? AppColors.brand500 : AppColors.gray400,
+              BlendMode.srcIn,
+            ),
             width: 26,
             height: 26,
           ),
