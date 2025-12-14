@@ -4,6 +4,7 @@ import '../../utils/toast_utils.dart';
 import '../../models/report_model.dart';
 import '../../services/incident_service.dart';
 import '../../l10n/app_localizations.dart';
+import '../../widgets/language_toggle_button.dart';
 
 /// Màn hình Leader xem chi tiết và duyệt báo cáo sự cố
 class LeaderReportReviewScreen extends StatefulWidget {
@@ -72,6 +73,10 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
           icon: Icon(Icons.arrow_back, color: AppColors.gray800),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: const [
+          LanguageToggleIconButton(),
+          SizedBox(width: 8),
+        ],
         title: Text(
           l10n.incidentDetail,
           style: TextStyle(
