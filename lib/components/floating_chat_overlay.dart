@@ -40,7 +40,7 @@ class _FloatingChatOverlayState extends State<FloatingChatOverlay>
   final GeminiService _geminiService = GeminiService.instance;
 
   // Button size
-  static const double _buttonSize = 56.0;
+  static const double _buttonSize = 50.0;
   static const double _collapsedWidth = 8.0;
   static const double _collapsedEdgePadding = 15.0;
 
