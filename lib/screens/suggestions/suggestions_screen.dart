@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 
 class SuggestionsScreen extends StatefulWidget {
   const SuggestionsScreen({super.key});
@@ -11,6 +12,7 @@ class SuggestionsScreen extends StatefulWidget {
 class _SuggestionsScreenState extends State<SuggestionsScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -39,7 +41,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Hòm thư góp ý',
+                      l10n.suggestionMailbox,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -50,8 +52,8 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Expanded(
-                child: Center(child: Text('Nội dung đang được xây dựng')),
+              Expanded(
+                child: Center(child: Text(l10n.contentUnderDevelopment)),
               ),
             ],
           ),
