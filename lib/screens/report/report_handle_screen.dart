@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../l10n/app_localizations.dart';
+import '../../widgets/language_toggle_button.dart';
 
 /// Screen để xử lý sự cố với 2 chức vụ: User và Leader
 /// User: Xem chi tiết sự cố, theo dõi tiến độ
@@ -21,6 +23,7 @@ class ReportHandleScreen extends StatefulWidget {
 class _ReportHandleScreenState extends State<ReportHandleScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.white,
@@ -30,13 +33,17 @@ class _ReportHandleScreenState extends State<ReportHandleScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.userRole == 'leader' ? 'Xử lý sự cố' : 'Chi tiết sự cố',
+          widget.userRole == 'leader' ? l10n.handleIncident : l10n.incidentDetail,
           style: TextStyle(
             color: AppColors.gray800,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: const [
+          LanguageToggleIconButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -70,7 +77,7 @@ class _ReportHandleScreenState extends State<ReportHandleScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'Leader view: Có thể phân công xử lý, cập nhật trạng thái',
+                      'Leader view: ${l10n.leaderCanAssignAndUpdate}',
                       style: TextStyle(fontSize: 14, color: AppColors.brand500),
                     ),
                   )
@@ -82,7 +89,7 @@ class _ReportHandleScreenState extends State<ReportHandleScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'User view: Chỉ xem chi tiết và theo dõi tiến độ',
+                      'User view: ${l10n.userCanOnlyViewProgress}',
                       style: TextStyle(fontSize: 14, color: AppColors.gray700),
                     ),
                   ),
