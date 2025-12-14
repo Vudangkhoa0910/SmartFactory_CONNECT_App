@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 import '../../../models/user_profile_model.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../widgets/language_toggle_button.dart';
 import '../../../utils/toast_utils.dart';
 import 'personal_info_edit_field_screen.dart';
 
@@ -57,6 +58,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           icon: Icon(Icons.arrow_back, color: AppColors.gray900),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: const [
+          LanguageToggleIconButton(),
+          SizedBox(width: 8),
+        ],
         title: Text(
           AppLocalizations.of(context)!.personalInfo,
           style: TextStyle(
