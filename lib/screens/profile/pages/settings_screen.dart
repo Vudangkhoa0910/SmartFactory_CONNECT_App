@@ -4,6 +4,7 @@ import '../../../services/auth_service.dart';
 import '../../../providers/language_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../utils/toast_utils.dart';
+import '../../../widgets/language_toggle_button.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -260,9 +261,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               color: AppColors.gray900,
               fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
             ),
           ),
+          actions: const [
+            LanguageToggleIconButton(),
+            SizedBox(width: 8),
+          ],
         ),
         body: Container(
           width: double.infinity,
