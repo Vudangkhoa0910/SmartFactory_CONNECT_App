@@ -512,6 +512,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get enterFullName => '氏名を入力';
 
   @override
+  String get pleaseEnterFullName => '氏名を入力してください';
+
+  @override
   String get enterEmail => 'メールアドレスを入力';
 
   @override
@@ -802,7 +805,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get reportInfo => '報告情報';
 
   @override
-  String get reportStatus => '状態';
+  String get reportStatus => 'ステータス';
 
   @override
   String get reportCreatedAt => '作成日';
@@ -1504,7 +1507,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get confirmApproveMessage => 'この報告を承認してAdminに送信しますか？';
 
   @override
-  String get approveAndSendToAdmin => '承認してADMINに送信';
+  String get approveAndSendToAdmin => '承認して管理者に送信';
 
   @override
   String get approvedAndSentToAdmin => '承認してAdminに送信しました';
@@ -1513,7 +1516,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cannotApproveReport => '報告を承認できません';
 
   @override
-  String get returnToUser => 'ユーザーに返却';
+  String get returnToUser => 'ユーザーに返す';
 
   @override
   String get confirmReturn => '返却確認';
@@ -1531,7 +1534,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cannotReturnReport => '報告を返却できません';
 
   @override
-  String get cancelReport => '報告をキャンセル';
+  String get cancelReport => 'キャンセル';
 
   @override
   String get confirmCancelMessage => 'この報告をキャンセルしますか？この操作は取り消せません。';
@@ -1854,11 +1857,148 @@ class AppLocalizationsJa extends AppLocalizations {
   String get statusPendingApproval => '承認待ち';
 
   @override
-  String get statusInProcessing => '対応中';
+  String get statusInProcessing => '処理中';
 
   @override
   String get statusDone => '完了';
 
   @override
   String get statusClosedLabel => 'クローズ';
+
+  @override
+  String get handleIncident => '対応する';
+
+  @override
+  String get leaderCanAssignAndUpdate => 'タスクを割り当てたり、ステータスを更新したりできます';
+
+  @override
+  String get userCanOnlyViewProgress => '詳細と進捗のみ確認できます';
+
+  @override
+  String get suggestionMailbox => '意見箱';
+
+  @override
+  String get contentUnderDevelopment => 'コンテンツは開発中です';
+
+  @override
+  String get issueType => '問題の種類';
+
+  @override
+  String get tabNew => '新規';
+
+  @override
+  String get unknownSender => '送信者不明';
+
+  @override
+  String get attachedDocuments => '添付資料';
+
+  @override
+  String escalatedTo(String escalatedTo) {
+    return '$escalatedToに転送';
+  }
+
+  @override
+  String get componentMotor => 'モーター';
+
+  @override
+  String get componentConveyor => 'コンベア';
+
+  @override
+  String get componentSensor => 'センサー';
+
+  @override
+  String get componentControlValve => '制御弁';
+
+  @override
+  String get productionLineA => '製造ラインA';
+
+  @override
+  String get productionLineB => '製造ラインB';
+
+  @override
+  String get productionLineC => '製造ラインC';
+
+  @override
+  String get workstationCasting => '鋳造';
+
+  @override
+  String get workstationStamping => 'プレス';
+
+  @override
+  String get workstationAssembly => '組立';
+
+  @override
+  String get workstationInspection => '検査';
+
+  @override
+  String get checkedAndConfirmed => '確認済み';
+
+  @override
+  String get categoryAdministrative => '管理';
+
+  @override
+  String get departmentQC => '品質管理';
+
+  @override
+  String get departmentProduction => '生産';
+
+  @override
+  String get departmentMaintenance => '保守';
+
+  @override
+  String get departmentSafety => '安全';
+
+  @override
+  String get whiteBoxTab => 'ホワイトボックス';
+
+  @override
+  String get pinkBoxTab => 'ピンクボックス';
+
+  @override
+  String get whiteBox => 'ホワイトボックス';
+
+  @override
+  String get publicVisibility => '誰でも見られる';
+
+  @override
+  String get pinkBox => 'ピンクボックス';
+
+  @override
+  String get privateVisibility => '自分だけが見られる';
+
+  @override
+  String get anonymousInfoMessage => '完全匿名で送信する場合はスキップできます';
+
+  @override
+  String get employeeIdExample => '例: NV001';
+
+  @override
+  String get submissionDate => '送信日 *';
+
+  @override
+  String get tapToEnterIdeaContent => 'クリックして意見や提案内容を入力...';
+
+  @override
+  String get ideaContentMinLength => '提案内容は最低10文字必要です';
+
+  @override
+  String get difficultyLevelOptional => '難易度（任意）';
+
+  @override
+  String get gallery => 'ギャラリー';
+
+  @override
+  String get personalInfoAnonymousNote => '個人情報は任意です。空欄にすると、提案は完全に匿名になります。';
+
+  @override
+  String get photoLibrary => 'フォトライブラリ';
+
+  @override
+  String get errorSelectingImage => '画像選択エラー';
+
+  @override
+  String get aiGreetingMessage => 'こんにちは！どのようなご用件でしょうか？';
+
+  @override
+  String get errorSendingMessage => 'メッセージ送信エラー';
 }
