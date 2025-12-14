@@ -512,6 +512,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get enterFullName => 'Nhập họ và tên';
 
   @override
+  String get pleaseEnterFullName => 'Vui lòng nhập họ và tên';
+
+  @override
   String get enterEmail => 'Nhập email';
 
   @override
@@ -1537,7 +1540,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cannotReturnReport => 'Không thể trả lại báo cáo';
 
   @override
-  String get cancelReport => 'Hủy báo cáo';
+  String get cancelReport => 'HỦY BỎ';
 
   @override
   String get confirmCancelMessage =>
@@ -1559,7 +1562,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get ratingQuality => 'Đánh giá chất lượng xử lý';
 
   @override
-  String get commentOptional => 'Nhận xét (không bắt buộc)';
+  String get commentOptional => 'Nhận xét (tùy chọn)';
 
   @override
   String get submitRating => 'Gửi đánh giá';
@@ -1875,4 +1878,145 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get statusClosedLabel => 'Đã đóng';
+
+  @override
+  String get handleIncident => 'Xử lý sự cố';
+
+  @override
+  String get leaderCanAssignAndUpdate =>
+      'Có thể phân công xử lý, cập nhật trạng thái';
+
+  @override
+  String get userCanOnlyViewProgress => 'Chỉ xem chi tiết và theo dõi tiến độ';
+
+  @override
+  String get suggestionMailbox => 'Hòm thư góp ý';
+
+  @override
+  String get contentUnderDevelopment => 'Nội dung đang được xây dựng';
+
+  @override
+  String get issueType => 'Loại vấn đề';
+
+  @override
+  String get tabNew => 'MỚI';
+
+  @override
+  String get unknownSender => 'Không rõ người gửi';
+
+  @override
+  String get attachedDocuments => 'Tài liệu đính kèm';
+
+  @override
+  String escalatedTo(String escalatedTo) {
+    return 'Chuyển đến $escalatedTo';
+  }
+
+  @override
+  String get componentMotor => 'Động cơ';
+
+  @override
+  String get componentConveyor => 'Băng tải';
+
+  @override
+  String get componentSensor => 'Cảm biến';
+
+  @override
+  String get componentControlValve => 'Van điều khiển';
+
+  @override
+  String get productionLineA => 'Dây chuyền A';
+
+  @override
+  String get productionLineB => 'Dây chuyền B';
+
+  @override
+  String get productionLineC => 'Dây chuyền C';
+
+  @override
+  String get workstationCasting => 'Đúc';
+
+  @override
+  String get workstationStamping => 'Dập';
+
+  @override
+  String get workstationAssembly => 'Lắp ráp';
+
+  @override
+  String get workstationInspection => 'Kiểm tra';
+
+  @override
+  String get checkedAndConfirmed => 'Đã kiểm tra và xác nhận';
+
+  @override
+  String get categoryAdministrative => 'Hành chính';
+
+  @override
+  String get departmentQC => 'QC';
+
+  @override
+  String get departmentProduction => 'Sản xuất';
+
+  @override
+  String get departmentMaintenance => 'Bảo trì';
+
+  @override
+  String get departmentSafety => 'An toàn';
+
+  @override
+  String get whiteBoxTab => 'HÒM TRẮNG';
+
+  @override
+  String get pinkBoxTab => 'HÒM HỒNG';
+
+  @override
+  String get whiteBox => 'Hòm trắng';
+
+  @override
+  String get publicVisibility => 'Ai cũng xem được';
+
+  @override
+  String get pinkBox => 'Hòm hồng';
+
+  @override
+  String get privateVisibility => 'Chỉ bạn xem được';
+
+  @override
+  String get anonymousInfoMessage =>
+      'Bạn có thể bỏ qua nếu muốn gửi hoàn toàn ẩn danh';
+
+  @override
+  String get employeeIdExample => 'VD: NV001';
+
+  @override
+  String get submissionDate => 'Ngày gửi *';
+
+  @override
+  String get tapToEnterIdeaContent =>
+      'Nhấn để nhập ý kiến hoặc nội dung góp ý...';
+
+  @override
+  String get ideaContentMinLength => 'Nội dung góp ý phải có ít nhất 10 ký tự';
+
+  @override
+  String get difficultyLevelOptional => 'Mức độ khó (tùy chọn)';
+
+  @override
+  String get gallery => 'Thư viện';
+
+  @override
+  String get personalInfoAnonymousNote =>
+      'Thông tin cá nhân là tùy chọn. Nếu bỏ trống, góp ý sẽ hoàn toàn ẩn danh.';
+
+  @override
+  String get photoLibrary => 'thư viện ảnh';
+
+  @override
+  String get errorSelectingImage => 'Lỗi khi chọn ảnh';
+
+  @override
+  String get aiGreetingMessage => 'Xin chào! Tôi có thể giúp gì cho bạn?';
+
+  @override
+  String get errorSendingMessage => 'Lỗi gửi tin nhắn';
 }
