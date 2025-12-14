@@ -188,6 +188,7 @@ class _LeaderReportManagementScreenState
   }
 
   Widget _buildTabBar() {
+    final l10n = AppLocalizations.of(context)!;
     final pendingCount = _getReportsByTab(0).length;
     final processingCount = _getReportsByTab(1).length;
     return Container(
@@ -223,7 +224,7 @@ class _LeaderReportManagementScreenState
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('MỚI'),
+                  Text(l10n.tabNew),
                   if (pendingCount > 0) ...[
                     const SizedBox(width: 3),
                     _buildBadge(pendingCount, 0),
@@ -238,7 +239,7 @@ class _LeaderReportManagementScreenState
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('XỬ LÝ'),
+                  Text(l10n.tabProcessing),
                   if (processingCount > 0) ...[
                     const SizedBox(width: 3),
                     _buildBadge(processingCount, 1),
@@ -248,7 +249,7 @@ class _LeaderReportManagementScreenState
             ),
           ),
           Tab(
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text('XONG')),
+            child: FittedBox(fit: BoxFit.scaleDown, child: Text(l10n.tabCompleted)),
           ),
         ],
       ),
