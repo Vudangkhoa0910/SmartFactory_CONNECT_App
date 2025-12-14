@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
+import 'api_service.dart';
 
 /// FCM Service for handling push notifications
 /// Supports: Android, iOS (mobile platforms only)
@@ -134,8 +135,8 @@ class FCMService {
       _messaging.onTokenRefresh.listen((newToken) {
         _fcmToken = newToken;
         debugPrint('FCM: Token refreshed - $newToken');
-        // TODO: Send new token to your server
-        // await ApiService.post('/api/users/fcm-token', {'token': newToken});
+        // Auto-send to server if user is logged in
+        sendTokenToServer();
       });
 
       return _fcmToken;
@@ -144,6 +145,56 @@ class FCMService {
       return null;
     }
   }
+
+  /// Send FCM token to server
+  /// Call this after user login
+  Future<bool> sendTokenToServer() async {
+    if (_fcmToken == null || !_isSupportedPlatform) {
+      return false;
+    }
+
+    try {
+      final platform = Platform.isAndroid ? 'android' : 'ios';
+      
+      final response = await ApiService.post('/api/users/fcm-token', {
+        'token': _fcmToken,
+        'devicePlatform': platform,
+      });
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('FCM: Token sent to server successfully');
+        return true;
+      } else {
+        debugPrint('FCM: Failed to send token to server - ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('FCM: Error sending token to server - $e');
+      return false;
+    }
+  }
+
+  /// Remove FCM token from server
+  /// Call this on user logout
+  Future<bool> removeTokenFromServer() async {
+    if (_fcmToken == null) {
+      return false;
+    }
+
+    try {
+      final response = await ApiService.delete('/api/users/fcm-token');
+      
+      if (response.statusCode == 200) {
+        debugPrint('FCM: Token removed from server');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('FCM: Error removing token from server - $e');
+      return false;
+    }
+  }
+
 
   /// Handle foreground messages
   void _setupForegroundHandler() {

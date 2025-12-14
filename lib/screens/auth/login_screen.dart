@@ -4,6 +4,7 @@ import '../../config/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/loading_overlay.dart';
 import '../../services/auth_service.dart';
+import '../../services/fcm_service.dart';
 import '../../providers/user_provider.dart';
 import '../../utils/toast_utils.dart';
 
@@ -116,6 +117,9 @@ class _LoginScreenState extends State<LoginScreen> {
             await Future.delayed(const Duration(milliseconds: 50));
           }
 
+          // Register FCM token with server
+          await FCMService().sendTokenToServer();
+
           _navigateToHome();
         } else {
           ToastUtils.showError(
@@ -191,6 +195,9 @@ class _LoginScreenState extends State<LoginScreen> {
         while (!userProvider.isLoaded) {
           await Future.delayed(const Duration(milliseconds: 50));
         }
+
+        // Register FCM token with server
+        await FCMService().sendTokenToServer();
 
         // Navigate to home
         _navigateToHome();

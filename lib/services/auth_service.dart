@@ -4,6 +4,7 @@ import 'package:local_auth/local_auth.dart';
 import 'dart:convert';
 import 'api_service.dart';
 import 'api_constants.dart';
+import 'fcm_service.dart';
 
 /// Service quản lý authentication và lưu trữ thông tin đăng nhập
 class AuthService {
@@ -142,6 +143,9 @@ class AuthService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyIsLoggedIn, false);
+
+    // Remove FCM token from server
+    await FCMService().removeTokenFromServer();
 
     // Không xóa credentials nếu remember me enabled HOẶC biometric enabled
     final rememberMe = await isRememberMeEnabled();
