@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../widgets/language_toggle_button.dart';
 import '../../../utils/toast_utils.dart';
 
 class PersonalInfoEditFieldScreen extends StatefulWidget {
@@ -60,6 +61,10 @@ class _PersonalInfoEditFieldScreenState
           icon: Icon(Icons.arrow_back, color: AppColors.gray900),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: const [
+          LanguageToggleIconButton(),
+          SizedBox(width: 8),
+        ],
         title: Text(
           widget.title,
           style: TextStyle(
