@@ -3,6 +3,7 @@ import '../../config/app_colors.dart';
 import '../../utils/toast_utils.dart';
 import '../../models/report_model.dart';
 import '../../l10n/app_localizations.dart';
+import '../../widgets/language_toggle_button.dart';
 
 class ReportDetailScreen extends StatelessWidget {
   final ReportModel report;
@@ -55,6 +56,10 @@ class ReportDetailScreen extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: const [
+          LanguageToggleIconButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
