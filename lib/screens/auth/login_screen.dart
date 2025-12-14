@@ -3,6 +3,7 @@ import '../../l10n/app_localizations.dart';
 import '../../config/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/loading_overlay.dart';
+import '../../widgets/language_toggle_button.dart';
 import '../../services/auth_service.dart';
 import '../../services/fcm_service.dart';
 import '../../providers/user_provider.dart';
@@ -284,6 +285,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             textAlign: TextAlign.center,
                           ),
+
+                          const SizedBox(height: 24),
+
+                          // Language Toggle Button
+                          const LanguageToggleButton(),
 
                           const SizedBox(height: 40),
 
