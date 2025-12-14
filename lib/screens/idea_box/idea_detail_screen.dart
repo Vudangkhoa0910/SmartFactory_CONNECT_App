@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../../widgets/language_toggle_button.dart';
 import '../../models/idea_box_model.dart';
 import '../../services/idea_service.dart';
 import '../../components/loading_infinity.dart';
@@ -157,7 +158,9 @@ class _IdeaDetailScreenState extends State<IdeaDetailScreen> {
               width: 20,
               height: 20,
               child: LoadingInfinity(size: 20),
-            ),
+            )
+          else
+            const LanguageToggleIconButton(),
         ],
       ),
     );
