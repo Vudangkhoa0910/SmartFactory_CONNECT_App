@@ -3,6 +3,7 @@ import '../../../config/app_colors.dart';
 import '../../../providers/user_provider.dart';
 import '../../../services/auth_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../widgets/language_toggle_button.dart';
 
 class HomeHeader extends StatefulWidget {
   final double height;
@@ -131,6 +132,9 @@ class _HomeHeaderState extends State<HomeHeader> {
           // Icons bên phải
           Row(
             children: [
+              // Language toggle
+              const LanguageToggleButtonCompact(),
+              const SizedBox(width: 12),
               IconButton(
                 icon: Icon(Icons.search, color: AppColors.gray600, size: 22),
                 padding: EdgeInsets.zero,
