@@ -101,10 +101,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _onRoleChanged() {
     if (mounted) {
-      setState(() {
-        _currentRole = UserProvider().currentRole;
+      // Defer setState to avoid calling it during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentRole = UserProvider().currentRole;
+          });
+          _loadUserProfile();
+        }
       });
-      _loadUserProfile();
     }
   }
 
