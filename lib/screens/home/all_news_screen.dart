@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
 import '../../components/loading_infinity.dart';
+import '../../widgets/language_toggle_button.dart';
 import '../../utils/date_utils.dart';
 import 'news_detail_screen.dart';
 
@@ -76,6 +77,9 @@ class _AllNewsScreenState extends State<AllNewsScreen> {
           ),
         ),
         actions: [
+          // Language toggle
+          const LanguageToggleIconButton(),
+          const SizedBox(width: 4),
           // Filter button - Copy exact từ report_list_screen
           PopupMenuButton<String>(
             icon: Icon(Icons.filter_list, color: AppColors.gray600, size: 22),
