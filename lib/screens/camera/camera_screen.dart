@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../components/loading_infinity.dart';
 import '../../config/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../../widgets/language_toggle_button.dart';
 import '../../utils/toast_utils.dart';
 import 'dart:io'; // For File when displaying captured image
 
@@ -226,6 +227,10 @@ class _CameraScreenState extends State<CameraScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: const [
+          LanguageToggleIconButton(),
+          SizedBox(width: 8),
+        ],
         title: Text(
           _isPhotoMode ? l10n.camera : l10n.scanQRCode,
           style: const TextStyle(
