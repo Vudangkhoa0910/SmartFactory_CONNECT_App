@@ -7,6 +7,7 @@ import '../../services/news_service.dart';
 import '../../components/loading_infinity.dart';
 import '../../utils/toast_utils.dart';
 import '../../utils/date_utils.dart';
+import '../../widgets/language_toggle_button.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final NewsModel news;
@@ -72,6 +73,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               ),
               onPressed: () => Navigator.pop(context),
             ),
+            actions: const [
+              LanguageToggleIconButton(),
+              SizedBox(width: 8),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
