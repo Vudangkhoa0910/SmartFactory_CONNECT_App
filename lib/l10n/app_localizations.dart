@@ -1100,6 +1100,12 @@ abstract class AppLocalizations {
   /// **'Nhập họ và tên'**
   String get enterFullName;
 
+  /// No description provided for @pleaseEnterFullName.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng nhập họ và tên'**
+  String get pleaseEnterFullName;
+
   /// No description provided for @enterEmail.
   ///
   /// In vi, this message translates to:
@@ -3131,7 +3137,7 @@ abstract class AppLocalizations {
   /// No description provided for @cancelReport.
   ///
   /// In vi, this message translates to:
-  /// **'Hủy báo cáo'**
+  /// **'HỦY BỎ'**
   String get cancelReport;
 
   /// No description provided for @confirmCancelMessage.
@@ -3173,7 +3179,7 @@ abstract class AppLocalizations {
   /// No description provided for @commentOptional.
   ///
   /// In vi, this message translates to:
-  /// **'Nhận xét (không bắt buộc)'**
+  /// **'Nhận xét (tùy chọn)'**
   String get commentOptional;
 
   /// No description provided for @submitRating.
@@ -3763,6 +3769,276 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Đã đóng'**
   String get statusClosedLabel;
+
+  /// No description provided for @handleIncident.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xử lý sự cố'**
+  String get handleIncident;
+
+  /// No description provided for @leaderCanAssignAndUpdate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có thể phân công xử lý, cập nhật trạng thái'**
+  String get leaderCanAssignAndUpdate;
+
+  /// No description provided for @userCanOnlyViewProgress.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ xem chi tiết và theo dõi tiến độ'**
+  String get userCanOnlyViewProgress;
+
+  /// No description provided for @suggestionMailbox.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hòm thư góp ý'**
+  String get suggestionMailbox;
+
+  /// No description provided for @contentUnderDevelopment.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nội dung đang được xây dựng'**
+  String get contentUnderDevelopment;
+
+  /// No description provided for @issueType.
+  ///
+  /// In vi, this message translates to:
+  /// **'Loại vấn đề'**
+  String get issueType;
+
+  /// No description provided for @tabNew.
+  ///
+  /// In vi, this message translates to:
+  /// **'MỚI'**
+  String get tabNew;
+
+  /// No description provided for @unknownSender.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không rõ người gửi'**
+  String get unknownSender;
+
+  /// No description provided for @attachedDocuments.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tài liệu đính kèm'**
+  String get attachedDocuments;
+
+  /// No description provided for @escalatedTo.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuyển đến {escalatedTo}'**
+  String escalatedTo(String escalatedTo);
+
+  /// No description provided for @componentMotor.
+  ///
+  /// In vi, this message translates to:
+  /// **'Động cơ'**
+  String get componentMotor;
+
+  /// No description provided for @componentConveyor.
+  ///
+  /// In vi, this message translates to:
+  /// **'Băng tải'**
+  String get componentConveyor;
+
+  /// No description provided for @componentSensor.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cảm biến'**
+  String get componentSensor;
+
+  /// No description provided for @componentControlValve.
+  ///
+  /// In vi, this message translates to:
+  /// **'Van điều khiển'**
+  String get componentControlValve;
+
+  /// No description provided for @productionLineA.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dây chuyền A'**
+  String get productionLineA;
+
+  /// No description provided for @productionLineB.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dây chuyền B'**
+  String get productionLineB;
+
+  /// No description provided for @productionLineC.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dây chuyền C'**
+  String get productionLineC;
+
+  /// No description provided for @workstationCasting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đúc'**
+  String get workstationCasting;
+
+  /// No description provided for @workstationStamping.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dập'**
+  String get workstationStamping;
+
+  /// No description provided for @workstationAssembly.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lắp ráp'**
+  String get workstationAssembly;
+
+  /// No description provided for @workstationInspection.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kiểm tra'**
+  String get workstationInspection;
+
+  /// No description provided for @checkedAndConfirmed.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã kiểm tra và xác nhận'**
+  String get checkedAndConfirmed;
+
+  /// No description provided for @categoryAdministrative.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành chính'**
+  String get categoryAdministrative;
+
+  /// No description provided for @departmentQC.
+  ///
+  /// In vi, this message translates to:
+  /// **'QC'**
+  String get departmentQC;
+
+  /// No description provided for @departmentProduction.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sản xuất'**
+  String get departmentProduction;
+
+  /// No description provided for @departmentMaintenance.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bảo trì'**
+  String get departmentMaintenance;
+
+  /// No description provided for @departmentSafety.
+  ///
+  /// In vi, this message translates to:
+  /// **'An toàn'**
+  String get departmentSafety;
+
+  /// No description provided for @whiteBoxTab.
+  ///
+  /// In vi, this message translates to:
+  /// **'HÒM TRẮNG'**
+  String get whiteBoxTab;
+
+  /// No description provided for @pinkBoxTab.
+  ///
+  /// In vi, this message translates to:
+  /// **'HÒM HỒNG'**
+  String get pinkBoxTab;
+
+  /// No description provided for @whiteBox.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hòm trắng'**
+  String get whiteBox;
+
+  /// No description provided for @publicVisibility.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ai cũng xem được'**
+  String get publicVisibility;
+
+  /// No description provided for @pinkBox.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hòm hồng'**
+  String get pinkBox;
+
+  /// No description provided for @privateVisibility.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ bạn xem được'**
+  String get privateVisibility;
+
+  /// No description provided for @anonymousInfoMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn có thể bỏ qua nếu muốn gửi hoàn toàn ẩn danh'**
+  String get anonymousInfoMessage;
+
+  /// No description provided for @employeeIdExample.
+  ///
+  /// In vi, this message translates to:
+  /// **'VD: NV001'**
+  String get employeeIdExample;
+
+  /// No description provided for @submissionDate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày gửi *'**
+  String get submissionDate;
+
+  /// No description provided for @tapToEnterIdeaContent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhấn để nhập ý kiến hoặc nội dung góp ý...'**
+  String get tapToEnterIdeaContent;
+
+  /// No description provided for @ideaContentMinLength.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nội dung góp ý phải có ít nhất 10 ký tự'**
+  String get ideaContentMinLength;
+
+  /// No description provided for @difficultyLevelOptional.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mức độ khó (tùy chọn)'**
+  String get difficultyLevelOptional;
+
+  /// No description provided for @gallery.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thư viện'**
+  String get gallery;
+
+  /// No description provided for @personalInfoAnonymousNote.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thông tin cá nhân là tùy chọn. Nếu bỏ trống, góp ý sẽ hoàn toàn ẩn danh.'**
+  String get personalInfoAnonymousNote;
+
+  /// No description provided for @photoLibrary.
+  ///
+  /// In vi, this message translates to:
+  /// **'thư viện ảnh'**
+  String get photoLibrary;
+
+  /// No description provided for @errorSelectingImage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lỗi khi chọn ảnh'**
+  String get errorSelectingImage;
+
+  /// No description provided for @aiGreetingMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xin chào! Tôi có thể giúp gì cho bạn?'**
+  String get aiGreetingMessage;
+
+  /// No description provided for @errorSendingMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lỗi gửi tin nhắn'**
+  String get errorSendingMessage;
 }
 
 class _AppLocalizationsDelegate
