@@ -6,6 +6,7 @@ import '../../services/incident_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'report_detail_view_screen.dart';
 import '../../components/loading_infinity.dart';
+import '../../widgets/language_toggle_button.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
   const ReportHistoryScreen({super.key});
@@ -121,6 +122,10 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: const [
+          LanguageToggleIconButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
