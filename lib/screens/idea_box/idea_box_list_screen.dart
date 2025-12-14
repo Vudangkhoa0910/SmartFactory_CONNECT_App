@@ -465,6 +465,7 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
   }
 
   Widget _buildTabBar() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       height: 45,
@@ -496,9 +497,9 @@ class _IdeaBoxListScreenState extends State<IdeaBoxListScreen>
           fontWeight: FontWeight.w500,
         ),
         onTap: (index) => setState(() {}),
-        tabs: const [
-          Tab(text: 'HÒM TRẮNG'),
-          Tab(text: 'HÒM HỒNG'),
+        tabs: [
+          Tab(text: l10n.whiteBoxTab),
+          Tab(text: l10n.pinkBoxTab),
         ],
       ),
     );
