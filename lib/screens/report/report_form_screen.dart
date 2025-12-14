@@ -12,6 +12,7 @@ import '../../widgets/expanded_text_dialog.dart';
 import '../../services/incident_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../components/loading_infinity.dart';
+import '../../widgets/language_toggle_button.dart';
 
 class ReportFormScreen extends StatefulWidget {
   const ReportFormScreen({super.key});
@@ -292,6 +293,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
+          actions: const [
+            LanguageToggleIconButton(),
+            SizedBox(width: 8),
+          ],
         ),
         body: Form(
           key: _formKey,
