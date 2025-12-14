@@ -9,6 +9,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../config/app_colors.dart';
 import '../../utils/toast_utils.dart';
 import '../../l10n/app_localizations.dart';
+import '../../widgets/language_toggle_button.dart';
+import '../../widgets/language_toggle_button.dart';
 
 class LeaderReportFormScreen extends StatefulWidget {
   const LeaderReportFormScreen({super.key});
@@ -300,6 +302,10 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
             icon: Icon(Icons.arrow_back, color: AppColors.gray800),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: const [
+            LanguageToggleIconButton(),
+            SizedBox(width: 8),
+          ],
           title: Builder(
             builder: (context) {
               final l10n = AppLocalizations.of(context)!;
