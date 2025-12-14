@@ -123,6 +123,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
               },
               children: pages,
             ),
+            
             Positioned(
               bottom: 16,
               left: 20,
