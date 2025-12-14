@@ -57,5 +57,9 @@
 	<string>SmartFactory Connect cần quyền lưu ảnh vào thư viện</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>SmartFactory Connect sử dụng Face ID để đăng nhập nhanh chóng và bảo mật</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
