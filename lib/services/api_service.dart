@@ -8,11 +8,12 @@ class ApiService {
   static const String _keyServerPort = 'server_port';
 
   // Default values
-  static const String defaultIp = '172.16.0.100';
+  static const String defaultIp = '192.168.79.19';
   static const String defaultPort = '3001';
   
   // Available IP range
   static const List<String> availableIps = [
+    '192.168.79.19',
     '172.16.0.100',
     '172.16.0.101',
     '172.16.0.102',

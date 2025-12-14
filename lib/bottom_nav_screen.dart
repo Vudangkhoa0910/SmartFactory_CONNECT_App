@@ -37,8 +37,13 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
   void _onRoleChanged() {
     if (mounted) {
-      setState(() {
-        // Rebuild to reflect role changes
+      // Defer setState to avoid calling it during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            // Rebuild to reflect role changes
+          });
+        }
       });
     }
   }
