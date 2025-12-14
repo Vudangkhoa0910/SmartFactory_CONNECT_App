@@ -8,6 +8,7 @@ import '../../models/idea_box_model.dart';
 import '../../services/idea_service.dart';
 import '../../widgets/text_field_with_mic.dart';
 import '../../widgets/expanded_text_dialog.dart';
+import '../../widgets/language_toggle_button.dart';
 import '../../components/loading_infinity.dart';
 import '../../utils/toast_utils.dart';
 import '../../services/auth_service.dart';
@@ -222,6 +223,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
               ],
             ),
           ),
+          const LanguageToggleIconButton(),
         ],
       ),
     );
@@ -247,8 +249,8 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
               child: _buildBoxTypeCard(
                 type: IdeaBoxType.white,
                 icon: Icons.inbox_outlined,
-                title: 'Hòm trắng',
-                subtitle: 'Ai cũng xem được',
+                title: l10n.whiteBox,
+                subtitle: l10n.publicVisibility,
                 color: AppColors.brand500,
               ),
             ),
@@ -257,8 +259,8 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
               child: _buildBoxTypeCard(
                 type: IdeaBoxType.pink,
                 icon: Icons.favorite_border,
-                title: 'Hòm hồng',
-                subtitle: 'Chỉ bạn xem được',
+                title: l10n.pinkBox,
+                subtitle: l10n.privateVisibility,
                 color: AppColors.themePink500,
               ),
             ),
@@ -415,6 +417,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildPersonalInfoSection() {
+    final l10n = AppLocalizations.of(context)!;
     final isRequired = _selectedBoxType == IdeaBoxType.white;
 
     return Column(
@@ -423,7 +426,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         Row(
           children: [
             Text(
-              'Thông tin cá nhân',
+              l10n.personalInfo,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -439,7 +442,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'Tùy chọn',
+                  l10n.optional,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -452,7 +455,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         if (!isRequired) ...[
           const SizedBox(height: 8),
           Text(
-            'Bạn có thể bỏ qua nếu muốn gửi hoàn toàn ẩn danh',
+            l10n.anonymousInfoMessage,
             style: TextStyle(
               fontSize: 13,
               color: AppColors.gray500,
@@ -466,15 +469,15 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         TextFormField(
           controller: _nameController,
           style: const TextStyle(color: AppColors.black),
-          decoration: const InputDecoration(
-            hintText: 'Nhập họ và tên của bạn',
+          decoration: InputDecoration(
+            hintText: l10n.enterFullName,
             hintStyle: TextStyle(color: AppColors.gray400),
             filled: true,
             fillColor: AppColors.white,
           ),
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
-              return 'Vui lòng nhập họ và tên';
+              return l10n.pleaseEnterFullName;
             }
             return null;
           },
@@ -485,15 +488,15 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         TextFormField(
           controller: _employeeIdController,
           style: const TextStyle(color: AppColors.black),
-          decoration: const InputDecoration(
-            hintText: 'VD: NV001',
+          decoration: InputDecoration(
+            hintText: l10n.employeeIdExample,
             hintStyle: TextStyle(color: AppColors.gray400),
             filled: true,
             fillColor: AppColors.white,
           ),
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
-              return 'Vui lòng nhập mã nhân viên';
+              return l10n.pleaseEnterEmployeeId;
             }
             return null;
           },
@@ -522,11 +525,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildDateField() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Ngày gửi *',
+        Text(
+          l10n.submissionDate,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -620,7 +624,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                 Expanded(
                   child: Text(
                     _contentController.text.isEmpty
-                        ? 'Nhấn để nhập ý kiến hoặc nội dung góp ý...'
+                        ? l10n.tapToEnterIdeaContent
                         : _contentController.text,
                     style: TextStyle(
                       color: _contentController.text.isEmpty
@@ -642,7 +646,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Nội dung góp ý phải có ít nhất 10 ký tự',
+              l10n.ideaContentMinLength,
               style: TextStyle(color: AppColors.gray500, fontSize: 12),
             ),
           ),
@@ -666,7 +670,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         const SizedBox(height: 12),
         TextFieldWithMic(
           controller: _expectedBenefitController,
-          hintText: 'Mô tả lợi ích dự kiến nếu ý tưởng được áp dụng...',
+          hintText: l10n.enterIdeaBenefit,
           maxLines: 3,
         ),
       ],
@@ -674,11 +678,12 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildDifficultySelector() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Mức độ khó (tùy chọn)',
+        Text(
+          l10n.difficultyLevelOptional,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -798,7 +803,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
             Expanded(
               child: _buildAttachmentButton(
                 icon: Icons.photo_camera,
-                label: 'Chụp ảnh',
+                label: l10n.takePhoto,
                 onTap: () => _pickImage(ImageSource.camera),
               ),
             ),
@@ -806,7 +811,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
             Expanded(
               child: _buildAttachmentButton(
                 icon: Icons.photo_library,
-                label: 'Thư viện',
+                label: l10n.gallery,
                 onTap: () => _pickImage(ImageSource.gallery),
               ),
             ),
@@ -850,6 +855,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   }
 
   Widget _buildAnonymousNote() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -867,7 +873,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Thông tin cá nhân là tùy chọn. Nếu bỏ trống, góp ý sẽ hoàn toàn ẩn danh.',
+              l10n.personalInfoAnonymousNote,
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.gray700,
@@ -926,20 +932,20 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
       }
     } on Exception catch (_) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         // Kiểm tra nếu là lỗi quyền bị từ chối vĩnh viễn
         Permission permission = source == ImageSource.camera
             ? Permission.camera
             : Permission.photos;
         String permissionName = source == ImageSource.camera
             ? 'camera'
-            : 'thư viện ảnh';
+            : l10n.photoLibrary;
 
         final status = await permission.status;
         if (status.isPermanentlyDenied) {
           _showPermissionDialog(permissionName);
         } else {
-          String errorMessage = 'Lỗi khi chọn ảnh';
-          ToastUtils.showError(errorMessage);
+          ToastUtils.showError(l10n.errorSelectingImage);
         }
       }
     }
