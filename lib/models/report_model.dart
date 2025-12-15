@@ -1,3 +1,5 @@
+import 'attachment_model.dart';
+
 enum ReportStatus {
   pending, // Chờ duyệt
   processing, // Đang xử lý
@@ -30,11 +32,11 @@ class ReportModel {
   final String? description;
   final ReportStatus status;
   final String? department;
-  final String? reporterName; // Add this
+  final String? reporterName;
   final DateTime createdDate;
   final DateTime? completedDate;
   final double? rating;
-  final List<String>? attachments;
+  final List<AttachmentModel>? attachments;
 
   ReportModel({
     required this.id,
@@ -122,7 +124,7 @@ class ReportModel {
       rating: json['rating'] != null
           ? (json['rating'] as num).toDouble()
           : null,
-      // attachments handling might need adjustment based on actual JSON structure
+      attachments: AttachmentModel.parseList(json['attachments']),
     );
   }
 

@@ -89,13 +89,14 @@ class IdeaBoxItem {
   });
 
   factory IdeaBoxItem.fromJson(Map<String, dynamic> json) {
-    // Helper to parse attachments
+    // Helper to parse attachments - supports both GridFS (url) and legacy (path) formats
     List<String> parseAttachments(dynamic attachments) {
       if (attachments == null) return [];
       if (attachments is String) {
         try {
           final List<dynamic> list = jsonDecode(attachments);
-          return list.map((e) => e['path'] as String).toList();
+          // Support both 'url' (new GridFS) and 'path' (legacy) formats
+          return list.map((e) => (e['url'] ?? e['path']) as String).toList();
         } catch (e) {
           return [];
         }
@@ -103,7 +104,8 @@ class IdeaBoxItem {
       if (attachments is List) {
         return attachments.map((e) {
           if (e is String) return e;
-          if (e is Map) return e['path'] as String;
+          // Support both 'url' (new GridFS) and 'path' (legacy) formats
+          if (e is Map) return (e['url'] ?? e['path']) as String;
           return '';
         }).toList();
       }

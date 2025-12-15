@@ -239,14 +239,18 @@ class ReportDetailScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Icon(
-                            Icons.attachment,
+                            attachment.isImage
+                                ? Icons.image
+                                : attachment.isAudio
+                                    ? Icons.audiotrack
+                                    : Icons.attachment,
                             size: 20,
                             color: AppColors.gray500,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              attachment,
+                              attachment.originalName,
                               style: TextStyle(
                                 color: AppColors.gray700,
                                 fontSize: 14,

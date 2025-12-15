@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:convert';
 import 'config/app_colors.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/home/news_detail_screen.dart';
 import 'screens/report/report_list_screen.dart';
 import 'screens/report/leader_report_management_screen.dart';
+import 'screens/report/report_detail_view_screen.dart';
 import 'screens/idea_box/idea_box_list_screen.dart';
+import 'screens/idea_box/idea_detail_screen.dart';
 import 'screens/profile/profile_screen.dart';
-import 'screens/camera/camera_screen.dart'; // Import CameraScreen
+import 'screens/camera/camera_screen.dart';
 import 'providers/user_provider.dart';
-import 'components/floating_chat_overlay.dart'; // Import FloatingChatOverlay
+import 'components/floating_chat_overlay.dart';
+import 'services/fcm_service.dart';
+import 'services/api_service.dart';
+import 'models/news_model.dart';
+import 'models/report_model.dart';
+import 'models/idea_box_model.dart';
 
 class BottomNavScreen extends StatefulWidget {
   const BottomNavScreen({super.key});
@@ -33,6 +43,107 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
     // Listen to role changes
     _userProvider.addListener(_onRoleChanged);
+
+    // Check for initial FCM message (when app was killed and opened via notification)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkInitialFCMMessage();
+    });
+  }
+
+  /// Check if app was opened from a notification when it was killed
+  Future<void> _checkInitialFCMMessage() async {
+    try {
+      // First try pending navigation from FCM service
+      FCMService().processPendingNavigation();
+
+      // Then check getInitialMessage again (in case it wasn't ready during FCM init)
+      final initialMessage = await FirebaseMessaging.instance
+          .getInitialMessage();
+      if (initialMessage != null) {
+        debugPrint('FCM: Found initial message in BottomNavScreen');
+        debugPrint('FCM: Data: ${initialMessage.data}');
+
+        // Process the notification data
+        final data = initialMessage.data;
+        final type = data['type'];
+        final id = data['id'];
+
+        if (type != null && id != null) {
+          await _navigateToDetail(type, id);
+        }
+      }
+    } catch (e) {
+      debugPrint('FCM: Error checking initial message: $e');
+    }
+  }
+
+  /// Navigate to detail screen based on notification type
+  Future<void> _navigateToDetail(String type, String id) async {
+    debugPrint('FCM: Navigating to $type with id $id');
+
+    try {
+      switch (type) {
+        case 'news':
+          final response = await ApiService.get('/api/news/$id');
+          if (response.statusCode == 200) {
+            final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+            if (jsonData['success'] == true && jsonData['data'] != null) {
+              final news = NewsModel.fromJson(
+                jsonData['data'] as Map<String, dynamic>,
+              );
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NewsDetailScreen(news: news),
+                  ),
+                );
+              }
+            }
+          }
+          break;
+        case 'incident':
+          final response = await ApiService.get('/api/incidents/$id');
+          if (response.statusCode == 200) {
+            final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+            if (jsonData['success'] == true && jsonData['data'] != null) {
+              final report = ReportModel.fromJson(
+                jsonData['data'] as Map<String, dynamic>,
+              );
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReportDetailScreen(report: report),
+                  ),
+                );
+              }
+            }
+          }
+          break;
+        case 'idea':
+          final response = await ApiService.get('/api/ideas/$id');
+          if (response.statusCode == 200) {
+            final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+            if (jsonData['success'] == true && jsonData['data'] != null) {
+              final idea = IdeaBoxItem.fromJson(
+                jsonData['data'] as Map<String, dynamic>,
+              );
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => IdeaDetailScreen(idea: idea),
+                  ),
+                );
+              }
+            }
+          }
+          break;
+      }
+    } catch (e) {
+      debugPrint('FCM: Error navigating: $e');
+    }
   }
 
   void _onRoleChanged() {
@@ -123,7 +234,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
               },
               children: pages,
             ),
-            
+
             Positioned(
               bottom: 16,
               left: 20,

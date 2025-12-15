@@ -3,7 +3,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
+import 'dart:convert' show jsonDecode, jsonEncode;
 import 'api_service.dart';
+import '../main.dart' show navigatorKey;
+import '../screens/home/news_detail_screen.dart';
+import '../screens/idea_box/idea_detail_screen.dart';
+import '../screens/report/report_detail_view_screen.dart';
+import '../models/news_model.dart';
+import '../models/idea_box_model.dart';
+import '../models/report_model.dart';
 
 /// FCM Service for handling push notifications
 /// Supports: Android, iOS (mobile platforms only)
@@ -17,7 +25,7 @@ class FCMService {
       FlutterLocalNotificationsPlugin();
 
   String? _fcmToken;
-  
+
   /// Get current FCM token
   String? get fcmToken => _fcmToken;
 
@@ -82,8 +90,9 @@ class FCMService {
   /// Setup local notifications plugin
   Future<void> _setupLocalNotifications() async {
     // Android settings
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/launcher_icon',
+    );
 
     // iOS settings
     const iosSettings = DarwinInitializationSettings(
@@ -109,7 +118,8 @@ class FCMService {
     if (!kIsWeb && Platform.isAndroid) {
       await _localNotifications
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(_channel);
     }
   }
@@ -125,7 +135,9 @@ class FCMService {
           await Future.delayed(const Duration(seconds: 2));
           apnsToken = await _messaging.getAPNSToken();
         }
-        debugPrint('FCM: APNs token - ${apnsToken != null ? "Available" : "Not available"}');
+        debugPrint(
+          'FCM: APNs token - ${apnsToken != null ? "Available" : "Not available"}',
+        );
       }
 
       _fcmToken = await _messaging.getToken();
@@ -155,17 +167,19 @@ class FCMService {
 
     try {
       final platform = Platform.isAndroid ? 'android' : 'ios';
-      
+
       final response = await ApiService.post('/api/users/fcm-token', {
         'token': _fcmToken,
         'devicePlatform': platform,
       });
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('FCM: Token sent to server successfully');
         return true;
       } else {
-        debugPrint('FCM: Failed to send token to server - ${response.statusCode}');
+        debugPrint(
+          'FCM: Failed to send token to server - ${response.statusCode}',
+        );
         return false;
       }
     } catch (e) {
@@ -183,7 +197,7 @@ class FCMService {
 
     try {
       final response = await ApiService.delete('/api/users/fcm-token');
-      
+
       if (response.statusCode == 200) {
         debugPrint('FCM: Token removed from server');
         return true;
@@ -194,7 +208,6 @@ class FCMService {
       return false;
     }
   }
-
 
   /// Handle foreground messages
   void _setupForegroundHandler() {
@@ -235,7 +248,7 @@ class FCMService {
             presentSound: true,
           ),
         ),
-        payload: message.data.toString(),
+        payload: jsonEncode(message.data),
       );
     }
   }
@@ -243,9 +256,14 @@ class FCMService {
   /// Setup interaction handlers (when user taps notification)
   void _setupInteractionHandler() {
     // Handle notification tap when app was terminated
+    debugPrint('FCM: Setting up interaction handler...');
     FirebaseMessaging.instance.getInitialMessage().then((message) {
+      debugPrint(
+        'FCM: getInitialMessage returned: ${message != null ? "HAS MESSAGE" : "NULL"}',
+      );
       if (message != null) {
         debugPrint('FCM: App opened from terminated state');
+        debugPrint('FCM: Initial message data: ${message.data}');
         _handleNotificationTap(message);
       }
     });
@@ -260,32 +278,191 @@ class FCMService {
   /// Handle notification tap
   void _handleNotificationTap(RemoteMessage message) {
     debugPrint('FCM: Notification tapped - ${message.data}');
-    
+
     // Extract data from notification
     final data = message.data;
-    final type = data['type'];
-    final id = data['id'];
-
-    // TODO: Navigate to appropriate screen based on notification type
-    // Example:
-    // if (type == 'incident' && id != null) {
-    //   navigatorKey.currentState?.pushNamed('/incident-detail', arguments: id);
-    // } else if (type == 'idea' && id != null) {
-    //   navigatorKey.currentState?.pushNamed('/idea-detail', arguments: id);
-    // }
+    _navigateByNotificationData(data);
   }
 
   /// Handle notification payload from local notification
   void _handleNotificationPayload(String? payload) {
     if (payload == null) return;
     debugPrint('FCM: Handling payload - $payload');
-    // TODO: Parse payload and navigate
+
+    // Parse payload JSON string to map
+    try {
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      _navigateByNotificationData(data);
+    } catch (e) {
+      debugPrint('FCM: Error parsing payload - $e');
+    }
+  }
+
+  /// Navigate based on notification data
+  void _navigateByNotificationData(Map<String, dynamic> data) {
+    final type = data['type']?.toString();
+    final id = data['id']?.toString();
+    final actionUrl = data['action_url']?.toString();
+
+    debugPrint(
+      'FCM: Navigating - type: $type, id: $id, action_url: $actionUrl',
+    );
+
+    if (type == null && actionUrl == null) {
+      debugPrint('FCM: No navigation data found');
+      return;
+    }
+
+    // Use navigatorKey from main.dart
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) {
+      debugPrint('FCM: Navigator not available yet');
+      // Store pending navigation and try again later
+      _pendingNavigationData = data;
+      return;
+    }
+
+    // Navigate based on type
+    switch (type) {
+      case 'news':
+        _navigateToNewsDetail(navigator, id);
+        break;
+      case 'incident':
+        _navigateToIncidentDetail(navigator, id);
+        break;
+      case 'idea':
+        _navigateToIdeaDetail(navigator, id);
+        break;
+      default:
+        debugPrint('FCM: Unknown notification type - $type');
+        // Navigate to notifications screen as fallback
+        navigator.pushNamed('/home');
+    }
+  }
+
+  /// Store pending navigation data
+  Map<String, dynamic>? _pendingNavigationData;
+
+  /// Process pending navigation (call after app is fully loaded)
+  void processPendingNavigation() {
+    debugPrint('FCM: processPendingNavigation called');
+    debugPrint('FCM: _pendingNavigationData = $_pendingNavigationData');
+    if (_pendingNavigationData != null) {
+      debugPrint('FCM: Processing pending navigation now...');
+      _navigateByNotificationData(_pendingNavigationData!);
+      _pendingNavigationData = null;
+    } else {
+      debugPrint('FCM: No pending navigation data');
+    }
+  }
+
+  /// Navigate to news detail
+  void _navigateToNewsDetail(NavigatorState navigator, String? newsId) async {
+    if (newsId == null) {
+      debugPrint('FCM: No news ID provided');
+      return;
+    }
+
+    try {
+      final response = await ApiService.get('/api/news/$newsId');
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          final newsData = jsonData['data'] as Map<String, dynamic>;
+          navigator.push(
+            MaterialPageRoute(
+              builder: (context) => _buildNewsDetailScreen(newsData),
+            ),
+          );
+        }
+      } else {
+        debugPrint('FCM: Failed to fetch news - ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('FCM: Error navigating to news - $e');
+    }
+  }
+
+  /// Navigate to incident detail
+  void _navigateToIncidentDetail(
+    NavigatorState navigator,
+    String? incidentId,
+  ) async {
+    if (incidentId == null) {
+      debugPrint('FCM: No incident ID provided');
+      return;
+    }
+
+    try {
+      // Fetch incident data first
+      final response = await ApiService.get('/api/incidents/$incidentId');
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          final incidentData = jsonData['data'] as Map<String, dynamic>;
+          navigator.push(
+            MaterialPageRoute(
+              builder: (context) => _buildIncidentDetailScreen(incidentData),
+            ),
+          );
+        }
+      } else {
+        debugPrint('FCM: Failed to fetch incident - ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('FCM: Error navigating to incident - $e');
+    }
+  }
+
+  /// Navigate to idea detail
+  void _navigateToIdeaDetail(NavigatorState navigator, String? ideaId) async {
+    if (ideaId == null) {
+      debugPrint('FCM: No idea ID provided');
+      return;
+    }
+
+    try {
+      final response = await ApiService.get('/api/ideas/$ideaId');
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          final ideaData = jsonData['data'] as Map<String, dynamic>;
+          navigator.push(
+            MaterialPageRoute(
+              builder: (context) => _buildIdeaDetailScreen(ideaData),
+            ),
+          );
+        }
+      } else {
+        debugPrint('FCM: Failed to fetch idea - ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('FCM: Error navigating to idea - $e');
+    }
+  }
+
+  /// Build news detail screen
+  Widget _buildNewsDetailScreen(Map<String, dynamic> newsData) {
+    final news = NewsModel.fromJson(newsData);
+    return NewsDetailScreen(news: news);
+  }
+
+  /// Build incident detail screen
+  Widget _buildIncidentDetailScreen(Map<String, dynamic> incidentData) {
+    final report = ReportModel.fromJson(incidentData);
+    return ReportDetailScreen(report: report);
+  }
+
+  /// Build idea detail screen
+  Widget _buildIdeaDetailScreen(Map<String, dynamic> ideaData) {
+    final idea = IdeaBoxItem.fromJson(ideaData);
+    return IdeaDetailScreen(idea: idea);
   }
 
   /// Subscribe to a topic
   Future<void> subscribeToTopic(String topic) async {
     if (!_isSupportedPlatform) return;
-    
+
     await _messaging.subscribeToTopic(topic);
     debugPrint('FCM: Subscribed to topic - $topic');
   }
@@ -293,7 +470,7 @@ class FCMService {
   /// Unsubscribe from a topic
   Future<void> unsubscribeFromTopic(String topic) async {
     if (!_isSupportedPlatform) return;
-    
+
     await _messaging.unsubscribeFromTopic(topic);
     debugPrint('FCM: Unsubscribed from topic - $topic');
   }

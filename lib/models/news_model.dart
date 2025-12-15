@@ -45,10 +45,8 @@ class NewsModel {
           orElse: () => null,
         );
         if (imageAttachment != null) {
-          // Construct full URL if needed, or just path
-          // For now, we might need to handle this in UI or Service to prepend base URL
-          // Assuming the path is relative like 'uploads/news/...'
-          imgUrl = imageAttachment['path'] ?? '';
+          // Support both new GridFS format (url) and legacy format (path)
+          imgUrl = imageAttachment['url'] ?? imageAttachment['path'] ?? '';
         }
       }
     }
