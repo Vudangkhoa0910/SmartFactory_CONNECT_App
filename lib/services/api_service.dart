@@ -7,10 +7,9 @@ class ApiService {
   static const String _keyServerIp = 'server_ip';
   static const String _keyServerPort = 'server_port';
 
-  // Default values
   static const String defaultIp = '192.168.79.19';
   static const String defaultPort = '3001';
-  
+
   // Available IP range
   static const List<String> availableIps = [
     '192.168.79.19',
@@ -135,7 +134,7 @@ class ApiService {
     return await http.delete(url, headers: _getHeaders());
   }
 
-  // Generic Multipart POST request
+  // Generic Multipart POST request with timeout
   static Future<http.StreamedResponse> postMultipart(
     String endpoint,
     Map<String, String> fields,
@@ -157,6 +156,36 @@ class ApiService {
     // Add files
     request.files.addAll(files);
 
-    return await request.send();
+    // Send with timeout (60 seconds for file uploads)
+    try {
+      final client = http.Client();
+      try {
+        final streamedResponse = await client
+            .send(request)
+            .timeout(
+              const Duration(seconds: 60),
+              onTimeout: () {
+                client.close();
+                throw TimeoutException('Upload timed out after 60 seconds');
+              },
+            );
+        return streamedResponse;
+      } finally {
+        // Don't close client here - let the caller consume the response stream first
+      }
+    } catch (e) {
+      if (e is TimeoutException) {
+        rethrow;
+      }
+      throw Exception('Failed to upload: $e');
+    }
   }
+}
+
+class TimeoutException implements Exception {
+  final String message;
+  TimeoutException(this.message);
+
+  @override
+  String toString() => message;
 }
