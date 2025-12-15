@@ -67,20 +67,20 @@ class _LanguageToggleButtonState extends State<LanguageToggleButton>
     return GestureDetector(
       onTap: _toggleLanguage,
       child: Container(
-        width: 100,
-        height: 40,
+        width: 90,
+        height: 35,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppColors.error500,
-            width: 2,
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.error500.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: AppColors.error500.withOpacity(0.08),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -148,9 +148,9 @@ class _LanguageToggleButtonState extends State<LanguageToggleButton>
             label,
             style: TextStyle(
               color: AppColors.gray900,
-              fontSize: 15,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
+              letterSpacing: 0.5,
             ),
           ),
         );

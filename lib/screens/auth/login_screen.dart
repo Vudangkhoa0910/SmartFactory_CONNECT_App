@@ -286,11 +286,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             textAlign: TextAlign.center,
                           ),
 
-                          const SizedBox(height: 24),
-
-                          // Language Toggle Button
-                          const LanguageToggleButton(),
-
                           const SizedBox(height: 40),
 
                           // Username field
@@ -553,6 +548,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+              ),
+            ),
+
+            // Language Toggle Button - Top Right Corner
+            Positioned(
+              top: 16,
+              right: 16,
+              child: SafeArea(
+                child: const LanguageToggleButton(),
               ),
             ),
 
