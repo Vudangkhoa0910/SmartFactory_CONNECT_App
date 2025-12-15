@@ -293,10 +293,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          actions: const [
-            LanguageToggleIconButton(),
-            SizedBox(width: 8),
-          ],
+          actions: const [LanguageToggleIconButton(), SizedBox(width: 8)],
         ),
         body: Form(
           key: _formKey,
@@ -545,8 +542,13 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                 onPressed: _isSubmitting
                     ? null
                     : () async {
+                        print('🔵 Submit button pressed');
+
                         if (_formKey.currentState!.validate()) {
+                          print('🔵 Form validation passed');
+
                           if (_selectedPriority == null) {
+                            print('🔴 No priority selected');
                             ToastUtils.showError(
                               AppLocalizations.of(
                                 context,
@@ -556,6 +558,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                           }
 
                           if (_selectedCategory == null) {
+                            print('🔴 No category selected');
                             ToastUtils.showError(
                               AppLocalizations.of(
                                 context,
@@ -564,11 +567,14 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                             return;
                           }
 
+                          print('🔵 Setting isSubmitting = true');
                           setState(() {
                             _isSubmitting = true;
                           });
 
                           final l10n = AppLocalizations.of(context)!;
+
+                          print('🔵 Mapping category and priority...');
                           // Map category
                           String incidentType = _mapCategoryToBackend(
                             _selectedCategory!,
@@ -577,6 +583,10 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                           String priority = _mapPriorityToBackend(
                             _selectedPriority!,
                             l10n,
+                          );
+
+                          print(
+                            '🔵 incident_type: $incidentType, priority: $priority',
                           );
 
                           // Append category info to description if needed
@@ -593,40 +603,62 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                             description =
                                 '${l10n.category}: $_selectedCategory\n\n$description';
                           }
-                          final result = await IncidentService.createIncident(
-                            title: _titleController.text,
-                            description: description,
-                            location: _locationController.text,
-                            priority: priority,
-                            incidentType: incidentType,
-                            images: _images,
-                            videos: _videos,
-                            audioPath: _audioPath,
+
+                          print('🔵 Preparing to send incident...');
+                          print(
+                            '🔵 Images: ${_images.length}, Videos: ${_videos.length}, Audio: ${_audioPath != null ? "yes" : "no"}',
                           );
 
-                          setState(() {
-                            _isSubmitting = false;
-                          });
+                          try {
+                            final result = await IncidentService.createIncident(
+                              title: _titleController.text,
+                              description: description,
+                              location: _locationController.text,
+                              priority: priority,
+                              incidentType: incidentType,
+                              images: _images,
+                              videos: _videos,
+                              audioPath: _audioPath,
+                            );
 
-                          if (result['success'] == true) {
-                            if (mounted) {
-                              ToastUtils.showSuccess(
-                                AppLocalizations.of(
-                                  context,
-                                )!.reportSubmitSuccess,
-                              );
-                              Navigator.pop(context);
+                            print('🔵 Got response from server');
+
+                            setState(() {
+                              _isSubmitting = false;
+                            });
+
+                            if (result['success'] == true) {
+                              if (mounted) {
+                                print('✅ Incident created successfully');
+                                ToastUtils.showSuccess(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.reportSubmitSuccess,
+                                );
+                                Navigator.pop(context);
+                              }
+                            } else {
+                              if (mounted) {
+                                print('❌ Failed: ${result['message']}');
+                                ToastUtils.showError(
+                                  result['message'] ??
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.reportSubmitFailed,
+                                );
+                              }
                             }
-                          } else {
+                          } catch (e) {
+                            print('❌ Exception during submit: $e');
+                            setState(() {
+                              _isSubmitting = false;
+                            });
                             if (mounted) {
-                              ToastUtils.showError(
-                                result['message'] ??
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.reportSubmitFailed,
-                              );
+                              ToastUtils.showError('Error: $e');
                             }
                           }
+                        } else {
+                          print('🔴 Form validation failed');
                         }
                       },
                 style: ElevatedButton.styleFrom(

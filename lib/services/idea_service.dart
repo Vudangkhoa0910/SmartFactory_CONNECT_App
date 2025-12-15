@@ -1,11 +1,43 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../models/idea_box_model.dart';
 import 'api_service.dart';
 
 class IdeaService {
-  
+  // Helper to get MIME type from file path
+  static MediaType _getMimeType(String path) {
+    final ext = path.toLowerCase().split('.').last;
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return MediaType('image', 'jpeg');
+      case 'png':
+        return MediaType('image', 'png');
+      case 'gif':
+        return MediaType('image', 'gif');
+      case 'webp':
+        return MediaType('image', 'webp');
+      case 'pdf':
+        return MediaType('application', 'pdf');
+      case 'doc':
+      case 'docx':
+        return MediaType(
+          'application',
+          'vnd.openxmlformats-officedocument.wordprocessingml.document',
+        );
+      case 'xls':
+      case 'xlsx':
+        return MediaType(
+          'application',
+          'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+      default:
+        return MediaType('application', 'octet-stream');
+    }
+  }
+
   Future<List<IdeaBoxItem>> getIdeas({
     required IdeaBoxType type,
     int page = 1,
@@ -56,17 +88,38 @@ class IdeaService {
     try {
       String category;
       switch (issueType) {
-        case IssueType.quality: category = 'quality_improvement'; break;
-        case IssueType.safety: category = 'safety_enhancement'; break;
-        case IssueType.performance: category = 'productivity'; break;
-        case IssueType.energySaving: category = 'cost_reduction'; break;
-        case IssueType.process: category = 'process_improvement'; break;
-        case IssueType.workEnvironment: category = 'workplace'; break;
-        case IssueType.welfare: category = 'workplace'; break;
-        case IssueType.pressure: category = 'workplace'; break;
-        case IssueType.psychologicalSafety: category = 'workplace'; break;
-        case IssueType.fairness: category = 'workplace'; break;
-        default: category = 'other';
+        case IssueType.quality:
+          category = 'quality_improvement';
+          break;
+        case IssueType.safety:
+          category = 'safety_enhancement';
+          break;
+        case IssueType.performance:
+          category = 'productivity';
+          break;
+        case IssueType.energySaving:
+          category = 'cost_reduction';
+          break;
+        case IssueType.process:
+          category = 'process_improvement';
+          break;
+        case IssueType.workEnvironment:
+          category = 'workplace';
+          break;
+        case IssueType.welfare:
+          category = 'workplace';
+          break;
+        case IssueType.pressure:
+          category = 'workplace';
+          break;
+        case IssueType.psychologicalSafety:
+          category = 'workplace';
+          break;
+        case IssueType.fairness:
+          category = 'workplace';
+          break;
+        default:
+          category = 'other';
       }
 
       final Map<String, String> fields = {
@@ -83,10 +136,14 @@ class IdeaService {
       List<http.MultipartFile> files = [];
       if (attachments != null) {
         for (var file in attachments) {
-          files.add(await http.MultipartFile.fromPath(
-            'attachments',
-            file.path,
-          ));
+          final mimeType = _getMimeType(file.path);
+          files.add(
+            await http.MultipartFile.fromPath(
+              'attachments',
+              file.path,
+              contentType: mimeType,
+            ),
+          );
         }
       }
 
