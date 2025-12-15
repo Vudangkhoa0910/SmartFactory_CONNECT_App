@@ -1018,13 +1018,18 @@ class _LeaderReportFormScreenState extends State<LeaderReportFormScreen> {
                       color: AppColors.gray100,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.gray200),
+                      image: icon == Icons.image
+                          ? DecorationImage(
+                              image: FileImage(files[index]),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(7),
-                      child: icon == Icons.image
-                          ? Image.file(files[index], fit: BoxFit.cover)
-                          : Icon(icon, color: AppColors.gray600, size: 24),
-                    ),
+                    child: icon != Icons.image
+                        ? Center(
+                            child: Icon(icon, color: AppColors.gray600, size: 24),
+                          )
+                        : null,
                   ),
                   Positioned(
                     top: 4,

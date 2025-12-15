@@ -784,12 +784,19 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.gray100,
                   borderRadius: BorderRadius.circular(8),
+                  image: icon == Icons.image
+                      ? DecorationImage(
+                          image: FileImage(files[index]),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
                 child: Stack(
                   children: [
-                    Center(
-                      child: Icon(icon, color: AppColors.gray400, size: 32),
-                    ),
+                    if (icon != Icons.image)
+                      Center(
+                        child: Icon(icon, color: AppColors.gray400, size: 32),
+                      ),
                     Positioned(
                       top: 4,
                       right: 4,
