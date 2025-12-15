@@ -3,8 +3,10 @@ import '../../config/app_colors.dart';
 import '../../utils/toast_utils.dart';
 import '../../models/report_model.dart';
 import '../../services/incident_service.dart';
+import '../../services/api_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/language_toggle_button.dart';
+import '../../widgets/audio_player_widget.dart';
 
 /// Màn hình Leader xem chi tiết và duyệt báo cáo sự cố
 class LeaderReportReviewScreen extends StatefulWidget {
@@ -318,15 +320,65 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: () {
-              // TODO: View attachments
+          FutureBuilder<String>(
+            future: ApiService.getBaseUrl(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              final baseUrl = snapshot.data!;
+              return Column(
+                children: widget.report.attachments!.map((attachment) {
+                  final fullUrl = attachment.getFullUrl(baseUrl);
+                  
+                  if (attachment.isImage) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.gray200),
+                        image: DecorationImage(
+                          image: NetworkImage(fullUrl),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  } else if (attachment.isAudio) {
+                    return AudioPlayerWidget(url: fullUrl);
+                  }
+                  
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.attachment,
+                          size: 20,
+                          color: AppColors.gray500,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            attachment.originalName,
+                            style: TextStyle(
+                              color: AppColors.gray700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
             },
-            icon: Icon(Icons.attachment, color: AppColors.brand500, size: 18),
-            label: Text(
-              '${l10n.viewDetail} ${widget.report.attachments?.length} ${l10n.attachments.toLowerCase()}',
-              style: TextStyle(color: AppColors.brand500, fontSize: 14),
-            ),
           ),
         ],
       ),
