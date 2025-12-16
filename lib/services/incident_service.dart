@@ -286,4 +286,60 @@ class IncidentService {
       notes: reason ?? 'Cancelled by Leader',
     );
   }
+
+  // Get all departments
+  static Future<List<Map<String, dynamic>>> getDepartments() async {
+    try {
+      final response = await ApiService.get('/api/departments');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return List<Map<String, dynamic>>.from(data['data']);
+        }
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching departments: $e');
+      return [];
+    }
+  }
+
+  // Assign department to incident (Leader dispatch)
+  static Future<Map<String, dynamic>> assignDepartment({
+    required String incidentId,
+    required String departmentId,
+    String? notes,
+  }) async {
+    try {
+      final response = await ApiService.post(
+        '${ApiConstants.incidents}/$incidentId/assign-departments',
+        {
+          'departments': [
+            {'department_id': departmentId},
+          ],
+          if (notes != null) 'notes': notes,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        try {
+          final errorBody = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorBody['message'] ?? 'Failed to assign department',
+          };
+        } catch (_) {
+          return {
+            'success': false,
+            'message': 'Failed to assign department: ${response.statusCode}',
+          };
+        }
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error: $e'};
+    }
+  }
 }

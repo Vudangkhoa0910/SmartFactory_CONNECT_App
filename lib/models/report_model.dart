@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'attachment_model.dart';
 
 enum ReportStatus {
@@ -23,6 +24,33 @@ enum ReportCategory {
   other, // Khác
 }
 
+/// RAG AI suggestion for department assignment
+class RAGSuggestion {
+  final String departmentId;
+  final String departmentName;
+  final double confidence;
+  final bool autoAssign;
+
+  RAGSuggestion({
+    required this.departmentId,
+    required this.departmentName,
+    required this.confidence,
+    required this.autoAssign,
+  });
+
+  factory RAGSuggestion.fromJson(Map<String, dynamic> json) {
+    return RAGSuggestion(
+      departmentId: json['department_id']?.toString() ?? '',
+      departmentName: json['department_name']?.toString() ?? '',
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+      autoAssign: json['auto_assign'] == true,
+    );
+  }
+
+  /// Confidence as percentage (0-100)
+  int get confidencePercent => (confidence * 100).round();
+}
+
 class ReportModel {
   final String id;
   final String title;
@@ -37,6 +65,7 @@ class ReportModel {
   final DateTime? completedDate;
   final double? rating;
   final List<AttachmentModel>? attachments;
+  final RAGSuggestion? ragSuggestion;
 
   ReportModel({
     required this.id,
@@ -47,11 +76,12 @@ class ReportModel {
     this.description,
     required this.status,
     this.department,
-    this.reporterName, // Add this
+    this.reporterName,
     required this.createdDate,
     this.completedDate,
     this.rating,
     this.attachments,
+    this.ragSuggestion,
   });
 
   // Helper methods - get enum key names for translation in UI
@@ -125,7 +155,42 @@ class ReportModel {
           ? (json['rating'] as num).toDouble()
           : null,
       attachments: AttachmentModel.parseList(json['attachments']),
+      ragSuggestion: _parseRagSuggestion(json['rag_suggestion']),
     );
+  }
+
+  static RAGSuggestion? _parseRagSuggestion(dynamic ragJson) {
+    if (ragJson == null) return null;
+
+    // Handle case where rag_suggestion is stored as JSON string
+    Map<String, dynamic>? data;
+    if (ragJson is String) {
+      try {
+        data = Map<String, dynamic>.from(
+          (ragJson.isNotEmpty) ? _decodeJson(ragJson) : {},
+        );
+      } catch (e) {
+        print('Error parsing rag_suggestion string: $e');
+        return null;
+      }
+    } else if (ragJson is Map) {
+      data = Map<String, dynamic>.from(ragJson);
+    }
+
+    if (data == null || data.isEmpty) return null;
+    if (data['department_id'] == null) return null;
+
+    return RAGSuggestion.fromJson(data);
+  }
+
+  static dynamic _decodeJson(String jsonStr) {
+    // Parse JSON string to Map
+    try {
+      return jsonDecode(jsonStr);
+    } catch (e) {
+      print('Error decoding JSON: $e');
+      return null;
+    }
   }
 
   static ReportPriority _parsePriority(String? priority) {

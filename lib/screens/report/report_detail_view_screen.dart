@@ -6,11 +6,138 @@ import '../../models/report_model.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/language_toggle_button.dart';
 import '../../services/api_service.dart';
+import '../../services/incident_service.dart';
+import '../../services/auth_service.dart';
 
-class ReportDetailScreen extends StatelessWidget {
+class ReportDetailScreen extends StatefulWidget {
   final ReportModel report;
 
   const ReportDetailScreen({super.key, required this.report});
+
+  @override
+  State<ReportDetailScreen> createState() => _ReportDetailScreenState();
+}
+
+class _ReportDetailScreenState extends State<ReportDetailScreen> {
+  List<Map<String, dynamic>> _departments = [];
+  String? _selectedDepartmentId;
+  bool _isLoadingDepartments = false;
+  bool _isAssigning = false;
+  String? _userRole;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+    _loadDepartments();
+  }
+
+  /// Apply RAG suggestion - auto fill department dropdown for pending incidents
+  /// Only applies when:
+  /// - Admin has enabled RAG (rag_suggestion exists)
+  /// - Incident is still pending (needs leader review)
+  void _applyRagSuggestion() {
+    final suggestion = widget.report.ragSuggestion;
+    if (suggestion == null) {
+      print('🤖 [RAG] No AI suggestion (RAG disabled or no match found)');
+      return;
+    }
+
+    // Only auto-fill for pending incidents
+    if (!_canAssignDepartment || _departments.isEmpty) {
+      print('🤖 [RAG] Cannot assign department, skipping auto-fill');
+      return;
+    }
+
+    print(
+      '🤖 [RAG] AI Suggestion: ${suggestion.departmentName} (${suggestion.confidencePercent}%)',
+    );
+
+    final matchingDept = _departments.firstWhere(
+      (d) => d['id'].toString() == suggestion.departmentId,
+      orElse: () => {},
+    );
+
+    if (matchingDept.isNotEmpty) {
+      setState(() {
+        _selectedDepartmentId = suggestion.departmentId;
+      });
+      print('🤖 [RAG] Pre-filled department: ${matchingDept['name']}');
+    }
+  }
+
+  Future<void> _loadUserRole() async {
+    final userInfo = await AuthService().getUserInfo();
+    if (mounted) {
+      setState(() {
+        _userRole = userInfo['role'];
+      });
+      print('🔍 [DEBUG] User role: $_userRole');
+      print('🔍 [DEBUG] Report status: ${widget.report.status}');
+      print('🔍 [DEBUG] Can assign department: $_canAssignDepartment');
+    }
+  }
+
+  Future<void> _loadDepartments() async {
+    setState(() => _isLoadingDepartments = true);
+    try {
+      print('🔍 [DEBUG] Loading departments...');
+      final departments = await IncidentService.getDepartments();
+      print('🔍 [DEBUG] Departments loaded: ${departments.length} items');
+      if (departments.isNotEmpty) {
+        print('🔍 [DEBUG] First department: ${departments.first}');
+      }
+      if (mounted) {
+        setState(() {
+          _departments = departments;
+          _isLoadingDepartments = false;
+        });
+        // Apply RAG suggestion after departments loaded
+        _applyRagSuggestion();
+      }
+    } catch (e) {
+      print('❌ [DEBUG] Error loading departments: $e');
+      if (mounted) {
+        setState(() => _isLoadingDepartments = false);
+      }
+    }
+  }
+
+  bool get _canAssignDepartment {
+    // Only leader role can assign, only pending incidents can be assigned
+    return _userRole == 'leader' &&
+        widget.report.status == ReportStatus.pending;
+  }
+
+  Future<void> _assignDepartment() async {
+    if (_selectedDepartmentId == null) {
+      ToastUtils.showWarning('Vui lòng chọn phòng ban');
+      return;
+    }
+
+    setState(() => _isAssigning = true);
+    try {
+      final result = await IncidentService.assignDepartment(
+        incidentId: widget.report.id,
+        departmentId: _selectedDepartmentId!,
+      );
+
+      if (result['success'] == true) {
+        ToastUtils.showSuccess('Đã điều phối thành công');
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to refresh list
+        }
+      } else {
+        ToastUtils.showError(result['message'] ?? 'Điều phối thất bại');
+      }
+    } catch (e) {
+      ToastUtils.showError('Lỗi: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isAssigning = false);
+      }
+    }
+  }
 
   Color _getStatusColor(ReportStatus status) {
     switch (status) {
@@ -38,6 +165,8 @@ class ReportDetailScreen extends StatelessWidget {
     }
   }
 
+  ReportModel get report => widget.report;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -58,10 +187,7 @@ class ReportDetailScreen extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        actions: const [
-          LanguageToggleIconButton(),
-          SizedBox(width: 8),
-        ],
+        actions: const [LanguageToggleIconButton(), SizedBox(width: 8)],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -250,7 +376,7 @@ class ReportDetailScreen extends StatelessWidget {
                       return Column(
                         children: report.attachments!.map((attachment) {
                           final fullUrl = attachment.getFullUrl(baseUrl);
-                          
+
                           if (attachment.isImage) {
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -268,7 +394,7 @@ class ReportDetailScreen extends StatelessWidget {
                           } else if (attachment.isAudio) {
                             return AudioPlayerWidget(url: fullUrl);
                           }
-                          
+
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Row(
@@ -332,6 +458,88 @@ class ReportDetailScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
+            // Department Assignment Card (Leader only, pending status only)
+            if (_canAssignDepartment) ...[
+              _buildDetailCard(
+                title: l10n.responsibleDepartment,
+                children: [
+                  // AI Suggestion Banner
+                  _buildAiSuggestionBanner(),
+                  if (_isLoadingDepartments)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else ...[
+                    // Department Dropdown
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.gray300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          hint: Text(
+                            l10n.selectDepartment,
+                            style: TextStyle(color: AppColors.gray500),
+                          ),
+                          value: _selectedDepartmentId,
+                          items: _departments.map((dept) {
+                            return DropdownMenuItem<String>(
+                              value: dept['id'].toString(),
+                              child: Text(dept['name'] ?? ''),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedDepartmentId = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Assign Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isAssigning ? null : _assignDepartment,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brand500,
+                          foregroundColor: AppColors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: _isAssigning
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'Điều phối',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // Action Button (if status is completed and not rated)
             if (report.status == ReportStatus.completed &&
                 report.rating == null) ...[
@@ -360,6 +568,104 @@ class ReportDetailScreen extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Build AI suggestion banner widget
+  /// Only shows when RAG is enabled and has suggestion for pending incidents
+  Widget _buildAiSuggestionBanner() {
+    final suggestion = widget.report.ragSuggestion;
+    // Only show banner for pending incidents with RAG suggestion
+    if (suggestion == null || !_canAssignDepartment) return const SizedBox.shrink();
+
+    // Check if user has changed department from suggestion
+    final bool isUsingAiSuggestion =
+        _selectedDepartmentId == suggestion.departmentId;
+    final bool userChangedDepartment =
+        _selectedDepartmentId != null && !isUsingAiSuggestion;
+
+    // Use blue theme for suggestions
+    final Color bannerColor = AppColors.blueLight500;
+    final Color textColor = AppColors.blueLight700;
+    final Color iconColor = AppColors.blueLight600;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bannerColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: bannerColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'AI gợi ý: ${suggestion.departmentName}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: bannerColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${suggestion.confidencePercent}%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Status row based on user action
+          if (userChangedDepartment)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Bạn đã thay đổi phòng ban',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.gray500,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _applyRagSuggestion,
+                  style: TextButton.styleFrom(
+                    foregroundColor: iconColor,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text('Dùng lại gợi ý', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            )
+          else
+            Text(
+              'Đề xuất của AI (bạn có thể thay đổi)',
+              style: TextStyle(fontSize: 12, color: iconColor),
+            ),
+        ],
       ),
     );
   }
@@ -624,7 +930,10 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                           width: 24,
                           height: 24,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
                       : Icon(
                           _isPlaying ? Icons.pause : Icons.play_arrow,
                           color: Colors.white,
@@ -639,10 +948,12 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   children: [
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
-                        thumbShape:
-                            const RoundSliderThumbShape(enabledThumbRadius: 6),
-                        overlayShape:
-                            const RoundSliderOverlayShape(overlayRadius: 14),
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 6,
+                        ),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 14,
+                        ),
                         trackHeight: 4,
                         activeTrackColor: AppColors.brand500,
                         inactiveTrackColor: AppColors.gray300,
@@ -651,8 +962,10 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                       child: Slider(
                         min: 0,
                         max: _duration.inSeconds.toDouble(),
-                        value: _position.inSeconds.toDouble()
-                            .clamp(0, _duration.inSeconds.toDouble()),
+                        value: _position.inSeconds.toDouble().clamp(
+                          0,
+                          _duration.inSeconds.toDouble(),
+                        ),
                         onChanged: (value) async {
                           final position = Duration(seconds: value.toInt());
                           await _audioPlayer.seek(position);
@@ -666,11 +979,17 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                         children: [
                           Text(
                             _formatDuration(_position),
-                            style: TextStyle(color: AppColors.gray600, fontSize: 12),
+                            style: TextStyle(
+                              color: AppColors.gray600,
+                              fontSize: 12,
+                            ),
                           ),
                           Text(
                             _formatDuration(_duration),
-                            style: TextStyle(color: AppColors.gray600, fontSize: 12),
+                            style: TextStyle(
+                              color: AppColors.gray600,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),

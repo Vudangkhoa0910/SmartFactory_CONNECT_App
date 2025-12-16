@@ -33,11 +33,19 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
   String? _selectedProductionLine;
   String? _selectedWorkstation;
   String? _selectedDepartment;
+  String? _selectedDepartmentId; // Store the UUID
   final TextEditingController _leaderNotesController = TextEditingController();
+
+  // Departments from database
+  List<Map<String, dynamic>> _departments = [];
+  bool _isLoadingDepartments = false;
 
   @override
   void initState() {
     super.initState();
+    // Load departments from database
+    _loadDepartments();
+
     // Pre-fill with user's selections or existing data if status is "processing"
     _selectedPriority = widget.report.priority;
 
@@ -58,10 +66,180 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
     }
   }
 
+  Future<void> _loadDepartments() async {
+    setState(() => _isLoadingDepartments = true);
+    try {
+      print('🔍 [DEBUG Review] Loading departments...');
+      final departments = await IncidentService.getDepartments();
+      print(
+        '🔍 [DEBUG Review] Departments loaded: ${departments.length} items',
+      );
+      if (mounted) {
+        setState(() {
+          _departments = departments;
+          _isLoadingDepartments = false;
+        });
+
+        // Apply RAG suggestion after departments loaded
+        _applyRagSuggestion();
+      }
+    } catch (e) {
+      print('❌ [DEBUG Review] Error loading departments: $e');
+      if (mounted) {
+        setState(() => _isLoadingDepartments = false);
+      }
+    }
+  }
+
+  /// Apply RAG suggestion - auto fill department dropdown for pending incidents
+  void _applyRagSuggestion() {
+    final suggestion = widget.report.ragSuggestion;
+    if (suggestion == null) {
+      print('🤖 [RAG] No AI suggestion (RAG disabled or no match found)');
+      return;
+    }
+
+    // Only auto-fill for pending incidents (leader needs to review)
+    if (!_isPending) {
+      print('🤖 [RAG] Incident not pending, skipping auto-fill');
+      return;
+    }
+
+    print(
+      '🤖 [RAG] AI Suggestion: ${suggestion.departmentName} (${suggestion.confidencePercent}%)',
+    );
+
+    // Auto-fill department dropdown with AI suggestion
+    if (_departments.isNotEmpty) {
+      final matchingDept = _departments.firstWhere(
+        (d) => d['id'].toString() == suggestion.departmentId,
+        orElse: () => {},
+      );
+
+      if (matchingDept.isNotEmpty) {
+        setState(() {
+          _selectedDepartment = matchingDept['name'] as String?;
+          _selectedDepartmentId = suggestion.departmentId;
+        });
+        print('🤖 [RAG] Pre-filled department: $_selectedDepartment');
+      }
+    }
+  }
+
+  /// Apply AI suggestion when user taps button
+  void _applyAiSuggestion() {
+    final suggestion = widget.report.ragSuggestion;
+    if (suggestion == null) return;
+
+    final matchingDept = _departments.firstWhere(
+      (d) => d['id'].toString() == suggestion.departmentId,
+      orElse: () => {},
+    );
+
+    if (matchingDept.isNotEmpty) {
+      setState(() {
+        _selectedDepartment = matchingDept['name'] as String?;
+        _selectedDepartmentId = suggestion.departmentId;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _leaderNotesController.dispose();
     super.dispose();
+  }
+
+  /// Build AI suggestion banner widget
+  Widget _buildAiSuggestionBanner() {
+    final suggestion = widget.report.ragSuggestion;
+    if (suggestion == null || !_isPending) return const SizedBox.shrink();
+
+    final bool isUsingAiSuggestion =
+        _selectedDepartmentId == suggestion.departmentId;
+    final bool userChangedDepartment =
+        _selectedDepartmentId != null && !isUsingAiSuggestion;
+
+    final Color bannerColor = AppColors.blueLight500;
+    final Color textColor = AppColors.blueLight700;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bannerColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: bannerColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'AI gợi ý: ${suggestion.departmentName}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: bannerColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${suggestion.confidencePercent}%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (userChangedDepartment)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Bạn đã thay đổi phòng ban',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.gray500,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _applyAiSuggestion,
+                  style: TextButton.styleFrom(
+                    foregroundColor: bannerColor,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text('Dùng lại gợi ý', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            )
+          else
+            Text(
+              'Đề xuất của AI (bạn có thể thay đổi)',
+              style: TextStyle(fontSize: 12, color: bannerColor),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -162,14 +340,52 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
                       setState(() => _selectedWorkstation = value);
                     },
                   ),
-                  _buildDropdownField(
-                    'Bộ phận phát hiện',
-                    _selectedDepartment,
-                    ['QC', 'Sản xuất', 'Bảo trì', 'An toàn'],
-                    (value) {
-                      setState(() => _selectedDepartment = value);
-                    },
-                  ),
+                  // AI Suggestion Banner - shows when RAG has suggestion
+                  _buildAiSuggestionBanner(),
+                  // Department Dropdown - Load from database
+                  if (_isLoadingDepartments)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.responsibleDepartment,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.gray600,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(12.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    _buildDropdownField(
+                      l10n.responsibleDepartment,
+                      _selectedDepartment,
+                      _departments
+                          .map((dept) => dept['name'] as String)
+                          .toList(),
+                      (value) {
+                        setState(() {
+                          _selectedDepartment = value;
+                          // Find and store the department ID
+                          final dept = _departments.firstWhere(
+                            (d) => d['name'] == value,
+                            orElse: () => {},
+                          );
+                          _selectedDepartmentId = dept['id']?.toString();
+                        });
+                      },
+                    ),
                   _buildTextAreaField(
                     'Ghi chú của Leader',
                     _leaderNotesController,
