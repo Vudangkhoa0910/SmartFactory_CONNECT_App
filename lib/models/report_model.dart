@@ -24,31 +24,84 @@ enum ReportCategory {
   other, // Khác
 }
 
+/// Similar incident from RAG search results
+class SimilarIncident {
+  final String id;
+  final String title;
+  final String? description;
+  final double similarity;
+  final String? status;
+  final String? departmentName;
+  final DateTime? createdAt;
+
+  SimilarIncident({
+    required this.id,
+    required this.title,
+    this.description,
+    required this.similarity,
+    this.status,
+    this.departmentName,
+    this.createdAt,
+  });
+
+  factory SimilarIncident.fromJson(Map<String, dynamic> json) {
+    return SimilarIncident(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString(),
+      similarity: (json['similarity'] as num?)?.toDouble() ?? 0.0,
+      status: json['status']?.toString(),
+      departmentName: json['department_name']?.toString(),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'])
+          : null,
+    );
+  }
+
+  /// Similarity as percentage (0-100)
+  int get similarityPercent => (similarity * 100).round();
+}
+
 /// RAG AI suggestion for department assignment
 class RAGSuggestion {
   final String departmentId;
   final String departmentName;
   final double confidence;
   final bool autoAssign;
+  final List<SimilarIncident> similarIncidents;
 
   RAGSuggestion({
     required this.departmentId,
     required this.departmentName,
     required this.confidence,
     required this.autoAssign,
+    this.similarIncidents = const [],
   });
 
   factory RAGSuggestion.fromJson(Map<String, dynamic> json) {
+    // Parse similar incidents
+    List<SimilarIncident> incidents = [];
+    if (json['similar_incidents'] != null &&
+        json['similar_incidents'] is List) {
+      incidents = (json['similar_incidents'] as List)
+          .map((item) => SimilarIncident.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
     return RAGSuggestion(
       departmentId: json['department_id']?.toString() ?? '',
       departmentName: json['department_name']?.toString() ?? '',
       confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
       autoAssign: json['auto_assign'] == true,
+      similarIncidents: incidents,
     );
   }
 
   /// Confidence as percentage (0-100)
   int get confidencePercent => (confidence * 100).round();
+
+  /// Check if there are similar incidents to show
+  bool get hasSimilarIncidents => similarIncidents.isNotEmpty;
 }
 
 class ReportModel {

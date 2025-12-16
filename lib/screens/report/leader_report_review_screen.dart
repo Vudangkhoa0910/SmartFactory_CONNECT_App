@@ -169,10 +169,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
       decoration: BoxDecoration(
         color: bannerColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: bannerColor.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: bannerColor.withOpacity(0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,6 +239,179 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
     );
   }
 
+  /// Build similar incidents list widget
+  /// Shows historical incidents that are similar to this one
+  Widget _buildSimilarIncidentsList() {
+    final suggestion = widget.report.ragSuggestion;
+    if (suggestion == null || !_isPending || !suggestion.hasSimilarIncidents) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          title: Row(
+            children: [
+              Icon(Icons.history, size: 18, color: AppColors.warning500),
+              const SizedBox(width: 8),
+              Text(
+                'Sự cố tương tự (${suggestion.similarIncidents.length})',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gray800,
+                ),
+              ),
+            ],
+          ),
+          children: suggestion.similarIncidents.map((incident) {
+            return Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.gray50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.gray200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title and similarity badge
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          incident.title,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.gray800,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getSimilarityColor(
+                            incident.similarityPercent,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${incident.similarityPercent}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Description preview
+                  if (incident.description != null &&
+                      incident.description!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      incident.description!,
+                      style: TextStyle(fontSize: 12, color: AppColors.gray600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  // Status and department
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      if (incident.status != null) ...[
+                        _buildStatusBadge(incident.status!),
+                        const SizedBox(width: 8),
+                      ],
+                      if (incident.departmentName != null)
+                        Expanded(
+                          child: Text(
+                            incident.departmentName!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.gray500,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  /// Get color based on similarity percentage
+  Color _getSimilarityColor(int percent) {
+    if (percent >= 85) return AppColors.success500;
+    if (percent >= 70) return AppColors.warning500;
+    return AppColors.gray400;
+  }
+
+  /// Build status badge for similar incident
+  Widget _buildStatusBadge(String status) {
+    Color bgColor;
+    String label;
+    switch (status.toLowerCase()) {
+      case 'resolved':
+        bgColor = AppColors.success100;
+        label = 'Đã xử lý';
+        break;
+      case 'in_progress':
+        bgColor = AppColors.blueLight100;
+        label = 'Đang xử lý';
+        break;
+      case 'assigned':
+        bgColor = AppColors.warning100;
+        label = 'Đã gán';
+        break;
+      case 'closed':
+        bgColor = AppColors.gray200;
+        label = 'Đã đóng';
+        break;
+      default:
+        bgColor = AppColors.gray100;
+        label = status;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 10, color: AppColors.gray700),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -253,10 +423,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
           icon: Icon(Icons.arrow_back, color: AppColors.gray800),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: const [
-          LanguageToggleIconButton(),
-          SizedBox(width: 8),
-        ],
+        actions: const [LanguageToggleIconButton(), SizedBox(width: 8)],
         title: Text(
           l10n.incidentDetail,
           style: TextStyle(
@@ -342,6 +509,8 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
                   ),
                   // AI Suggestion Banner - shows when RAG has suggestion
                   _buildAiSuggestionBanner(),
+                  // Similar Incidents List - shows historical similar issues
+                  _buildSimilarIncidentsList(),
                   // Department Dropdown - Load from database
                   if (_isLoadingDepartments)
                     Padding(
@@ -551,7 +720,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
               return Column(
                 children: widget.report.attachments!.map((attachment) {
                   final fullUrl = attachment.getFullUrl(baseUrl);
-                  
+
                   if (attachment.isImage) {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -569,7 +738,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
                   } else if (attachment.isAudio) {
                     return AudioPlayerWidget(url: fullUrl);
                   }
-                  
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
