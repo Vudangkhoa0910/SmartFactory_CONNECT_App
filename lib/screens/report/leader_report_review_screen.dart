@@ -178,7 +178,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'AI gợi ý: ${suggestion.departmentName}',
+                  'Gợi ý: ${suggestion.departmentName}',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -228,11 +228,6 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
                   child: Text('Dùng lại gợi ý', style: TextStyle(fontSize: 12)),
                 ),
               ],
-            )
-          else
-            Text(
-              'Đề xuất của AI (bạn có thể thay đổi)',
-              style: TextStyle(fontSize: 12, color: bannerColor),
             ),
         ],
       ),
@@ -448,9 +443,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
               _buildSection(l10n.senderInfo, [
                 _buildReadOnlyRowField(
                   l10n.reporter,
-                  widget.report.title.contains(' - ')
-                      ? widget.report.title.split(' - ').last
-                      : 'N/A',
+                  widget.report.reporterName ?? 'N/A',
                 ),
                 _buildReadOnlyRowField(
                   l10n.incidentTitle,
