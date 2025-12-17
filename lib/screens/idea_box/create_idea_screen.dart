@@ -35,7 +35,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
 
   late IdeaBoxType _selectedBoxType;
   IssueType? _selectedIssueType;
-  DifficultyLevel? _selectedDifficulty;
   bool _isSubmitting = false;
   List<File> _attachments = [];
   final ImagePicker _picker = ImagePicker();
@@ -162,10 +161,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
                             _buildExpectedBenefitField(),
                             const SizedBox(height: 20),
 
-                            if (_selectedBoxType == IdeaBoxType.white) ...[
-                              _buildDifficultySelector(),
-                              const SizedBox(height: 20),
-                            ],
                             _buildAttachmentSection(),
                             const SizedBox(height: 24),
                             if (_selectedBoxType == IdeaBoxType.pink)
@@ -672,62 +667,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           controller: _expectedBenefitController,
           hintText: l10n.enterIdeaBenefit,
           maxLines: 3,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDifficultySelector() {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.difficultyLevelOptional,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.gray900,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: DifficultyLevel.values.map((level) {
-            final isSelected = _selectedDifficulty == level;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedDifficulty = level;
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.warning100 : AppColors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.warning500
-                          : AppColors.gray200,
-                    ),
-                  ),
-                  child: Text(
-                    level.label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? AppColors.warning700
-                          : AppColors.gray600,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
         ),
       ],
     );

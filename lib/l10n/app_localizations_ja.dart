@@ -1534,6 +1534,33 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cannotReturnReport => '報告を返却できません';
 
   @override
+  String get acknowledgeReport => '受領マーク';
+
+  @override
+  String get acknowledgedReport => '受領マークしました';
+
+  @override
+  String get cannotAcknowledgeReport => '受領マークできません';
+
+  @override
+  String get sendSolution => '解決策を送信';
+
+  @override
+  String get sendSolutionTitle => '解決策を送信';
+
+  @override
+  String get enterSolutionHint => '解決策を入力...';
+
+  @override
+  String get pleaseEnterSolution => '解決策を入力してください';
+
+  @override
+  String get solutionSent => '解決策を送信しました';
+
+  @override
+  String get cannotSendSolution => '解決策を送信できません';
+
+  @override
   String get cancelReport => 'キャンセル';
 
   @override

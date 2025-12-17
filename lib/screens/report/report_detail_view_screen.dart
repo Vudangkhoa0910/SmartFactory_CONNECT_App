@@ -24,12 +24,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   bool _isLoadingDepartments = false;
   bool _isAssigning = false;
   String? _userRole;
+  List<Map<String, dynamic>> _comments = [];
+  bool _isLoadingComments = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserRole();
     _loadDepartments();
+    _loadComments();
   }
 
   /// Apply RAG suggestion - auto fill department dropdown for pending incidents
@@ -99,6 +102,28 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       print('❌ [DEBUG] Error loading departments: $e');
       if (mounted) {
         setState(() => _isLoadingDepartments = false);
+      }
+    }
+  }
+
+  Future<void> _loadComments() async {
+    setState(() => _isLoadingComments = true);
+    try {
+      print('💬 [DEBUG] Loading comments for incident: ${widget.report.id}');
+      final comments = await IncidentService.getIncidentComments(
+        incidentId: widget.report.id,
+      );
+      print('💬 [DEBUG] Comments loaded: ${comments.length} items');
+      if (mounted) {
+        setState(() {
+          _comments = comments;
+          _isLoadingComments = false;
+        });
+      }
+    } catch (e) {
+      print('❌ [DEBUG] Error loading comments: $e');
+      if (mounted) {
+        setState(() => _isLoadingComments = false);
       }
     }
   }
@@ -422,6 +447,113 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     },
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Comments/Feedback Section (show manager's responses)
+            if (_comments.isNotEmpty) ...[
+              _buildDetailCard(
+                title: l10n.comments,
+                children: [
+                  ..._comments.map((comment) {
+                    final createdAt = comment['created_at'] != null
+                        ? DateTime.parse(comment['created_at'])
+                        : null;
+                    final authorName = comment['author_name'] ?? 'Quản lý';
+                    final content = comment['content'] ?? comment['notes'] ?? '';
+                    
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.brand50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.brand200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 16,
+                                color: AppColors.brand500,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                authorName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.brand700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (createdAt != null)
+                                Text(
+                                  '${createdAt.day}/${createdAt.month}/${createdAt.year}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.gray500,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            content,
+                            style: TextStyle(
+                              color: AppColors.gray700,
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Loading comments indicator
+            if (_isLoadingComments) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.gray200.withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.brand500,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Đang tải phản hồi...',
+                      style: TextStyle(
+                        color: AppColors.gray600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
             ],

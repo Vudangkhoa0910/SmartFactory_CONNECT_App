@@ -3134,6 +3134,60 @@ abstract class AppLocalizations {
   /// **'Không thể trả lại báo cáo'**
   String get cannotReturnReport;
 
+  /// No description provided for @acknowledgeReport.
+  ///
+  /// In vi, this message translates to:
+  /// **'ĐÁNH DẤU ĐÃ TIẾP NHẬN'**
+  String get acknowledgeReport;
+
+  /// No description provided for @acknowledgedReport.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đánh dấu tiếp nhận báo cáo'**
+  String get acknowledgedReport;
+
+  /// No description provided for @cannotAcknowledgeReport.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không thể đánh dấu tiếp nhận'**
+  String get cannotAcknowledgeReport;
+
+  /// No description provided for @sendSolution.
+  ///
+  /// In vi, this message translates to:
+  /// **'GỬI XỬ LÝ'**
+  String get sendSolution;
+
+  /// No description provided for @sendSolutionTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi giải pháp xử lý'**
+  String get sendSolutionTitle;
+
+  /// No description provided for @enterSolutionHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập giải pháp xử lý...'**
+  String get enterSolutionHint;
+
+  /// No description provided for @pleaseEnterSolution.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng nhập giải pháp xử lý'**
+  String get pleaseEnterSolution;
+
+  /// No description provided for @solutionSent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gửi giải pháp xử lý'**
+  String get solutionSent;
+
+  /// No description provided for @cannotSendSolution.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không thể gửi giải pháp'**
+  String get cannotSendSolution;
+
   /// No description provided for @cancelReport.
   ///
   /// In vi, this message translates to:

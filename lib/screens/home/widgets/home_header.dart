@@ -105,28 +105,32 @@ class _HomeHeaderState extends State<HomeHeader> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // User Info
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _isLoading ? '...' : displayName,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.gray800,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _isLoading ? '...' : displayName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.gray800,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
-              ),
-              Text(
-                isLeader ? l10n.roleLeader : l10n.roleWorker,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isLeader ? AppColors.error500 : AppColors.gray800,
-                  letterSpacing: 0.5,
+                Text(
+                  isLeader ? l10n.roleLeader : l10n.roleWorker,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isLeader ? AppColors.error500 : AppColors.gray800,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           // Icons bên phải

@@ -1540,6 +1540,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cannotReturnReport => 'Không thể trả lại báo cáo';
 
   @override
+  String get acknowledgeReport => 'ĐÁNH DẤU ĐÃ TIẾP NHẬN';
+
+  @override
+  String get acknowledgedReport => 'Đã đánh dấu tiếp nhận báo cáo';
+
+  @override
+  String get cannotAcknowledgeReport => 'Không thể đánh dấu tiếp nhận';
+
+  @override
+  String get sendSolution => 'GỬI XỬ LÝ';
+
+  @override
+  String get sendSolutionTitle => 'Gửi giải pháp xử lý';
+
+  @override
+  String get enterSolutionHint => 'Nhập giải pháp xử lý...';
+
+  @override
+  String get pleaseEnterSolution => 'Vui lòng nhập giải pháp xử lý';
+
+  @override
+  String get solutionSent => 'Đã gửi giải pháp xử lý';
+
+  @override
+  String get cannotSendSolution => 'Không thể gửi giải pháp';
+
+  @override
   String get cancelReport => 'HỦY BỎ';
 
   @override

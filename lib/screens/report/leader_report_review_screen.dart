@@ -1066,7 +1066,7 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
               ),
             ),
             child: Text(
-              'DUYỆT & GỬI LÊN ADMIN',
+              'GỬI LÊN ADMIN',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -1076,24 +1076,47 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        // Return to User Button
+        // Send Solution Button (Manager handles and sends solution to worker)
         SizedBox(
           width: double.infinity,
           height: 50,
-          child: OutlinedButton(
-            onPressed: _showReturnDialog,
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: AppColors.orange500, width: 2),
+          child: ElevatedButton(
+            onPressed: _validateAndSendSolution,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success500,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: Text(
-              'TRẢ LẠI USER',
+              'GỬI XỬ LÝ',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: AppColors.orange500,
+                color: AppColors.white,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Acknowledge Button (Mark as received)
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: OutlinedButton(
+            onPressed: _showAcknowledgeDialog,
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: AppColors.brand500, width: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'ĐÁNH DẤU ĐÃ TIẾP NHẬN',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.brand500,
               ),
             ),
           ),
@@ -1202,6 +1225,50 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
     }
   }
 
+  void _validateAndSendSolution() {
+    final l10n = AppLocalizations.of(context)!;
+    // Validate required fields
+    if (_selectedCategory == null ||
+        _selectedPriority == null ||
+        _selectedComponent == null ||
+        _selectedProductionLine == null ||
+        _selectedWorkstation == null ||
+        _selectedDepartment == null) {
+      ToastUtils.showError(l10n.pleaseFillRequiredFields);
+      return;
+    }
+
+    // Validate that notes field is filled (this is the solution)
+    if (_leaderNotesController.text.trim().isEmpty) {
+      ToastUtils.showError('Vui lòng nhập ghi chú xử lý');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.sendSolutionTitle),
+        content: Text('Xác nhận gửi xử lý với nội dung đã nhập?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await _performSendSolution();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success500,
+            ),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showReturnDialog() {
     final l10n = AppLocalizations.of(context)!;
     final reasonController = TextEditingController();
@@ -1261,6 +1328,100 @@ class _LeaderReportReviewScreenState extends State<LeaderReportReviewScreen> {
       } else {
         if (mounted) {
           ToastUtils.showError(result['message'] ?? l10n.cannotReturnReport);
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ToastUtils.showError('${l10n.error}: $e');
+      }
+    }
+  }
+
+  Future<void> _performSendSolution() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await IncidentService.sendSolution(
+        incidentId: widget.report.id,
+        priority: _selectedPriority!.name,
+        category: _selectedCategory,
+        component: _selectedComponent,
+        productionLine: _selectedProductionLine,
+        workstation: _selectedWorkstation,
+        department: _selectedDepartment,
+        solution: _leaderNotesController.text.trim(), // Use notes from form
+      );
+
+      setState(() => _isLoading = false);
+
+      final l10n = AppLocalizations.of(context)!;
+      if (result['success'] == true || result['data'] != null) {
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to refresh list
+          ToastUtils.showSuccess(l10n.solutionSent);
+        }
+      } else {
+        if (mounted) {
+          ToastUtils.showError(result['message'] ?? l10n.cannotSendSolution);
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ToastUtils.showError('${l10n.error}: $e');
+      }
+    }
+  }
+
+  void _showAcknowledgeDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.acknowledgeReport),
+        content: Text('Xác nhận đã tiếp nhận báo cáo này?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await _performAcknowledge();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brand500,
+            ),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performAcknowledge() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await IncidentService.acknowledgeIncident(
+        incidentId: widget.report.id,
+      );
+
+      setState(() => _isLoading = false);
+
+      final l10n = AppLocalizations.of(context)!;
+      if (result['success'] == true || result['data'] != null) {
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to refresh list
+          ToastUtils.showSuccess(l10n.acknowledgedReport);
+        }
+      } else {
+        if (mounted) {
+          ToastUtils.showError(result['message'] ?? l10n.cannotAcknowledgeReport);
         }
       }
     } catch (e) {

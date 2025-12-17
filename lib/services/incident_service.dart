@@ -342,4 +342,57 @@ class IncidentService {
       return {'success': false, 'message': 'Error: $e'};
     }
   }
+
+  // Acknowledge incident (Manager marks as received)
+  static Future<Map<String, dynamic>> acknowledgeIncident({
+    required String incidentId,
+    String? notes,
+  }) async {
+    return updateStatus(
+      incidentId: incidentId,
+      status: 'acknowledged',
+      notes: notes ?? 'Acknowledged by Manager',
+    );
+  }
+
+  // Send solution to worker (Manager handles and sends solution)
+  // Uses same fields as approveIncident for consistency
+  static Future<Map<String, dynamic>> sendSolution({
+    required String incidentId,
+    required String priority,
+    String? category,
+    String? component,
+    String? productionLine,
+    String? workstation,
+    String? department,
+    required String solution, // This goes into leaderNotes/notes field
+  }) async {
+    return updateStatus(
+      incidentId: incidentId,
+      status: 'resolved',
+      notes: solution,
+    );
+  }
+
+  // Get incident comments/feedback
+  static Future<List<Map<String, dynamic>>> getIncidentComments({
+    required String incidentId,
+  }) async {
+    try {
+      final response = await ApiService.get(
+        '${ApiConstants.incidents}/$incidentId/comments',
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return List<Map<String, dynamic>>.from(data['data']);
+        }
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching incident comments: $e');
+      return [];
+    }
+  }
 }
